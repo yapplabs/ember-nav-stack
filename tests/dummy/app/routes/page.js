@@ -45,7 +45,7 @@ export default Route.extend(StackableRoute, {
       this.transitionTo('track', track);
     },
     visitMySchedule() {
-      console.log('TODO');
+      this.transitionTo('my-schedule');
     },
     backToMorePage() {
       this.transitionTo('yapp.more');

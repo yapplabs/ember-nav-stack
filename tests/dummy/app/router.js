@@ -6,8 +6,8 @@ const Router = EmberRouter.extend({
   rootURL: config.rootURL
 });
 
-function myScheduleRoutes(dsl) {
-  dsl.route('my-schedule', function() {
+function myScheduleRoutes(dsl, resetNamespace = false) {
+  dsl.route('my-schedule', { resetNamespace }, function() {
     this.route('schedule-item', { path: '/schedule-items/:schedule_item_id' }, function() {
       this.route('rating-form');
       this.route('person');
@@ -20,7 +20,7 @@ Router.map(function() {
     this.route('more'); // layer 0, silo 0
     this.route('page', { path: '/pages/:page_id', resetNamespace: true }, function() { // layer 0, silo 1
       this.route('main', { path: '/' }, function() {
-        myScheduleRoutes(this);
+        myScheduleRoutes(this, true);
       });
       this.route('schedule-item', { path: '/schedule-items/:schedule_item_id', resetNamespace: true }, function() {  // layer 0, silo 2
         this.route('rating-form');  // layer 0, silo 3

@@ -17,7 +17,7 @@ export default Route.extend(AnimationAwareMixin, StackableRoute, {
   },
   actions: {
     visitMySchedule() {
-      console.log('TODO');
+      this.transitionTo(`${this.parentRoutePrefix}schedule-item.my-schedule`);
     },
     drillDownToRatingForm() {
       this.transitionTo(`${this.parentRoutePrefix}schedule-item.rating-form`);
