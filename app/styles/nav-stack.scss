@@ -1,0 +1,129 @@
+$nav-stack-header-height: 44px;
+$nav-stack-footer-height: 50px;
+
+.NavStack {
+  position: absolute;
+  left: 0px;
+  top: 0;
+  width: 100%;
+  height: 100%;
+
+  &--layer0 {
+    top: 0;
+  }
+  &--layer1 {
+    top: 100%;
+  }
+  &--layer2 {
+    top: 200%;
+  }
+  &-itemContainer {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 500%;
+    background: white;
+  }
+
+  &-item {
+    position: absolute;
+    width: 20%;
+    top: $nav-stack-header-height;
+    bottom: 0;
+    box-sizing: border-box;
+    overflow:hidden;
+
+    &-0 {
+      left: 0;
+    }
+    &-1 {
+      left: 20%;
+    }
+    &-2 {
+      left: 40%;
+    }
+    &-3 {
+      left: 60%;
+    }
+    &-4 {
+      left: 80%;
+    }
+  }
+
+  &--withFooter &-item {
+    bottom: $nav-stack-footer-height;
+  }
+
+  &-header {
+    position: absolute;
+    height: $nav-stack-header-height;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: rgba(0,0,0,.2);
+  }
+
+  &-footer {
+    position: absolute;
+    bottom: 0;
+    height: $nav-stack-footer-height;
+    left: 0;
+    right: 0;
+    background: rgba(0,0,0,.2);
+  }
+
+  &.is-birdsEyeDebugging {
+    width: 100px;
+    height: 200px;
+
+    &.NavStack--layer0 .NavStack-itemContainer {
+      border: 1px solid green;
+      background: rgba(lighten(green, 50%), 0.9);
+    }
+
+    &.NavStack--layer1 {
+      top: 200px;
+    }
+
+    &.NavStack--layer1 .NavStack-itemContainer {
+      border: 1px solid yellow;
+      background: rgba(lighten(yellow, 30%), 0.9);
+    }
+
+    &.NavStack--layer2 {
+      top: 400px;
+    }
+
+    &.NavStack--layer2 .NavStack-itemContainer {
+      border: 1px solid purple;
+      background: rgba(lighten(purple, 50%), 0.9);
+    }
+
+    .NavStack-itemContainer {
+      left: 0px;
+      width: 500px;
+    }
+
+    .NavStack-item {
+      width: 100px;
+      border: 1px dashed blue;
+    }
+
+    &-0 {
+      left: 0;
+    }
+    &-1 {
+      left: 100px;
+    }
+    &-2 {
+      left: 200px;
+    }
+    &-3 {
+      left: 300px;
+    }
+    &-4 {
+      left: 400px;
+    }
+  }
+}
