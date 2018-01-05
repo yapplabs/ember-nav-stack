@@ -3,7 +3,6 @@ import StackableRoute from 'ember-nav-stack/mixins/stackable-route';
 import AnimationAwareMixin from 'dummy/mixins/animation-aware';
 
 export default Route.extend(AnimationAwareMixin, StackableRoute, {
-  parentRoutePrefix: '',
   routableTemplateName: 'schedule-item',
   model(params = {}) {
     let page = this.modelFor('page');
@@ -17,13 +16,13 @@ export default Route.extend(AnimationAwareMixin, StackableRoute, {
   },
   actions: {
     visitMySchedule() {
-      this.transitionTo(`${this.parentRoutePrefix}schedule-item.my-schedule`);
+      this.transitionTo(`${this.routeName}.my-schedule`);
     },
     drillDownToRatingForm() {
-      this.transitionTo(`${this.parentRoutePrefix}schedule-item.rating-form`);
+      this.transitionTo(`${this.routeName}.rating-form`);
     },
     showAttachedPerson() {
-      this.transitionTo(`${this.parentRoutePrefix}schedule-item.person`);
+      this.transitionTo(`${this.routeName}.person`);
     }
   }
 });

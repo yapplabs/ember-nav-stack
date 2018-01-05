@@ -1,5 +1,3 @@
 import Route from '../schedule-item';
 
-export default Route.extend({
-  parentRoutePrefix: 'my-schedule.'
-});
+export default Route.extend();

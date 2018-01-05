@@ -10,7 +10,8 @@ export default Route.extend(AnimationAwareMixin, StackableRoute, {
       page,
       yapp: {
         myScheduleEnabled: true
-      }
+      },
+      hasMySchedule: true
     };
   },
   actions: {
@@ -18,7 +19,7 @@ export default Route.extend(AnimationAwareMixin, StackableRoute, {
       this.transitionTo('track.schedule-item', scheduleItem);
     },
     visitMySchedule() {
-      console.log('TODO');
+      this.transitionTo('track.my-schedule');
     }
   }
 });

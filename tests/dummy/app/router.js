@@ -15,28 +15,30 @@ function myScheduleRoutes(dsl, resetNamespace = false) {
   });
 }
 
-Router.map(function() {
+let dsl = function() {
   this.route('yapp', { path: '/yapp/', resetNamespace: true }, function() {
-    this.route('more'); // layer 0, silo 0
-    this.route('page', { path: '/pages/:page_id', resetNamespace: true }, function() { // layer 0, silo 1
+    this.route('more');
+    this.route('page', { path: '/pages/:page_id', resetNamespace: true }, function() {
       this.route('main', { path: '/' }, function() {
         myScheduleRoutes(this, true);
       });
-      this.route('schedule-item', { path: '/schedule-items/:schedule_item_id', resetNamespace: true }, function() {  // layer 0, silo 2
-        this.route('rating-form');  // layer 0, silo 3
-        this.route('person');  // layer 1, silo 0
+      this.route('schedule-item', { path: '/schedule-items/:schedule_item_id', resetNamespace: true }, function() {
+        this.route('rating-form');
+        this.route('person');
         myScheduleRoutes(this);
       });
-      this.route('track', { path: '/tracks/:track_id', resetNamespace: true }, function() { // track_id is "all" or UUID   // layer 1, silo 2
-        this.route('schedule-item', { path: '/schedule-items/:schedule_item_id' }, function() {   // layer 0, silo 3
-          this.route('rating-form');   // layer 0, silo 4
-          this.route('person');  // layer 1, silo 0
+      this.route('track', { path: '/tracks/:track_id', resetNamespace: true }, function() { // track_id is "all" or UUID
+        this.route('schedule-item', { path: '/schedule-items/:schedule_item_id' }, function() {
+          this.route('rating-form');
+          this.route('person');
           myScheduleRoutes(this);
         });
         myScheduleRoutes(this);
       });
     });
   });
-});
+};
+
+Router.map(dsl);
 
 export default Router;
