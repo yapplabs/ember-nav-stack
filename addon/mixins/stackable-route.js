@@ -34,5 +34,13 @@ export default Mixin.create({
       routeComponent: this.getRouteComponent(model),
       headerComponent: this.getHeaderComponent(model)
     });
+  },
+  getParentRouteName() {
+    return getParentRoute(this.router, this).routeName;
+  },
+  actions: {
+    back() {
+      this.transitionTo(this.getParentRouteName());
+    },
   }
 });
