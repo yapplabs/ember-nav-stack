@@ -1,21 +1,28 @@
 $nav-stack-header-height: 44px;
 $nav-stack-footer-height: 50px;
 
+$easing: cubic-bezier(.23, 1, .32, 1);
+
 .NavStack {
   position: absolute;
   left: 0px;
   top: 0;
   width: 100%;
   height: 100%;
+  transition: transform 600ms $easing;
+
+  .isCutting {
+    transition-duration: 0ms !important;
+  }
 
   &--layer0 {
-    top: 0;
+    transform: translateY(0);
   }
   &--layer1 {
-    top: 100%;
+    transform: translateY(100%);
   }
   &--layer2 {
-    top: 200%;
+    transform: translateY(200%);
   }
   &-itemContainer {
     position: absolute;
@@ -23,6 +30,7 @@ $nav-stack-footer-height: 50px;
     bottom: 0;
     left: 0;
     width: 500%;
+    transition: transform 300ms $easing;
   }
 
   &-item {
@@ -78,13 +86,12 @@ $nav-stack-footer-height: 50px;
     width: $item-width;
     height: $item-height;
 
-
     &.NavStack--layer1 {
-      top: $item-height;
+      transform: translateY($item-height);
     }
 
     &.NavStack--layer2 {
-      top: $item-height * 2;
+      transform: translateY($item-height * 2);
     }
 
     .NavStack-itemContainer {
@@ -95,19 +102,5 @@ $nav-stack-footer-height: 50px;
     .NavStack-item {
       border: 1px dashed blue;
     }
-
-    .NavStack--layer0 .NavStack-itemContainer {
-      border: 1px solid green;
-      background: rgba(lighten(green, 50%), 0.9);
-    }
-    .NavStack--layer1 .NavStack-itemContainer {
-      border: 1px solid yellow;
-      background: rgba(lighten(yellow, 30%), 0.9);
-    }
-    .NavStack--layer2 .NavStack-itemContainer {
-      border: 1px solid purple;
-      background: rgba(lighten(purple, 50%), 0.9);
-    }
-
   }
 }
