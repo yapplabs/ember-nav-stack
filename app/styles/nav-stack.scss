@@ -23,7 +23,6 @@ $nav-stack-footer-height: 50px;
     bottom: 0;
     left: 0;
     width: 500%;
-    background: white;
   }
 
   &-item {
@@ -74,56 +73,41 @@ $nav-stack-footer-height: 50px;
   }
 
   &.is-birdsEyeDebugging {
-    width: 100px;
-    height: 200px;
+    $item-width: 320px;
+    $item-height: 480px;
+    width: $item-width;
+    height: $item-height;
 
-    &.NavStack--layer0 .NavStack-itemContainer {
-      border: 1px solid green;
-      background: rgba(lighten(green, 50%), 0.9);
-    }
 
     &.NavStack--layer1 {
-      top: 200px;
-    }
-
-    &.NavStack--layer1 .NavStack-itemContainer {
-      border: 1px solid yellow;
-      background: rgba(lighten(yellow, 30%), 0.9);
+      top: $item-height;
     }
 
     &.NavStack--layer2 {
-      top: 400px;
-    }
-
-    &.NavStack--layer2 .NavStack-itemContainer {
-      border: 1px solid purple;
-      background: rgba(lighten(purple, 50%), 0.9);
+      top: $item-height * 2;
     }
 
     .NavStack-itemContainer {
       left: 0px;
-      width: 500px;
+      width: $item-width * 5;
     }
 
     .NavStack-item {
-      width: 100px;
       border: 1px dashed blue;
     }
 
-    &-0 {
-      left: 0;
+    .NavStack--layer0 .NavStack-itemContainer {
+      border: 1px solid green;
+      background: rgba(lighten(green, 50%), 0.9);
     }
-    &-1 {
-      left: 100px;
+    .NavStack--layer1 .NavStack-itemContainer {
+      border: 1px solid yellow;
+      background: rgba(lighten(yellow, 30%), 0.9);
     }
-    &-2 {
-      left: 200px;
+    .NavStack--layer2 .NavStack-itemContainer {
+      border: 1px solid purple;
+      background: rgba(lighten(purple, 50%), 0.9);
     }
-    &-3 {
-      left: 300px;
-    }
-    &-4 {
-      left: 400px;
-    }
+
   }
 }

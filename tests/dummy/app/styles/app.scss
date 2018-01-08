@@ -18,14 +18,26 @@ h1 {
 }
 
 #yapp-application.birds-eye-debugging {
-  font-size: 10px;
-  width: 500px;
-  height: 600px;
   border: 1px solid red;
   position: absolute;
-  left: calc(50% - 500px/2);
-  top: calc(50% - 600px/2);
   overflow: visible;
+  transform-origin: left top;
+  transform: scale(0.5);
+  width: (320px * 5);
+  margin: 100px 0 0 320px;
+
+  .NavStack--layer0 .NavStack-itemContainer {
+    border: 1px solid green;
+    background: rgba(lighten(green, 50%), 0.9);
+  }
+  .NavStack--layer1 .NavStack-itemContainer {
+    border: 1px solid yellow;
+    background: rgba(lighten(yellow, 30%), 0.9);
+  }
+  .NavStack--layer2 .NavStack-itemContainer {
+    border: 1px solid purple;
+    background: rgba(lighten(purple, 50%), 0.9);
+  }
 }
 
 .y-page-content {
@@ -48,4 +60,8 @@ h1 {
     display: inline-block;
     font-size: .8rem;
   }
+}
+
+.NavStack--itemContainer {
+  background: white;
 }

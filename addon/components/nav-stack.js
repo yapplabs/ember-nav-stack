@@ -91,9 +91,7 @@ export default Component.extend({
     let stackDepth = this.get('stackDepth');
     let layer = this.get('layer');
     let layerX = (stackDepth - 1) * -100;
-    if (!this.get('birdsEyeDebugging')) {
-      layerX = `${layerX}%`;
-    }
+    layerX = `${layerX}%`;
     this.$('.NavStack-itemContainer').css('left', layerX);
     if (layer > 0 & stackDepth > 0) {
       this.$().css('top', 0);
@@ -102,9 +100,7 @@ export default Component.extend({
   slideForward() {
     let stackDepth = this.get('stackDepth');
     let layerX = (stackDepth - 1) * -100;
-    if (!this.get('birdsEyeDebugging')) {
-      layerX = `${layerX}%`;
-    }
+    layerX = `${layerX}%`;
     let params = {
       left: layerX
     };
@@ -118,9 +114,7 @@ export default Component.extend({
   slideBack() {
     let stackDepth = this.get('stackDepth');
     let layerX = (stackDepth - 1) * -100;
-    if (!this.get('birdsEyeDebugging')) {
-      layerX = `${layerX}%`;
-    }
+    layerX = `${layerX}%`;
     let params = {
       left: layerX
     };
@@ -138,7 +132,7 @@ export default Component.extend({
   },
   slideUp() {
     let params = {
-      top: [0, this.get('birdsEyeDebugging') ? '200px' : '100%']
+      top: [0, this.get('birdsEyeDebugging') ? '480px' : '100%']
     };
     animate(
       this.$(),
@@ -149,7 +143,7 @@ export default Component.extend({
   },
   slideDown() {
     let params = {
-      top: [this.get('birdsEyeDebugging') ? '200px' : '100%', 0]
+      top: [this.get('birdsEyeDebugging') ? '480px' : '100%', 0]
     };
     animate(
       this.$(),
