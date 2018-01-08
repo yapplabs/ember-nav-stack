@@ -84,10 +84,7 @@ export default Component.extend({
 
   computeXPosition() {
     let stackDepth = this.get('stackDepth');
-    let layerX = (stackDepth - 1) * -100;
-    let debug = this.get('birdsEyeDebugging');
-    layerX = debug ? `${layerX/5}%` : `${layerX}vw`;
-
+    let layerX = `${(stackDepth - 1) * -20}%`;
     return layerX;
   },
 
