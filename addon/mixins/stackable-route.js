@@ -20,7 +20,7 @@ export default Mixin.create({
     return `routable-components/${(this.routableTemplateName || this.routeName).replace(/\./g,'/')}`;
   },
   getHeaderComponent(model) {
-    return `${this.getRouteComponent(model)}/title-bar`;
+    return `${this.getRouteComponent(model)}/header`;
   },
   layerIndex: computed(function() {
     let parentRoute = getParentRoute(this.router, this);
