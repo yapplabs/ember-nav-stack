@@ -1,13 +1,11 @@
 import Component from '@ember/component';
 import layout from '../templates/components/nav-stack';
-import { computed } from '@ember/object';
+import { computed, get } from '@ember/object';
 import { inject as service } from '@ember/service';
-import { get } from '@ember/object';
-import { scheduleOnce } from '@ember/runloop';
-import { animate } from 'liquid-fire';
+import { run, scheduleOnce } from '@ember/runloop';
 import { observer } from '@ember/object';
-const SLIDE_EASING = 'easeInOutQuint';
-const SLIDE_DURATION = 450;
+
+import { nextTick, computeTimeout } from 'ember-nav-stack/utils/animation'
 
 export default Component.extend({
   layer: null, // PT.number.isRequired
@@ -35,6 +33,7 @@ export default Component.extend({
   stackDepthChanged: observer('stackItems', function() {
     this.handleStackDepthChange();
   }),
+
   handleStackDepthChange(initialRender = false) {
     let stackDepth = this.get('stackItems.length') || 0;
     let rootComponentRef = this.get('stackItems.firstObject.component');
@@ -43,118 +42,119 @@ export default Component.extend({
 
     let layer = this.get('layer');
     if (initialRender) {
-      this.scheduleCut();
+      this.schedule(this.cut);
     }
+
     else if (layer > 0 && stackDepth > 0 && this._stackDepth === 0) {
-      this.scheduleSlideUp();
+      this.schedule(this.slideUp);
     }
+
     else if (layer > 0 && stackDepth === 0 && this._stackDepth > 0) {
-      this.scheduleSlideDown();
-    }
-    else if (stackDepth === 1 && rootComponentIdentifier !== this._rootComponentIdentifier) {
-      this.scheduleCut();
+      this.cloneLastStackItem();
+      this.schedule(this.slideDown);
+
+    } else if (stackDepth === 1 && rootComponentIdentifier !== this._rootComponentIdentifier) {
+      this.schedule(this.cut);
+
     } else if (stackDepth < this._stackDepth) {
-      this.scheduleSlideBack();
+      this.cloneLastStackItem();
+      this.schedule(this.slideBack);
       headerAnimation = 'slideBack';
+
     } else if (stackDepth > this._stackDepth) {
-      this.scheduleSlideForward();
+      this.schedule(this.slideForward);
       headerAnimation = 'slideForward';
     }
+
     this.setHeaderInfo(headerAnimation);
     this._stackDepth = stackDepth;
     this._rootComponentIdentifier = rootComponentIdentifier;
   },
+
   setHeaderInfo(enterAnimation = 'cut') {
     this.set('headerInfo', {
       component: this.get('stackItems.lastObject.headerComponent'),
       enterAnimation
     });
   },
-  scheduleCut() {
-    scheduleOnce('afterRender', this, this.cut);
+
+  schedule(method) {
+    scheduleOnce('afterRender', this, method);
   },
-  scheduleSlideBack() {
-    this.cloneLastStackItem();
-    scheduleOnce('afterRender', this, this.slideBack);
-  },
-  scheduleSlideForward() {
-    scheduleOnce('afterRender', this, this.slideForward);
-  },
-  scheduleSlideDown() {
-    this.cloneLastStackItem();
-    scheduleOnce('afterRender', this, this.slideDown);
-  },
-  scheduleSlideUp() {
-    scheduleOnce('afterRender', this, this.slideUp);
-  },
-  cut() {
+
+  computeXPosition() {
     let stackDepth = this.get('stackDepth');
-    let layer = this.get('layer');
     let layerX = (stackDepth - 1) * -100;
-    layerX = `${layerX}%`;
-    this.$('.NavStack-itemContainer').css('left', layerX);
-    if (layer > 0 & stackDepth > 0) {
-      this.$().css('top', 0);
+    let debug = this.get('birdsEyeDebugging');
+    layerX = debug ? `${layerX/5}%` : `${layerX}vw`;
+
+    return layerX;
+  },
+
+  cut() {
+    let { element } = this;
+    let x = this.computeXPosition();
+    let stackItemEl = element.querySelector('.NavStack-itemContainer')
+    stackItemEl.classList.add('isCutting');
+    this.transition(stackItemEl, 'X', x, () => {
+      stackItemEl.classList.remove('isCutting');
+    });
+
+    if (this.get('layer') > 0 & this.get('stackDepth') > 0) {
+      element.classList.add('isCutting');
+      element.style.transform = `translateY(0px)`;
+      this.transition(this.element, 'Y', '0px', () => {
+        element.classList.remove('isCutting');
+      });
     }
   },
+
   slideForward() {
-    let stackDepth = this.get('stackDepth');
-    let layerX = (stackDepth - 1) * -100;
-    layerX = `${layerX}%`;
-    let params = {
-      left: layerX
-    };
-    animate(
-      this.$('.NavStack-itemContainer'),
-      params,
-      { duration: SLIDE_DURATION, easing: SLIDE_EASING },
-      'layer-slide'
-    );
+    let element = this.element.querySelector('.NavStack-itemContainer')
+    let x = this.computeXPosition();
+    this.transition(element, 'X', x);
   },
+
   slideBack() {
-    let stackDepth = this.get('stackDepth');
-    let layerX = (stackDepth - 1) * -100;
-    layerX = `${layerX}%`;
-    let params = {
-      left: layerX
-    };
-    animate(
-      this.$('.NavStack-itemContainer'),
-      params,
-      { duration: SLIDE_DURATION, easing: SLIDE_EASING },
-      'layer-slide'
-    ).finally(() => {
+    let element = this.element.querySelector('.NavStack-itemContainer')
+    let x = this.computeXPosition();
+
+    this.transition(element, 'X', x, () => {
       if (this.clonedStackItem) {
         this.clonedStackItem.remove();
         this.clonedStackItem = null;
       }
     });
   },
+
   slideUp() {
-    let params = {
-      top: [0, this.get('birdsEyeDebugging') ? '480px' : '100%']
-    };
-    animate(
-      this.$(),
-      params,
-      { duration: SLIDE_DURATION, easing: SLIDE_EASING },
-      'layer-slide'
-    );
+    this.transition(this.element, 'Y', '0px');
   },
+
   slideDown() {
-    let params = {
-      top: [this.get('birdsEyeDebugging') ? '480px' : '100%', 0]
-    };
-    animate(
-      this.$(),
-      params,
-      { duration: SLIDE_DURATION, easing: SLIDE_EASING },
-      'layer-slide'
-    ).finally(() => {
+    let debug = this.get('birdsEyeDebugging');
+    let y = debug ? '480px' : '100vh';
+    this.transition(this.element, 'Y', y, () => {
       if (this.clonedStackItem) {
         this.clonedStackItem.remove();
         this.clonedStackItem = null;
       }
+    });
+  },
+
+  transition(element, plane, amount, finishCallback) {
+    element.style.transform = `translate${plane}(${amount})`;
+
+    nextTick().then(() => {
+      element.classList.add('transitioning');
+      // set timeout for animation end
+      run.later(() => {
+        element.classList.remove('transitioning');
+
+        if (finishCallback) {
+          finishCallback();
+        }
+      }, computeTimeout(element) || 0);
     });
   },
 
