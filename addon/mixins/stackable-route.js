@@ -32,7 +32,8 @@ export default Mixin.create({
     controller.setProperties({
       layerIndex: this.get('layerIndex'),
       routeComponent: this.getRouteComponent(model),
-      headerComponent: this.getHeaderComponent(model)
+      headerComponent: this.getHeaderComponent(model),
+      routeName: this.routeName
     });
   },
   getParentRouteName() {

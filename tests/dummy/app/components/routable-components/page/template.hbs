@@ -1,4 +1,4 @@
-<div class='y-page-content' style="position:absolute;top:0;bottom:0;left:0;right:0">
+<div class='y-page-content' style="position:absolute;top:0;bottom:0;left:0;right:0" data-test-route-name={{controller.routeName}}>
   <h1>page {{model.id}}</h1>
   {{#if (eq model.slug 'schedule2') }}
     <a href="#" {{action (route-action 'drillDownToScheduleItem') '1'}}>Schedule Item 1</a>
