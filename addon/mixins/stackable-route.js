@@ -1,7 +1,7 @@
 import Mixin from '@ember/object/mixin';
 import { computed } from '@ember/object';
 
-function getParentRoute(router, route) {
+export function getParentRoute(router, route) {
   let routerMicroLib = router._routerMicrolib;
   let { handlerInfos } = routerMicroLib.state;
   if (!handlerInfos) {
