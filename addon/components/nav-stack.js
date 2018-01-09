@@ -140,6 +140,7 @@ export default Component.extend({
   },
 
   transition(element, plane, amount, finishCallback) {
+    this.transitionDidBegin();
     element.style.transform = `translate${plane}(${amount})`;
 
     nextTick().then(() => {
@@ -148,12 +149,15 @@ export default Component.extend({
       run.later(() => {
         element.classList.remove('transitioning');
 
+        this.transitionDidEnd();
         if (finishCallback) {
           finishCallback();
         }
       }, computeTimeout(element) || 0);
     });
   },
+  transitionDidBegin(){},
+  transitionDidEnd(){},
 
   cloneLastStackItem() {
     let clone = this.clonedStackItem = this.$('.NavStack-item:last-child').clone();
