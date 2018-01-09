@@ -10,6 +10,7 @@ $easing: cubic-bezier(.23, 1, .32, 1);
   width: 100%;
   height: 100%;
   transition: transform 600ms $easing;
+  will-change: transform;
 
   .isCutting {
     transition-duration: 0ms !important;
@@ -17,12 +18,15 @@ $easing: cubic-bezier(.23, 1, .32, 1);
 
   &--layer0 {
     transform: translateY(0);
+    z-index: 1;
   }
   &--layer1 {
     transform: translateY(100%);
+    z-index: 2;
   }
   &--layer2 {
     transform: translateY(200%);
+    z-index: 3;
   }
   &-itemContainer {
     position: absolute;
