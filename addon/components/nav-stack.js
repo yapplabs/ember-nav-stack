@@ -144,11 +144,7 @@ export default Component.extend({
     element.style.transform = `translate${plane}(${amount})`;
 
     nextTick().then(() => {
-      element.classList.add('transitioning');
-      // set timeout for animation end
       run.later(() => {
-        element.classList.remove('transitioning');
-
         this.transitionDidEnd();
         if (finishCallback) {
           finishCallback();

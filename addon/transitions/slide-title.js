@@ -1,7 +1,11 @@
 import { Promise, animate } from 'liquid-fire';
 
-export default function(direction, opts = {}) {
-  let distanceOut = this.newElement.width() / 8;
+const duration = 330;
+const easing = [.23, 1, .32, 1];
+
+export default function(direction, opts = { duration, easing }) {
+  // let distanceOut = this.newElement.width() / 8;
+  let distanceOut = 60;
   let distanceIn = distanceOut;
   if (direction === 'left') {
     distanceOut *= -1;
