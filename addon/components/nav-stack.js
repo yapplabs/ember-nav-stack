@@ -198,7 +198,10 @@ function getComponentIdentifier(componentRef) {
   } else if (componentRef.args.named.has && componentRef.args.named.has('model')) {
     let model = componentRef.args.named.get('model').value();
     if (model) {
-      result += `:${get(model, 'id')}`;
+      let modelId = get(model, 'id');
+      if (modelId) {
+        result += `:${modelId}`;
+      }
     }
   }
   return result;
