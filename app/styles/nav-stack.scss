@@ -34,7 +34,7 @@ $easing: cubic-bezier(.23, 1, .32, 1);
     bottom: 0;
     left: 0;
     width: 500%;
-    transition: transform 300ms $easing;
+    transition: transform 350ms $easing;
   }
 
   &-item {
