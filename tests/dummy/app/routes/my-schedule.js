@@ -2,7 +2,7 @@ import Route from '@ember/routing/route';
 import StackableRoute from 'ember-nav-stack/mixins/stackable-route';
 
 export default Route.extend(StackableRoute, {
-  layerIndex: 1,
+  newLayer: true,
   routableTemplateName: 'my-schedule',
   model() {
     return {

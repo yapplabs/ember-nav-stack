@@ -25,7 +25,11 @@ export default Mixin.create({
   layerIndex: computed(function() {
     let parentRoute = getParentRoute(this.router, this);
     let parentRouteLayerIndex = parentRoute.get('layerIndex');
-    return parentRouteLayerIndex || 0;
+    let currentLayerIndex = parentRouteLayerIndex || 0;
+    if (this.get('newLayer') === true) {
+      return currentLayerIndex + 1;
+    }
+    return currentLayerIndex;
   }),
   setupController(controller, model) {
     this._super(controller, model);
