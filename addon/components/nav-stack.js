@@ -50,7 +50,8 @@ export default Component.extend({
     }
 
     else if (layer > 0 && stackDepth === 0 && this._stackDepth > 0) {
-      this.cloneLastStackItem();
+      this.cloneElement();
+      this.element.style.display = 'none';
       this.schedule(this.slideDown);
 
     } else if (stackDepth === 1 && rootComponentIdentifier !== this._rootComponentIdentifier) {
@@ -117,9 +118,9 @@ export default Component.extend({
     let x = this.computeXPosition();
 
     this.transition(element, 'X', x, () => {
-      if (this.clonedStackItem) {
-        this.clonedStackItem.remove();
-        this.clonedStackItem = null;
+      if (this.$clonedStackItem) {
+        this.$clonedStackItem.remove();
+        this.$clonedStackItem = null;
       }
     });
   },
@@ -131,10 +132,10 @@ export default Component.extend({
   slideDown() {
     let debug = this.get('birdsEyeDebugging');
     let y = debug ? '480px' : '100vh';
-    this.transition(this.element, 'Y', y, () => {
-      if (this.clonedStackItem) {
-        this.clonedStackItem.remove();
-        this.clonedStackItem = null;
+    this.transition(this.$clonedElement[0], 'Y', y, () => {
+      if (this.$clonedElement) {
+        this.$clonedElement.remove();
+        this.$clonedElement = null;
       }
     });
   },
@@ -156,12 +157,21 @@ export default Component.extend({
   transitionDidEnd(){},
 
   cloneLastStackItem() {
-    let clone = this.clonedStackItem = this.$('.NavStack-item:last-child').clone();
-    clone.attr('id', `${this.elementId}_clonedStackItem`);
-    this.attachClone(clone);
+    let clone = this.$clonedStackItem = this.$('.NavStack-item:last-child').clone();
+    clone.attr('id', `${this.elementId}_$clonedStackItem`);
+    this.attachClonedStackItem(clone);
   },
-  attachClone(clone) {
+  cloneElement() {
+    let clone = this.$clonedElement = this.$().clone();
+    clone.attr('id', `${this.elementId}_clone`);
+    this.attachClonedElement(clone);
+  },
+  attachClonedStackItem(clone) {
     this.$('.NavStack-itemContainer').append(clone);
+  },
+  attachClonedElement(clone) {
+    this.$().parent().append(clone);
+    clone.css('transform'); // force layout, without this CSS transition does not run
   }
 });
 

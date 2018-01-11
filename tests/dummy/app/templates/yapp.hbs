@@ -1,8 +1,8 @@
 <div id='yapp-application' class={{if birdsEyeDebugging 'birds-eye-debugging' ''}}>
-  {{#each (array 0 1 2) as |layer|}}
+  {{#each (nav-layer-indices) as |layerIndex|}}
     {{nav-stack
-        layer=layer
-        footer=(if (eq layer 0) (component 'tab-bar'))
+        layer=layerIndex
+        footer=(if (eq layerIndex 0) (component 'tab-bar'))
         birdsEyeDebugging=birdsEyeDebugging
     }}
   {{/each}}
