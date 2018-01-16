@@ -62,3 +62,19 @@ export function computeTimeout(element) {
 
   return (maxDelay + maxDuration) * 1000;
 }
+
+var transformKey;
+function initTransformKey(element) {
+  if (element.style.transform) {
+    transformKey = 'transform';
+  } else {
+    transformKey = 'webkitTransform'; // e.g. Android 4.4
+  }
+}
+
+export function setTransformTranslateStyle(element, plane, amount) {
+  if (!transformKey) {
+    initTransformKey(element);
+  }
+  element.style[transformKey] = `translate${plane}(${amount})`;
+}

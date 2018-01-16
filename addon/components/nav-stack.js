@@ -5,7 +5,7 @@ import { inject as service } from '@ember/service';
 import { run, scheduleOnce } from '@ember/runloop';
 import { observer } from '@ember/object';
 
-import { nextTick, computeTimeout } from 'ember-nav-stack/utils/animation'
+import { nextTick, computeTimeout, setTransformTranslateStyle } from 'ember-nav-stack/utils/animation'
 
 export default Component.extend({
   layer: null, // PT.number.isRequired
@@ -100,7 +100,7 @@ export default Component.extend({
 
     if (this.get('layer') > 0 & this.get('stackDepth') > 0) {
       element.classList.add('isCutting');
-      element.style.transform = `translateY(0px)`;
+      setTransformTranslateStyle(element, 'Y', '0px');
       this.transition(this.element, 'Y', '0px', () => {
         element.classList.remove('isCutting');
       });
@@ -142,7 +142,7 @@ export default Component.extend({
 
   transition(element, plane, amount, finishCallback) {
     this.transitionDidBegin();
-    element.style.transform = `translate${plane}(${amount})`;
+    setTransformTranslateStyle(element, plane, amount);
 
     nextTick().then(() => {
       run.later(() => {
