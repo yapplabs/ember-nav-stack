@@ -1,6 +1,8 @@
+import Ember from 'ember';
+const { testing } = Ember;
 import { Promise, animate } from 'liquid-fire';
 
-const duration = 330;
+const duration = testing ? 0 : 330;
 const easing = [.23, 1, .32, 1];
 
 export default function(direction, opts = { duration, easing }) {
