@@ -22,7 +22,7 @@
     "ember-cli-htmlbars": "^2.0.1",
     "ember-math-helpers": "^2.4.0",
     "ember-truth-helpers": "^2.0.0",
-    "liquid-fire": "^0.29.1"
+    "liquid-fire": "^0.29.2"
   },
   "devDependencies": {
     "broccoli-asset-rev": "^2.4.5",
