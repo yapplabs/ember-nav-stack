@@ -1,6 +1,6 @@
 {
   "name": "ember-nav-stack",
-  "version": "0.2.9",
+  "version": "0.2.10",
   "description": "The default blueprint for ember-cli addons.",
   "keywords": [
     "ember-addon"
