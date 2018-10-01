@@ -21,7 +21,7 @@
     "ember-cli-babel": "^6.6.0",
     "ember-cli-htmlbars": "^2.0.1",
     "ember-math-helpers": "^2.4.0",
-    "ember-truth-helpers": "^2.0.0",
+    "ember-truth-helpers": "^2.1.0",
     "liquid-fire": "^0.29.2"
   },
   "devDependencies": {
