@@ -63,18 +63,16 @@ export function computeTimeout(element) {
   return (maxDelay + maxDuration) * 1000;
 }
 
-var transformKey;
-function initTransformKey(element) {
-  if (element.style.transform) {
-    transformKey = 'transform';
-  } else {
-    transformKey = 'webkitTransform'; // e.g. Android 4.4
-  }
-}
-
+const TRANSFORM_STYLE_KEYS = [
+  "webkitTransform",
+  "mozTransform",
+  "msTransform",
+  "oTransform",
+  "transform"
+];
 export function setTransformTranslateStyle(element, plane, amount) {
-  if (!transformKey) {
-    initTransformKey(element);
-  }
-  element.style[transformKey] = `translate${plane}(${amount})`;
+  let transformValue = `translate${plane}(${amount})`;
+  TRANSFORM_STYLE_KEYS.forEach((transformKey) => {
+    element.style[transformKey] = transformValue;
+  });
 }
