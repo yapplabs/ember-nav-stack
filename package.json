@@ -11,7 +11,10 @@
     "doc": "doc",
     "test": "tests"
   },
-  "repository": "",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yapplabs/ember-nav-stack.git"
+  },
   "scripts": {
     "build": "ember build",
     "start": "ember serve",
