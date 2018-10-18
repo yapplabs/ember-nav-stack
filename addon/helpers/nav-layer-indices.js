@@ -1,22 +1,28 @@
 import Helper from '@ember/component/helper';
-import { inject as service } from '@ember/service';
-import { observer } from '@ember/object';
-import { computed } from '@ember/object';
+import { computed, observes } from '@ember-decorators/object';
+import { service } from '@ember-decorators/service';
 
-export default Helper.extend({
-  navStacks: service(),
-  compute: function() {
-    let layerCount = this.get('layerCount');
+export default class NavLayerIndices extends Helper {
+
+  @service
+  navStacks;
+
+  compute() {
+    let layerCount = this.layerCount;
     let indices = [];
     for (let i = 0; i < layerCount; i++) {
       indices.push(i);
     }
     return indices;
-  },
-  layerCount: computed('navStacks.stacks', function(){
-    return Object.keys(this.get('navStacks.stacks')).length;
-  }),
-  navStacksChanged: observer('layerCount', function(){
+  }
+
+  @computed('navStacks.stacks')
+  get layerCount(){
+    return Object.keys(this.navStacks.stacks).length;
+  }
+
+  @observes('layerCount')
+  navStacksChanged() {
     this.recompute();
-  })
-});
+  }
+}

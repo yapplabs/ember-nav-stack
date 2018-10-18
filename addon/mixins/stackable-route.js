@@ -34,7 +34,7 @@ export default Mixin.create({
   setupController(controller, model) {
     this._super(controller, model);
     controller.setProperties({
-      layerIndex: this.get('layerIndex'),
+      layerIndex: this.layerIndex,
       routeComponent: this.getRouteComponent(model),
       headerComponent: this.getHeaderComponent(model),
       routeName: this.routeName
@@ -46,6 +46,6 @@ export default Mixin.create({
   actions: {
     back() {
       this.transitionTo(this.getParentRouteName());
-    },
+    }
   }
 });

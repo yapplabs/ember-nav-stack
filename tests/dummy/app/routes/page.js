@@ -1,5 +1,6 @@
 import Route from '@ember/routing/route';
 import StackableRoute from 'ember-nav-stack/mixins/stackable-route';
+import { get } from '@ember/object';
 
 export default Route.extend(StackableRoute, {
   templateName: 'page',
@@ -47,8 +48,13 @@ export default Route.extend(StackableRoute, {
     visitMySchedule() {
       this.transitionTo('my-schedule');
     },
-    backToMorePage() {
-      this.transitionTo('yapp.more');
+    back() {
+      let model = this.modelFor(this.routeName);
+      if (get(model, 'isUnderMorePage')) {
+        this.transitionTo('yapp.more');
+      } else {
+        this.transitionTo(this.getParentRouteName());
+      }
     }
   }
 });
