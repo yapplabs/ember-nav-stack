@@ -1,3 +1,4 @@
+import { readOnly, mapBy, bool } from '@ember/object/computed';
 import Component from '@ember/component';
 import layout from '../templates/components/nav-stack';
 import { computed, get } from '@ember/object';
@@ -5,7 +6,11 @@ import { inject as service } from '@ember/service';
 import { run, scheduleOnce } from '@ember/runloop';
 import { observer } from '@ember/object';
 
-import { nextTick, computeTimeout, setTransformTranslateStyle } from 'ember-nav-stack/utils/animation'
+import {
+  nextTick,
+  computeTimeout,
+  setTransformTranslateStyle
+} from 'ember-nav-stack/utils/animation'
 
 export default Component.extend({
   layer: null, // PT.number.isRequired
@@ -18,13 +23,13 @@ export default Component.extend({
   layerIndexCssClass: computed('layer', function() {
     return `NavStack--layer${this.get('layer')}`;
   }),
-  headerComponent: computed.readOnly('stackItems.lastObject.headerComponent'),
+  headerComponent: readOnly('stackItems.lastObject.headerComponent'),
   stackItems: computed('layer', 'navStacksService.stacks', function(){
     return this.get(`navStacksService.stacks.layer${this.get('layer')}`);
   }),
-  stackDepth: computed.readOnly('stackItems.length'),
-  components: computed.mapBy('stackItems', 'component'),
-  hasFooter: computed.bool('footer'),
+  stackDepth: readOnly('stackItems.length'),
+  components: mapBy('stackItems', 'component'),
+  hasFooter: bool('footer'),
   headerTransitionRules,
   didInsertElement(){
     this._super(...arguments);
@@ -73,8 +78,13 @@ export default Component.extend({
   },
 
   setHeaderInfo(enterAnimation = 'cut') {
+    let { stackItems } = this;
+    let headerComponent;
+    if (stackItems && stackItems.length >= 1) {
+      headerComponent = stackItems[stackItems.length - 1].headerComponent;
+    }
     this.set('headerInfo', {
-      component: this.get('stackItems.lastObject.headerComponent'),
+      component: headerComponent,
       enterAnimation
     });
   },
@@ -118,9 +128,9 @@ export default Component.extend({
     let x = this.computeXPosition();
 
     this.transition(element, 'X', x, () => {
-      if (this.$clonedStackItem) {
-        this.$clonedStackItem.remove();
-        this.$clonedStackItem = null;
+      if (this._clonedStackItem) {
+        this._clonedStackItem.parentNode.removeChild(this._clonedStackItem);
+        this._clonedStackItem = null;
       }
     });
   },
@@ -132,10 +142,10 @@ export default Component.extend({
   slideDown() {
     let debug = this.get('birdsEyeDebugging');
     let y = debug ? '480px' : '100vh';
-    this.transition(this.$clonedElement[0], 'Y', y, () => {
-      if (this.$clonedElement) {
-        this.$clonedElement.remove();
-        this.$clonedElement = null;
+    this.transition(this._clonedElement, 'Y', y, () => {
+      if (this._clonedElement) {
+        this._clonedElement.parentNode.removeChild(this._clonedElement);
+        this._clonedElement = null;
       }
     });
   },
@@ -157,21 +167,21 @@ export default Component.extend({
   transitionDidEnd(){},
 
   cloneLastStackItem() {
-    let clone = this.$clonedStackItem = this.$('.NavStack-item:last-child').clone();
-    clone.attr('id', `${this.elementId}_$clonedStackItem`);
+    let clone = this._clonedStackItem = this.element.querySelector('.NavStack-item:last-child').cloneNode(true);
+    clone.setAttribute('id', `${this.elementId}_clonedStackItem`);
     this.attachClonedStackItem(clone);
   },
   cloneElement() {
-    let clone = this.$clonedElement = this.$().clone();
-    clone.attr('id', `${this.elementId}_clone`);
+    let clone = this._clonedElement = this.element.cloneNode(true);
+    clone.setAttribute('id', `${this.elementId}_clone`);
     this.attachClonedElement(clone);
   },
   attachClonedStackItem(clone) {
-    this.$('.NavStack-itemContainer').append(clone);
+    this.element.querySelector('.NavStack-itemContainer').appendChild(clone);
   },
   attachClonedElement(clone) {
-    this.$().parent().append(clone);
-    clone.css('transform'); // force layout, without this CSS transition does not run
+    this.element.parentNode.appendChild(clone);
+    clone.style.transform; // force layout, without this CSS transition does not run
   }
 });
 
