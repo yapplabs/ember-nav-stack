@@ -1,7 +1,7 @@
+import { A } from '@ember/array';
 import Service from '@ember/service';
 import { run } from '@ember/runloop';
 import EmberObject from '@ember/object';
-import Ember from 'ember';
 
 export default Service.extend({
   init() {
@@ -37,7 +37,7 @@ export default Service.extend({
     Object.keys(itemsById).forEach((sourceId) => {
       let { layer, component, headerComponent, order } = itemsById[sourceId];
       let layerName = `layer${layer}`;
-      newStacks[layerName] = newStacks[layerName] || Ember.A();
+      newStacks[layerName] = newStacks[layerName] || A();
       let newItem = component ? { component, headerComponent, order } : null;
 
       newStacks[layerName].push(newItem);
