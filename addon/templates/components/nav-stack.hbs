@@ -9,9 +9,14 @@
   {{/each}}
 </div>
 <div class="NavStack-header">
-  {{#liquid-bind headerInfo rules=headerTransitionRules as |currentHeaderInfo|}}
-    {{component currentHeaderInfo.component}}
-  {{/liquid-bind}}
+  {{#if parentItemHeaderComponent}}
+    <div class="NavStack-headerContainer NavStack-parentItemHeaderContainer">
+      {{component parentItemHeaderComponent class="NavStack-headerComponent"}}
+    </div>
+  {{/if}}
+  <div class="NavStack-headerContainer NavStack-currentHeaderContainer">
+    {{component headerComponent class="NavStack-headerComponent"}}
+  </div>
 </div>
 {{#if hasFooter}}
   <div class="NavStack-footer">

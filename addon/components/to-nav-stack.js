@@ -1,22 +1,35 @@
 import { guidFor } from '@ember/object/internals';
-import { inject as service } from '@ember/service';
 import Component from '@ember/component';
+import { argument } from '@ember-decorators/argument';
+import { type } from '@ember-decorators/argument/type';
+import { required } from '@ember-decorators/argument/validation';
+import { tagName } from '@ember-decorators/component';
+import { service } from '@ember-decorators/service';
 
-export default Component.extend({
-  layer: null, // PT.number.isRequired
-  item: null, // component ref
-  header: null, // component ref
-  service: service('nav-stacks'),
-  tagName: '',
+@tagName('')
+export default class ToNavStack extends Component {
+  @argument @type('number') @required
+  layer;
+
+  @argument
+  item = null;
+
+  @argument
+  header = null;
+
+  @service('nav-stacks')
+  service;
+
   willRender() {
-    this.get('service').pushItem(
+    this.service.pushItem(
       guidFor(this),
       this.get('layer'),
       this.get('item'),
       this.get('header')
     );
-  },
-  willDestroyElement() {
-    this.get('service').removeItem(guidFor(this));
   }
-});
+
+  willDestroyElement() {
+    this.service.removeItem(guidFor(this));
+  }
+}

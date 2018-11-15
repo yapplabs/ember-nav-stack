@@ -46,9 +46,20 @@ h1 {
 
 .page-title {
   text-align: center;
+  line-height: 44px;
 }
 .my-schedule-button::after {
   content: 'MS'
+}
+
+.left-button {
+  float: left;
+  line-height: 44px;
+}
+
+.right-button {
+  float: right;
+  line-height: 44px;
 }
 
 .TabBar-list {
@@ -66,3 +77,9 @@ h1 {
 .NavStack--itemContainer {
   background: white;
 }
+ .VerticalPanDetectorPane {
+   background: silver;
+   height: 300px;
+   text-align: center;
+   font: 30px/300px Helvetica, Arial, sans-serif;
+ }

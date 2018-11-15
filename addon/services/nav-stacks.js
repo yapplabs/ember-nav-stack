@@ -3,13 +3,15 @@ import Service from '@ember/service';
 import { run } from '@ember/runloop';
 import EmberObject from '@ember/object';
 
-export default Service.extend({
-  init() {
-    this._super();
+export default class NavStacks extends Service {
+  constructor() {
+    super(...arguments);
     this.set('stacks', EmberObject.create());
     this._itemsById = {};
     this._counter = 1;
-  },
+    this._runningTransitions = 0;
+    this.isInitialRender = true;
+  }
 
   pushItem(sourceId, layer, component, headerComponent) {
     this._itemsById[sourceId] = {
@@ -19,33 +21,47 @@ export default Service.extend({
       order: this._counter++
     };
     this._schedule();
-  },
+  }
 
   removeItem(sourceId) {
     delete this._itemsById[sourceId];
     this._schedule();
-  },
+  }
+
+  notifyTransitionStart() {
+    this._runningTransitions++;
+  }
+
+  notifyTransitionEnd() {
+    this._runningTransitions--;
+  }
+
+  runningTransitions() {
+    return this._runningTransitions;
+  }
 
   _schedule() {
     run.scheduleOnce('afterRender', this, this._process);
-  },
+  }
 
   _process() {
     let newStacks = {};
     let itemsById = this._itemsById;
 
-    Object.keys(itemsById).forEach((sourceId) => {
+    for (var sourceId in itemsById) {
       let { layer, component, headerComponent, order } = itemsById[sourceId];
       let layerName = `layer${layer}`;
       newStacks[layerName] = newStacks[layerName] || A();
       let newItem = component ? { component, headerComponent, order } : null;
 
       newStacks[layerName].push(newItem);
-    });
-    Object.keys(newStacks).forEach((layerName) => {
+    }
+    for (var layerName in newStacks) {
       newStacks[layerName] = newStacks[layerName].sortBy('order');
-    });
-
+    }
     this.set('stacks', EmberObject.create(newStacks));
+    if (this.isInitialRender === true) {
+      run.next(this, this.set, 'isInitialRender', false);
+    }
   }
-});
+}

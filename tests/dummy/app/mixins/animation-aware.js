@@ -2,8 +2,8 @@ import { inject as service } from '@ember/service';
 import Mixin from '@ember/object/mixin';
 
 export default Mixin.create({
-  liquidFireTransitions: service('liquid-fire-transitions'),
+  navStacks: service(),
   isRunningTransitions() {
-    return this.get('liquidFireTransitions').runningTransitions() > 0;
+    return this.get('navStacks').runningTransitions() > 0;
   }
 });

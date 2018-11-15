@@ -3,6 +3,7 @@
     {{nav-stack
         layer=layerIndex
         footer=(if (eq layerIndex 0) (component 'tab-bar'))
+        back=(route-action 'back')
         birdsEyeDebugging=birdsEyeDebugging
     }}
   {{/each}}

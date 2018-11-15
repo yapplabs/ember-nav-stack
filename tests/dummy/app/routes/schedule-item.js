@@ -23,6 +23,13 @@ export default Route.extend(AnimationAwareMixin, StackableRoute, {
     },
     showAttachedPerson() {
       this.transitionTo(`${this.routeName}.person`);
+    },
+    logThenGoToRating() {
+      if (this.isRunningTransitions()) {
+        return;
+      }
+      console.log('LOGGING BEFORE GOING TO RATING. THIS ACTION SHOULD NOT RUN IF ANIMATED TRANSITION HAS STARTED'); // eslint-disable-line
+      this.transitionTo(`${this.routeName}.rating-form`);
     }
   }
 });
