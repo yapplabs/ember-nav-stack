@@ -1,0 +1,20 @@
+
+<div class="NavStack-itemContainer">
+  {{#each components as |stackItemComponent index|}}
+    <div class={{concat 'NavStack-item NavStack-item-' index}}>
+      {{#if (lte (sub stackDepth index) 2)}}
+        {{component stackItemComponent}}
+      {{/if}}
+    </div>
+  {{/each}}
+</div>
+<div class="NavStack-header">
+  {{#liquid-bind headerInfo rules=headerTransitionRules as |currentHeaderInfo|}}
+    {{component currentHeaderInfo.component}}
+  {{/liquid-bind}}
+</div>
+{{#if hasFooter}}
+  <div class="NavStack-footer">
+    {{component footer}}
+  </div>
+{{/if}}

@@ -1,0 +1,5 @@
+<button {{action (route-action 'back')}} class="y-button left-button theme-color back-button">Back</button>
+
+{{#if model.yapp.myScheduleEnabled}}
+  <button {{action (route-action 'visitMySchedule')}} class="y-button right-button theme-color icon-button my-schedule-button"></button>
+{{/if}}
