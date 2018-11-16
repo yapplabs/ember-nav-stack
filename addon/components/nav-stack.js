@@ -98,6 +98,7 @@ export default class NavStack extends Component {
   didInsertElement(){
     this._super(...arguments);
     this.hammer = new Hammer.Manager(this.element, {
+      inputClass: Hammer.TouchMouseInput,
       recognizers: [
         [BackSwipeRecognizer]
       ]

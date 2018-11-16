@@ -1,7 +1,8 @@
 import { A } from '@ember/array';
 import Service from '@ember/service';
-import { run } from '@ember/runloop';
+import { run, next } from '@ember/runloop';
 import EmberObject from '@ember/object';
+import { Promise as EmberPromise } from 'rsvp';
 
 export default class NavStacks extends Service {
   constructor() {
@@ -34,10 +35,34 @@ export default class NavStacks extends Service {
 
   notifyTransitionEnd() {
     this._runningTransitions--;
+    next(() => {
+      this._maybeResolveIdle();
+    });
   }
 
   runningTransitions() {
     return this._runningTransitions;
+  }
+
+  waitUntilTransitionIdle() {
+    if (this._waitingPromise) {
+      return this._waitingPromise;
+    }
+    return this._waitingPromise = new EmberPromise((resolve) => {
+      this._resolveWaiting = resolve;
+      next(() => {
+        this._maybeResolveIdle();
+      });
+    });
+  }
+
+  _maybeResolveIdle() {
+    if (this._runningTransitions === 0 && this._resolveWaiting) {
+      let resolveWaiting = this._resolveWaiting;
+      this._resolveWaiting = null;
+      this._waitingPromise = null;
+      resolveWaiting();
+    }
   }
 
   _schedule() {
