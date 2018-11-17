@@ -81,5 +81,13 @@ h1 {
    background: silver;
    height: 300px;
    text-align: center;
-   font: 30px/300px Helvetica, Arial, sans-serif;
+   font: 30px/190px Helvetica, Arial, sans-serif;
+ }
+
+ .ClickablePane {
+   background: lime;
+   height: 100px;
+   text-align: center;
+   font: 30px/100px Helvetica, Arial, sans-serif;
+   margin:5px;
  }
