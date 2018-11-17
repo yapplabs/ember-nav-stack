@@ -8,6 +8,10 @@ export default class BackSwipeRecognizer extends Hammer.Pan {
   constructor(options) {
     super(options);
     this.options = Object.assign({}, this.defaults, options || {});
+    this.captureClick = (ev) => {
+      ev.stopPropagation(); // Stop the click from being propagated.
+      this.manager.element.removeEventListener('click', this.captureClick, true);
+    }
   }
 
   defaults = {
@@ -23,7 +27,17 @@ export default class BackSwipeRecognizer extends Hammer.Pan {
     if (inputData.isFirst) {
       this.isInitialTouchInValidArea = this.checkInitialTouchInValidArea(inputData);
     }
+    this.captureGhostClickIfNeeded(inputData);
     super.recognize(inputData);
+  }
+
+  captureGhostClickIfNeeded(inputData) {
+    if (inputData.srcEvent.type === 'mouseup' && (this.state & (Hammer.STATE_BEGAN))) {
+      this.manager.element.addEventListener('click', this.captureClick, true);
+      setTimeout(() => {
+        this.manager.element.removeEventListener('click', this.captureClick, true);
+      }, 0);
+    }
   }
 
   attrTest(input) {

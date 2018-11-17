@@ -398,10 +398,14 @@ export default class NavStack extends Component {
               currentHeaderElement
             );
           }
-          currentHeaderElement.style.opacity = 1;
-          currentHeaderElement.style.transform = 'translateX(0px)';
-          parentHeaderElement.style.opacity = 0;
-          parentHeaderElement.style.transform = 'translateX(-60px)';
+          if (currentHeaderElement) {
+            currentHeaderElement.style.opacity = 1;
+            currentHeaderElement.style.transform = 'translateX(0px)';
+          }
+          if (parentHeaderElement) {
+            parentHeaderElement.style.opacity = 0;
+            parentHeaderElement.style.transform = 'translateX(-60px)';
+          }
         }).start();
       }
     });
@@ -416,6 +420,9 @@ export default class NavStack extends Component {
   cloneHeader() {
     this.removeClonedHeader();
     let liveHeader = this.element.querySelector('.NavStack-currentHeaderContainer');
+    if (!liveHeader) {
+      return;
+    }
     let clonedHeader = this._clonedHeader = liveHeader.cloneNode(true);
     clonedHeader.classList.remove('NavStack-currentHeaderContainer');
     clonedHeader.classList.add('NavStack-clonedHeaderContainer');
