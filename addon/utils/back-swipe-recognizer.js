@@ -1,5 +1,6 @@
 import Hammer from 'hammerjs';
 const { DIRECTION_RIGHT } = Hammer;
+const FIELD_REGEXP = /input|textarea|select/i;
 
 /* This recognizer subclasses the Pan recognizer and adds the constraint that the initial touch
  * must be in the validLeftAreaPercent portion of the screen.
@@ -27,8 +28,21 @@ export default class BackSwipeRecognizer extends Hammer.Pan {
     if (inputData.isFirst) {
       this.isInitialTouchInValidArea = this.checkInitialTouchInValidArea(inputData);
     }
+    let isOverElementThatPreventsScrollingInteraction = this.shouldPreventScrollingInteraction(inputData);
+    if (isOverElementThatPreventsScrollingInteraction) {
+      this.manager.stop();
+      return;
+    }
     this.captureGhostClickIfNeeded(inputData);
     super.recognize(inputData);
+  }
+
+  shouldPreventScrollingInteraction(inputData) {
+    let { target } = inputData;
+    return inputData.isFirst
+      && (target && target.tagName.match(FIELD_REGEXP)
+          || target && target.hasAttribute('data-prevent-scrolling')
+         );
   }
 
   captureGhostClickIfNeeded(inputData) {
