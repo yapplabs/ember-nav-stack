@@ -12,7 +12,7 @@ import { optional, type } from '@ember-decorators/argument/type';
 import { ClosureAction } from '@ember-decorators/argument/types';
 import { required } from '@ember-decorators/argument/validation';
 import { service } from '@ember-decorators/service';
-import { bool, mapBy, readOnly } from '@ember-decorators/object/computed';
+import { bool, mapBy, reads } from '@ember-decorators/object/computed';
 import { Spring } from 'wobble';
 
 function currentTransitionPercentage(fromValue, toValue, currentValue) {
@@ -85,7 +85,7 @@ export default class NavStack extends Component {
     return this.get(`navStacksService.stacks.layer${this.get('layer')}`);
   }
 
-  @readOnly('stackItems.length')
+  @reads('stackItems.length')
   stackDepth;
 
   @mapBy('stackItems', 'component')
