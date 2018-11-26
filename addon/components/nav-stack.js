@@ -14,6 +14,7 @@ import { required } from '@ember-decorators/argument/validation';
 import { service } from '@ember-decorators/service';
 import { bool, mapBy, reads } from '@ember-decorators/object/computed';
 import { Spring } from 'wobble';
+import { getOwner } from '@ember/application';
 
 function currentTransitionPercentage(fromValue, toValue, currentValue) {
   if (fromValue === undefined || fromValue === toValue) {
@@ -94,6 +95,12 @@ export default class NavStack extends Component {
   @bool('footer')
   @className('NavStack--withFooter')
   hasFooter;
+
+  @computed
+  get suppressAnimation() {
+    const config = getOwner(this).resolveRegistration('config:environment');
+    return config['ember-nav-stack'] && config['ember-nav-stack'].suppressAnimation;
+  }
 
   didInsertElement(){
     this._super(...arguments);
@@ -228,7 +235,7 @@ export default class NavStack extends Component {
     });
   }
 
-  horizontalTransition({ toValue, fromValue, animate=true, finishCallback }) {
+  horizontalTransition({ toValue, fromValue, animate=!this.suppressAnimation, finishCallback }) {
     let itemContainerElement = this.element.querySelector('.NavStack-itemContainer');
     let currentHeaderElement = this.element.querySelector('.NavStack-currentHeaderContainer');
     let clonedHeaderElement = this.element.querySelector('.NavStack-clonedHeaderContainer');
@@ -272,7 +279,7 @@ export default class NavStack extends Component {
     run(finish);
   }
 
-  verticalTransition({ element, toValue, fromValue, animate=true, finishCallback }) {
+  verticalTransition({ element, toValue, fromValue, animate=!this.suppressAnimation, finishCallback }) {
     this.transitionDidBegin();
     this.notifyTransitionStart();
     let finish = () => {
