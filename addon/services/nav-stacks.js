@@ -60,6 +60,8 @@ export default class NavStacks extends Service {
     });
   }
 
+  didUpdate() {} // hook
+
   _maybeResolveIdle() {
     if (this._runningTransitions === 0 && this._resolveWaiting) {
       let resolveWaiting = this._resolveWaiting;
@@ -92,5 +94,6 @@ export default class NavStacks extends Service {
     if (this.isInitialRender === true) {
       run.next(this, this.set, 'isInitialRender', false);
     }
+    this.didUpdate();
   }
 }
