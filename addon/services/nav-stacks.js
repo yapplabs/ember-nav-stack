@@ -4,6 +4,7 @@ import { run, next } from '@ember/runloop';
 import EmberObject from '@ember/object';
 import { Promise as EmberPromise } from 'rsvp';
 import { registerWaiter } from '@ember/test';
+import { DEBUG } from '@glimmer/env';
 
 export default class NavStacks extends Service {
   constructor() {
@@ -13,9 +14,11 @@ export default class NavStacks extends Service {
     this._counter = 1;
     this._runningTransitions = 0;
     this.isInitialRender = true;
-    registerWaiter(this, function() {
-      return this._runningTransitions === 0;
-    });
+    if (DEBUG) {
+      registerWaiter(this, function() {
+        return this._runningTransitions === 0;
+      });
+    }
   }
 
   pushItem(sourceId, layer, component, headerComponent) {
