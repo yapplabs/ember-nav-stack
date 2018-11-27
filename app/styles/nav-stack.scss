@@ -69,6 +69,10 @@ $easing: cubic-bezier(.23, 1, .32, 1);
     background: rgba(0,0,0,.2);
   }
 
+  &-headerContainer {
+    position: relative;
+  }
+
   &-headerComponent, &-headerContainerComponent {
     position: absolute;
     top: 0;
