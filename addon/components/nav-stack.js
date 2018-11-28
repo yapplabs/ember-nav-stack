@@ -12,8 +12,9 @@ import { optional, type } from '@ember-decorators/argument/type';
 import { ClosureAction } from '@ember-decorators/argument/types';
 import { required } from '@ember-decorators/argument/validation';
 import { service } from '@ember-decorators/service';
-import { bool, mapBy, readOnly } from '@ember-decorators/object/computed';
+import { bool, mapBy, reads } from '@ember-decorators/object/computed';
 import { Spring } from 'wobble';
+import { getOwner } from '@ember/application';
 
 function currentTransitionPercentage(fromValue, toValue, currentValue) {
   if (fromValue === undefined || fromValue === toValue) {
@@ -85,7 +86,7 @@ export default class NavStack extends Component {
     return this.get(`navStacksService.stacks.layer${this.get('layer')}`);
   }
 
-  @readOnly('stackItems.length')
+  @reads('stackItems.length')
   stackDepth;
 
   @mapBy('stackItems', 'component')
@@ -95,9 +96,16 @@ export default class NavStack extends Component {
   @className('NavStack--withFooter')
   hasFooter;
 
+  @computed
+  get suppressAnimation() {
+    const config = getOwner(this).resolveRegistration('config:environment');
+    return config['ember-nav-stack'] && config['ember-nav-stack'].suppressAnimation;
+  }
+
   didInsertElement(){
     this._super(...arguments);
     this.hammer = new Hammer.Manager(this.element, {
+      inputClass: Hammer.TouchMouseInput,
       recognizers: [
         [BackSwipeRecognizer]
       ]
@@ -227,7 +235,7 @@ export default class NavStack extends Component {
     });
   }
 
-  horizontalTransition({ toValue, fromValue, animate=true, finishCallback }) {
+  horizontalTransition({ toValue, fromValue, animate=!this.suppressAnimation, finishCallback }) {
     let itemContainerElement = this.element.querySelector('.NavStack-itemContainer');
     let currentHeaderElement = this.element.querySelector('.NavStack-currentHeaderContainer');
     let clonedHeaderElement = this.element.querySelector('.NavStack-clonedHeaderContainer');
@@ -271,7 +279,7 @@ export default class NavStack extends Component {
     run(finish);
   }
 
-  verticalTransition({ element, toValue, fromValue, animate=true, finishCallback }) {
+  verticalTransition({ element, toValue, fromValue, animate=!this.suppressAnimation, finishCallback }) {
     this.transitionDidBegin();
     this.notifyTransitionStart();
     let finish = () => {
@@ -397,10 +405,14 @@ export default class NavStack extends Component {
               currentHeaderElement
             );
           }
-          currentHeaderElement.style.opacity = 1;
-          currentHeaderElement.style.transform = 'translateX(0px)';
-          parentHeaderElement.style.opacity = 0;
-          parentHeaderElement.style.transform = 'translateX(-60px)';
+          if (currentHeaderElement) {
+            currentHeaderElement.style.opacity = 1;
+            currentHeaderElement.style.transform = 'translateX(0px)';
+          }
+          if (parentHeaderElement) {
+            parentHeaderElement.style.opacity = 0;
+            parentHeaderElement.style.transform = 'translateX(-60px)';
+          }
         }).start();
       }
     });
@@ -415,6 +427,9 @@ export default class NavStack extends Component {
   cloneHeader() {
     this.removeClonedHeader();
     let liveHeader = this.element.querySelector('.NavStack-currentHeaderContainer');
+    if (!liveHeader) {
+      return;
+    }
     let clonedHeader = this._clonedHeader = liveHeader.cloneNode(true);
     clonedHeader.classList.remove('NavStack-currentHeaderContainer');
     clonedHeader.classList.add('NavStack-clonedHeaderContainer');

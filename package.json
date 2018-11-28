@@ -29,8 +29,8 @@
     "ember-auto-import": "^1.2.13",
     "ember-cli-babel": "^6.16.0",
     "ember-cli-htmlbars": "^3.0.0",
-    "ember-decorators": "^2.5.2",
-    "ember-math-helpers": "^2.4.0",
+    "ember-decorators": "2.5.2",
+    "ember-math-helpers": "^2.7.1",
     "ember-truth-helpers": "^2.1.0",
     "hammerjs": "^2.0.8",
     "wobble": "^1.5.0"

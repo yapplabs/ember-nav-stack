@@ -3,8 +3,8 @@
   <button {{action (route-action 'drillDownToRatingForm')}}>Rate</button>
   <button {{action (route-action 'logThenGoToRating')}}>Log Then Rate</button>
   <button {{action (route-action 'showAttachedPerson')}}>John Doe</button>
-  {{vertical-pan-detector-pane
-      didCreateHammerRecognizer=requireGestureFailureForNavStackInteraction
-      willDestroyHammerRecognizer=stopRequiringGestureFailureForNavStackInteraction
-  }}
+  <textarea rows="8" cols="40" style="border-style: inset;"></textarea>
+  {{#vertical-pan-detector-pane}}
+    {{clickable-pane}}
+  {{/vertical-pan-detector-pane}}
 </div>

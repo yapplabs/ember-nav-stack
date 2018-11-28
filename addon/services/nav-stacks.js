@@ -1,7 +1,10 @@
 import { A } from '@ember/array';
 import Service from '@ember/service';
-import { run } from '@ember/runloop';
+import { run, next } from '@ember/runloop';
 import EmberObject from '@ember/object';
+import { Promise as EmberPromise } from 'rsvp';
+import { registerWaiter } from '@ember/test';
+import { DEBUG } from '@glimmer/env';
 
 export default class NavStacks extends Service {
   constructor() {
@@ -11,6 +14,11 @@ export default class NavStacks extends Service {
     this._counter = 1;
     this._runningTransitions = 0;
     this.isInitialRender = true;
+    if (DEBUG) {
+      registerWaiter(this, function() {
+        return this._runningTransitions === 0;
+      });
+    }
   }
 
   pushItem(sourceId, layer, component, headerComponent) {
@@ -34,10 +42,36 @@ export default class NavStacks extends Service {
 
   notifyTransitionEnd() {
     this._runningTransitions--;
+    next(() => {
+      this._maybeResolveIdle();
+    });
   }
 
   runningTransitions() {
     return this._runningTransitions;
+  }
+
+  waitUntilTransitionIdle() {
+    if (this._waitingPromise) {
+      return this._waitingPromise;
+    }
+    return this._waitingPromise = new EmberPromise((resolve) => {
+      this._resolveWaiting = resolve;
+      next(() => {
+        this._maybeResolveIdle();
+      });
+    });
+  }
+
+  didUpdate() {} // hook
+
+  _maybeResolveIdle() {
+    if (this._runningTransitions === 0 && this._resolveWaiting) {
+      let resolveWaiting = this._resolveWaiting;
+      this._resolveWaiting = null;
+      this._waitingPromise = null;
+      resolveWaiting();
+    }
   }
 
   _schedule() {
@@ -63,5 +97,6 @@ export default class NavStacks extends Service {
     if (this.isInitialRender === true) {
       run.next(this, this.set, 'isInitialRender', false);
     }
+    this.didUpdate();
   }
 }
