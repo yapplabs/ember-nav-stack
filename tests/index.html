@@ -16,6 +16,24 @@
 
     {{content-for "head-footer"}}
     {{content-for "test-head-footer"}}
+    <style media="screen">
+      #ember-testing-container {
+        width: 320px;
+        height: 486px;
+        position: absolute !important;
+        overflow: hidden;
+      }
+      #ember-testing {
+        position: absolute;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        top: 0;
+        height: auto;
+        width: auto;
+        transform: scale(1);
+      }
+    </style>
   </head>
   <body>
     {{content-for "body"}}

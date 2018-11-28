@@ -15,6 +15,7 @@ import { service } from '@ember-decorators/service';
 import { bool, mapBy, reads } from '@ember-decorators/object/computed';
 import { Spring } from 'wobble';
 import { getOwner } from '@ember/application';
+import { DEBUG } from '@glimmer/env';
 
 function currentTransitionPercentage(fromValue, toValue, currentValue) {
   if (fromValue === undefined || fromValue === toValue) {
@@ -42,6 +43,28 @@ function styleHeaderElements(transitionRatio, isForward, currentHeaderElement, o
     otherHeaderElement.style.opacity = 1 - transitionRatio;
     otherHeaderElement.style.transform = `translateX(${xOffset}px)`;
   }
+}
+
+let _testContainerEl;
+let getTestContainerEl = function() {
+  if (_testContainerEl === undefined) {
+    _testContainerEl = document.querySelector('#ember-testing') || false;
+  }
+  return _testContainerEl;
+};
+
+function getX(element) {
+  return adjustX(element.getBoundingClientRect().x);
+}
+
+function adjustX(x) {
+  if (DEBUG) {
+    let testContainerEl = getTestContainerEl();
+    if (testContainerEl) {
+      return x - testContainerEl.getBoundingClientRect().x;
+    }
+  }
+  return x;
 }
 
 @layout(template)
@@ -257,7 +280,7 @@ export default class NavStack extends Component {
       }
     };
     if (animate) {
-      fromValue = fromValue || itemContainerElement.getBoundingClientRect().x;
+      fromValue = fromValue || getX(itemContainerElement);
       if (fromValue === toValue) {
         run(finish);
         return;
@@ -342,13 +365,13 @@ export default class NavStack extends Component {
     let containerElement = this.element.querySelector('.NavStack-itemContainer');
     let currentHeaderElement = this.element.querySelector('.NavStack-currentHeaderContainer');
     let parentHeaderElement = this.element.querySelector('.NavStack-parentItemHeaderContainer');
-    let startingX = containerElement.getBoundingClientRect().x;
+    let startingX = getX(containerElement);
     let currentStackItemElement = this._currentStackItemElement = this.element.querySelector('.NavStack-item:last-child');
     if (!currentStackItemElement) {
       return;
     }
     let itemWidth = currentStackItemElement.getBoundingClientRect().width;
-    let backX = containerElement.getBoundingClientRect().x + itemWidth;
+    let backX = startingX + itemWidth;
     let thresholdX = itemWidth / 2;
     let canNavigateBack = this.back && this.get('stackDepth') > 1;
     this.hammer.on('pan', (ev) => {
@@ -368,11 +391,12 @@ export default class NavStack extends Component {
         parentHeaderElement.style.opacity = 1 - transitionRatio;
       }
       if (ev.isFinal) {
-        let shouldNavigateBack = ev.center.x >= thresholdX && canNavigateBack;
+        let shouldNavigateBack = adjustX(ev.center.x) >= thresholdX && canNavigateBack;
         let initialVelocity = ev.velocityX;
         let fromValue = startingX + ev.deltaX;
         let toValue = shouldNavigateBack ? backX : startingX;
         let spring = this._createSpring({ initialVelocity, fromValue, toValue });
+        this.navStacksService.notifyTransitionStart();
         spring.onUpdate((s) => {
           containerElement.style.transform = `translateX(${s.currentValue}px)`;
           styleHeaderElements(
@@ -413,6 +437,7 @@ export default class NavStack extends Component {
             parentHeaderElement.style.opacity = 0;
             parentHeaderElement.style.transform = 'translateX(-60px)';
           }
+          this.navStacksService.notifyTransitionEnd();
         }).start();
       }
     });
