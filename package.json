@@ -26,7 +26,7 @@
     "@ember-decorators/argument": "^0.8.21",
     "@ember-decorators/babel-transforms": "^2.0.0",
     "babel-eslint": "^8.0.0",
-    "ember-auto-import": "^1.2.13",
+    "ember-auto-import": "^1.2.16",
     "ember-cli-babel": "^6.16.0",
     "ember-cli-htmlbars": "^3.0.0",
     "ember-decorators": "2.5.2",

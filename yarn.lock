@@ -16,7 +16,7 @@
   dependencies:
     "@babel/highlight" "^7.0.0"
 
-"@babel/core@^7.0.0":
+"@babel/core@^7.0.0", "@babel/core@^7.1.6":
   version "7.1.6"
   resolved "https://registry.yarnpkg.com/@babel/core/-/core-7.1.6.tgz#3733cbee4317429bc87c62b29cf8587dba7baeb3"
   integrity sha512-Hz6PJT6e44iUNpAn8AoyAs6B3bl60g7MJQaI0rZEar6ECzh6+srYO1xlIdssio34mPaUtAb1y+XlkkSJzok3yw==
@@ -4192,11 +4192,12 @@ ember-assign-polyfill@~2.4.0:
     ember-cli-babel "^6.6.0"
     ember-cli-version-checker "^2.0.0"
 
-ember-auto-import@^1.2.13:
-  version "1.2.15"
-  resolved "https://registry.yarnpkg.com/ember-auto-import/-/ember-auto-import-1.2.15.tgz#3da74f83704f4c095dc1affec25a68f396ed5728"
-  integrity sha512-L9eyO5b135BXdzNMexhoxkPETBUQCkwp3lp4O2uu+hVEDUe2Z9m+/X8TdTRcuavkeFbQk5bgoXAGPzv4yaPjIg==
+ember-auto-import@^1.2.16:
+  version "1.2.16"
+  resolved "https://registry.yarnpkg.com/ember-auto-import/-/ember-auto-import-1.2.16.tgz#3a94fef045e95a0161c420b121fbaccbdaee5977"
+  integrity sha512-2YXYYpeSPuXymwrwTrnDBmXpIarOKlchn5VwkWiy+dZAJAHP4tQ17MGDABYD43gojJzEmcj/Eq26YPYnbrWOtQ==
   dependencies:
+    "@babel/core" "^7.1.6"
     babel-core "^6.26.3"
     babel-plugin-syntax-dynamic-import "^6.18.0"
     babel-template "^6.26.0"
