@@ -191,6 +191,33 @@ module('Integration | Component | nav-stack', function(hooks) {
       assert.ok(!isInViewport('.NavStack-item-1'), 'Item 1 is off screen');
       assert.ok(isInViewport('.NavStack-item-2'), 'Item 2 is on screen');
     });
+    test('partial back swipe from level 3, then interrupted by another swipe', async function(assert) {
+      await this.renderNavStack(exampleHbs);
+      assert.ok(!isInViewport('.NavStack-item-1'), 'Item 1 is off screen');
+      let firstMouseUpDeferred = RSVP.defer();
+      let panXPromise = panX(find('.NavStack-item-2'), {
+        position: [50, 100],
+        amount: 20,
+        duration: 100,
+        waitForMouseUp: firstMouseUpDeferred.promise
+      });
+      await delay(250);
+      firstMouseUpDeferred.resolve();
+      await panXPromise;
+      let secondMouseUpDeferred = RSVP.defer();
+      panXPromise = panX(find('.NavStack-item-2'), {
+        position: [50, 100],
+        amount: 200,
+        duration: 100,
+        waitForMouseUp: secondMouseUpDeferred.promise
+      });
+      await delay(250);
+      secondMouseUpDeferred.resolve();
+      await panXPromise;
+      await settled();
+      assert.ok(isInViewport('.NavStack-item-1'), 'Item 1 is on screen');
+      assert.dom('.NavStack-item-2').doesNotExist();
+    });
   });
   module('page under more', function() {
     let exampleHbs = hbs`
