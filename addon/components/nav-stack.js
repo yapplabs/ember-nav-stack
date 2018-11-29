@@ -117,6 +117,11 @@ export default class NavStack extends Component {
     this.hammer.on('pan', this.handlePanEvent.bind(this));
   }
 
+  willDestroyElement(){
+    this.hammer.off('pan');
+    super.willDestroyElement(...arguments);
+  }
+
   @observes('stackItems')
   stackItemDidChange() {
     this.handleStackDepthChange(false);
