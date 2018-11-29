@@ -60,14 +60,14 @@
     "ember-qunit": "^3.4.1",
     "ember-resolver": "^5.0.1",
     "ember-route-action-helper": "^2.0.6",
+    "ember-simulant-test-helpers": "^0.1.0",
     "ember-source": "~3.5.0",
     "ember-source-channel-url": "^1.1.0",
     "ember-try": "^1.0.0",
     "eslint-plugin-ember": "^5.2.0",
     "eslint-plugin-node": "^7.0.1",
     "loader.js": "^4.7.0",
-    "qunit-dom": "^0.8.0",
-    "yapp-test-support": "git+ssh://git@github.com/yappbox/yapp-test-support.git#v2.2.0"
+    "qunit-dom": "^0.8.0"
   },
   "engines": {
     "node": "6.* || 8.* || >= 10.*"

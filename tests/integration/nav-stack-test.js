@@ -2,7 +2,8 @@ import { module, test } from 'qunit';
 import { setupRenderingTest } from 'ember-qunit';
 import hbs from 'htmlbars-inline-precompile';
 import { click, find, settled } from '@ember/test-helpers';
-import { delay, panX } from 'yapp-test-support/test-support/helpers';
+import { panX } from 'ember-simulant-test-helpers';
+import delay from '../helpers/delay';
 import RSVP from 'rsvp';
 
 module('Integration | Component | nav-stack', function(hooks) {
