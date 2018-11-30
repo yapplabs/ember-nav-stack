@@ -1,6 +1,7 @@
 import Hammer from 'hammerjs';
 const { DIRECTION_RIGHT } = Hammer;
 const FIELD_REGEXP = /input|textarea|select/i;
+import { DEBUG } from '@glimmer/env';
 
 /* This recognizer subclasses the Pan recognizer and adds the constraint that the initial touch
  * must be in the validLeftAreaPercent portion of the screen.
@@ -63,6 +64,14 @@ export default class BackSwipeRecognizer extends Hammer.Pan {
   }
 
   checkInitialTouchInValidArea(inputData) {
+    if (DEBUG) {
+      let testingEl = document.querySelector('#ember-testing');
+      if (testingEl) {
+        let minValidX = testingEl.getBoundingClientRect().x;
+        let maxValidX = minValidX + (testingEl.clientWidth * (this.options.validLeftAreaPercent/100));
+        return inputData.center.x >= minValidX && inputData.center.x <= maxValidX;
+      }
+    }
     let maxValidX = window.innerWidth * (this.options.validLeftAreaPercent/100);
     return inputData.center.x <= maxValidX;
   }

@@ -95,8 +95,15 @@ export default class NavStacks extends Service {
     }
     this.set('stacks', EmberObject.create(newStacks));
     if (this.isInitialRender === true) {
-      run.next(this, this.set, 'isInitialRender', false);
+      run.next(this, this._clearIsInitialRender);
     }
     this.didUpdate();
+  }
+
+  _clearIsInitialRender() {
+    if (this.isDestroyed || this.isDestroying) {
+      return;
+    }
+    this.set('isInitialRender', false);
   }
 }

@@ -17,7 +17,9 @@ export default class VerticalPanDetectorPane extends Component {
     let mc = this.mc = new Hammer(this.element);
     mc.get('pan').set({ direction: Hammer.DIRECTION_VERTICAL });
     mc.on("panup pandown", (ev) => {
-      this.element.querySelector('.status').textContent = ev.type +" gesture detected";
+      if (this.element) {
+        this.element.querySelector('.status').textContent = ev.type +" gesture detected";
+      }
     });
 
     schedule('afterRender', this, () => {
