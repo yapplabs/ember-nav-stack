@@ -364,7 +364,7 @@ export default class NavStack extends Component {
 
   handlePanEvent(ev) {
     if (this._activeSpring) {
-      this._activeSpring.stop();
+      return;
     }
     this.containerElement.style.transform = `translateX(${this.startingX + ev.deltaX}px)`;
     styleHeaderElements(
@@ -394,7 +394,6 @@ export default class NavStack extends Component {
     let spring = this._createSpring({ initialVelocity, fromValue, toValue });
     this.navStacksService.notifyTransitionStart();
     this._activeSpring = spring;
-    this.hammer.get('pan').set({ threshold: 0 });
     spring.onUpdate((s) => {
       this.containerElement.style.transform = `translateX(${s.currentValue}px)`;
       styleHeaderElements(
