@@ -1,7 +1,7 @@
 import { module, test } from 'qunit';
 import { setupRenderingTest } from 'ember-qunit';
 import hbs from 'htmlbars-inline-precompile';
-import { click, find, settled } from '@ember/test-helpers';
+import { click, find, settled, waitUntil } from '@ember/test-helpers';
 import { panX } from 'ember-simulant-test-helpers';
 import delay from '../helpers/delay';
 import RSVP from 'rsvp';
@@ -26,6 +26,10 @@ module('Integration | Component | nav-stack', function(hooks) {
   });
 
   function isInViewport(selector) {
+    return getElementInViewportRatio(selector) === 1;
+  }
+
+  function getElementInViewportRatio(selector) {
     let element = find(selector);
     if (!element) {
       return false;
@@ -33,10 +37,17 @@ module('Integration | Component | nav-stack', function(hooks) {
     let viewportEl = document.querySelector('#ember-testing');
     let elementRect = element.getBoundingClientRect();
     let viewportRect = viewportEl.getBoundingClientRect();
-    return elementRect.top >= viewportRect.top &&
-           elementRect.left >= viewportRect.left &&
-           elementRect.bottom <= viewportRect.bottom &&
-           elementRect.right <= viewportRect.right;
+    let topOutOfViewport = Math.max(0, viewportRect.top - elementRect.top);
+    let bottomOutOfViewport = Math.max(0, elementRect.bottom - viewportRect.bottom);
+    let leftOutOfViewport = Math.max(0, viewportRect.left - elementRect.left);
+    let rightOutOfViewport = Math.max(0, elementRect.right - viewportRect.right);
+    let totalArea = (elementRect.width * elementRect.height);
+    let outOfViewportXAmount = leftOutOfViewport + rightOutOfViewport;
+    let outOfViewportYAmount = topOutOfViewport + bottomOutOfViewport;
+    let areaOutside =
+        (outOfViewportXAmount * elementRect.height) +
+        (outOfViewportYAmount * (elementRect.width - outOfViewportXAmount));
+    return (totalArea - areaOutside) / totalArea;
   }
 
   module('top level page', function() {
@@ -192,7 +203,7 @@ module('Integration | Component | nav-stack', function(hooks) {
       assert.ok(!isInViewport('.NavStack-item-1'), 'Item 1 is off screen');
       assert.ok(isInViewport('.NavStack-item-2'), 'Item 2 is on screen');
     });
-    test('partial back swipe from level 3, then interrupted by another swipe', async function(assert) {
+    test('partial back swipe from level 3, during animation, additional swipe is ignored', async function(assert) {
       await this.renderNavStack(exampleHbs);
       assert.ok(!isInViewport('.NavStack-item-1'), 'Item 1 is off screen');
       let firstMouseUpDeferred = RSVP.defer();
@@ -215,6 +226,38 @@ module('Integration | Component | nav-stack', function(hooks) {
       await delay(250);
       secondMouseUpDeferred.resolve();
       await panXPromise;
+      await settled();
+      assert.ok(!isInViewport('.NavStack-item-1'), 'Item 1 is still off screen');
+      assert.ok(isInViewport('.NavStack-item-2'), 'Item 2 is on screen');
+    });
+    test('partial back swipe from level 3, then user trying to swipe again near end', async function(assert) {
+      await this.renderNavStack(exampleHbs);
+      assert.ok(!isInViewport('.NavStack-item-1'), 'Item 1 is off screen');
+      panX(find('.NavStack-item-2'), {
+        position: [50, 100],
+        amount: 150,
+        duration: 30
+      });
+      await delay(150);
+      await waitUntil(() => {
+        let inViewportRatio = getElementInViewportRatio('.NavStack-item-2');
+        return inViewportRatio < 0.1;
+      });
+      panX(find('.NavStack-item-1'), {
+        position: [50, 100],
+        amount: 150,
+        duration: 30
+      });
+      let elementReanimated = false;
+      await waitUntil(() => {
+        let inViewportRatio = getElementInViewportRatio('.NavStack-item-2');
+        if (inViewportRatio > 0.1) {
+          elementReanimated = true;
+        }
+        return !find('.NavStack-item-2');
+      });
+      assert.equal(elementReanimated, false, 'should not show another swipe animation');
+      await delay(50);
       await settled();
       assert.ok(isInViewport('.NavStack-item-1'), 'Item 1 is on screen');
       assert.dom('.NavStack-item-2').doesNotExist();
