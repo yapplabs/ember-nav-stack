@@ -326,11 +326,17 @@ export default class NavStack extends Component {
     });
   }
 
-  transitionDidBegin(){}
+  disablePanRecognizer() {
+    this.hammer.get('pan').set({ enable: false });
+  }
+
+  transitionDidBegin(){
+    this.disablePanRecognizer();
+  }
 
   transitionDidEnd(){
     if (this._currentStackItemElement)  {
-      this.hammer.get('pan').set({ enable: false });
+      this.disablePanRecognizer();
     }
     if (!this.element || this.get('stackDepth') <= 1) {
       return;

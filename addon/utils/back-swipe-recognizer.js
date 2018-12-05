@@ -36,6 +36,11 @@ export default class BackSwipeRecognizer extends Hammer.Pan {
     }
     this.captureGhostClickIfNeeded(inputData);
     super.recognize(inputData);
+    if (inputData.isFinal) {
+      setTimeout(() => {
+        this.state = Hammer.STATE_POSSIBLE;
+      }, 0);
+    }
   }
 
   shouldPreventScrollingInteraction(inputData) {
