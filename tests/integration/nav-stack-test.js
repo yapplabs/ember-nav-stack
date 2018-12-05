@@ -5,6 +5,7 @@ import { click, find, settled, waitUntil } from '@ember/test-helpers';
 import { panX } from 'ember-simulant-test-helpers';
 import delay from '../helpers/delay';
 import RSVP from 'rsvp';
+import { getElementInViewportRatio, isInViewport } from 'ember-nav-stack/test-support/in-viewport';
 
 module('Integration | Component | nav-stack', function(hooks) {
   setupRenderingTest(hooks);
@@ -24,31 +25,6 @@ module('Integration | Component | nav-stack', function(hooks) {
       this.set('shouldRenderNavStack', true);
     }
   });
-
-  function isInViewport(selector) {
-    return getElementInViewportRatio(selector) === 1;
-  }
-
-  function getElementInViewportRatio(selector) {
-    let element = find(selector);
-    if (!element) {
-      return false;
-    }
-    let viewportEl = document.querySelector('#ember-testing');
-    let elementRect = element.getBoundingClientRect();
-    let viewportRect = viewportEl.getBoundingClientRect();
-    let topOutOfViewport = Math.max(0, viewportRect.top - elementRect.top);
-    let bottomOutOfViewport = Math.max(0, elementRect.bottom - viewportRect.bottom);
-    let leftOutOfViewport = Math.max(0, viewportRect.left - elementRect.left);
-    let rightOutOfViewport = Math.max(0, elementRect.right - viewportRect.right);
-    let totalArea = (elementRect.width * elementRect.height);
-    let outOfViewportXAmount = leftOutOfViewport + rightOutOfViewport;
-    let outOfViewportYAmount = topOutOfViewport + bottomOutOfViewport;
-    let areaOutside =
-        (outOfViewportXAmount * elementRect.height) +
-        (outOfViewportYAmount * (elementRect.width - outOfViewportXAmount));
-    return (totalArea - areaOutside) / totalArea;
-  }
 
   module('top level page', function() {
     let exampleHbs = hbs`
