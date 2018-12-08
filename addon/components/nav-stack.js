@@ -183,6 +183,12 @@ export default class NavStack extends Component {
     return layerX;
   }
 
+  repositionX() {
+    let itemContainerElement = this.element.querySelector('.NavStack-itemContainer');
+    let newX = this.computeXPosition();
+    itemContainerElement.style.transform = `translateX(${newX}px)`;
+  }
+
   cut() {
     this.horizontalTransition({
       toValue: this.computeXPosition(),
