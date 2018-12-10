@@ -4763,10 +4763,10 @@ ember-router-generator@^1.2.3:
   dependencies:
     recast "^0.11.3"
 
-ember-simulant-test-helpers@^0.1.0:
-  version "0.1.0"
-  resolved "https://registry.yarnpkg.com/ember-simulant-test-helpers/-/ember-simulant-test-helpers-0.1.0.tgz#7683cb8f21f519606a5818961a06143edcd46ab7"
-  integrity sha512-4qiLcNAhj0Zmc8mIZgTMbJeDMSGMdk1tuZuzCcVCVVRcLURRIB5CA/t1ayHlga17rEVsiCaRb6guknqC4suWcQ==
+ember-simulant-test-helpers@^0.3.0:
+  version "0.3.0"
+  resolved "https://registry.yarnpkg.com/ember-simulant-test-helpers/-/ember-simulant-test-helpers-0.3.0.tgz#95fe189fa78137724d0ec0946721295e135db0f6"
+  integrity sha512-D4lNE+awHEhMilv266TaacLmBK43tzCLi61pMlE29BY2ANmguVov0tj4dg3Bk3uhl/dfP42Zvu4nbUIPHN4uCg==
   dependencies:
     broccoli-debug "^0.6.5"
     broccoli-funnel "^2.0.1"

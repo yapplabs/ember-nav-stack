@@ -403,32 +403,8 @@ export default class NavStack extends Component {
     let initialVelocity = ev.velocityX;
     let fromValue = this.startingX + ev.deltaX;
     let toValue = shouldNavigateBack ? this.backX : this.startingX;
-    let spring = this._createSpring({ initialVelocity, fromValue, toValue });
     this.navStacksService.notifyTransitionStart();
-    this._activeSpring = spring;
-    spring.onUpdate((s) => {
-      this.containerElement.style.transform = `translateX(${s.currentValue}px)`;
-      styleHeaderElements(
-        currentTransitionPercentage(this.startingX, this.backX, s.currentValue),
-        false,
-        this.parentHeaderElement,
-        this.currentHeaderElement
-      );
-      if (!shouldNavigateBack && s.currentValue >= this.startingX + this.thresholdX) {
-        shouldNavigateBack = true;
-        spring.updateConfig({
-          toValue: this.backX
-        });
-      }
-    }).onStop(() => {
-      let finalizeSpring = () => {
-        this.navStacksService.notifyTransitionEnd();
-        this._activeSpring = null;
-      };
-      if (!spring.isAtRest) { // we were interrupted
-        finalizeSpring();
-        return;
-      }
+    let finalize = () => {
       if (shouldNavigateBack) {
         styleHeaderElements(
           currentTransitionPercentage(this.startingX, this.backX, this.backX),
@@ -454,7 +430,31 @@ export default class NavStack extends Component {
         this.parentHeaderElement.style.opacity = 0;
         this.parentHeaderElement.style.transform = 'translateX(-60px)';
       }
-      finalizeSpring();
+      this.navStacksService.notifyTransitionEnd();
+      this._activeSpring = null;
+    };
+    if (fromValue === toValue && initialVelocity === 0) {
+      finalize();
+      return;
+    } 
+    let spring = this._createSpring({ initialVelocity, fromValue, toValue });
+    this._activeSpring = spring;
+    spring.onUpdate((s) => {
+      this.containerElement.style.transform = `translateX(${s.currentValue}px)`;
+      styleHeaderElements(
+        currentTransitionPercentage(this.startingX, this.backX, s.currentValue),
+        false,
+        this.parentHeaderElement,
+        this.currentHeaderElement
+      );
+      if (!shouldNavigateBack && s.currentValue >= this.startingX + this.thresholdX) {
+        shouldNavigateBack = true;
+        spring.updateConfig({
+          toValue: this.backX
+        });
+      }
+    }).onStop(() => {
+      finalize();
     }).start();
   }
 
