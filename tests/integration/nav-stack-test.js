@@ -211,7 +211,7 @@ module('Integration | Component | nav-stack', function(hooks) {
       assert.ok(!isInViewport('.NavStack-item-1'), 'Item 1 is off screen');
       panX(find('.NavStack-item-2'), {
         position: [50, 100],
-        amount: 150,
+        amount: 200,
         duration: 30
       });
       await delay(150);
@@ -234,6 +234,31 @@ module('Integration | Component | nav-stack', function(hooks) {
       });
       assert.equal(elementReanimated, false, 'should not show another swipe animation');
       await delay(50);
+      await settled();
+      assert.ok(isInViewport('.NavStack-item-1'), 'Item 1 is on screen');
+      assert.dom('.NavStack-item-2').doesNotExist();
+    });
+    test('partial back swipe from level 3 and then return exactly to original position, then swipe back', async function(assert) {
+      await this.renderNavStack(exampleHbs);
+      assert.ok(!isInViewport('.NavStack-item-1'), 'Item 1 is off screen');
+      let mouseUpDeferred = RSVP.defer();
+      let panXPromise = panX(find('.NavStack-item-2'), {
+        position: [50, 100],
+        amount: [40, -34, -3, -3],
+        duration: 300,
+        waitForMouseUp: mouseUpDeferred.promise
+      });
+      await delay(1000);
+      mouseUpDeferred.resolve();
+      await panXPromise;
+      await settled();
+      assert.ok(!isInViewport('.NavStack-item-1'), 'Item 1 is off screen');
+      assert.ok(isInViewport('.NavStack-item-2'), 'Item 2 is on screen');
+      await panX(find('.NavStack-item-2'), {
+        position: [50, 100],
+        amount: 150,
+        duration: 200,
+      });
       await settled();
       assert.ok(isInViewport('.NavStack-item-1'), 'Item 1 is on screen');
       assert.dom('.NavStack-item-2').doesNotExist();
