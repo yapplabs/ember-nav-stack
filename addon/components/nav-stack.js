@@ -16,6 +16,7 @@ import { bool, mapBy, reads } from '@ember-decorators/object/computed';
 import { Spring } from 'wobble';
 import { getOwner } from '@ember/application';
 import { DEBUG } from '@glimmer/env';
+import { setTransform } from 'ember-nav-stack/utils/animation';
 
 function currentTransitionPercentage(fromValue, toValue, currentValue) {
   if (fromValue === undefined || fromValue === toValue) {
@@ -37,11 +38,11 @@ function styleHeaderElements(transitionRatio, isForward, currentHeaderElement, o
   let xOffset = transitionRatio * -1 * startingOffset;
   if (currentHeaderElement) {
     currentHeaderElement.style.opacity = transitionRatio;
-    currentHeaderElement.style.transform = `translateX(${startingOffset + xOffset}px)`;
+    setTransform(currentHeaderElement, `translateX(${startingOffset + xOffset}px)`);
   }
   if (otherHeaderElement) {
     otherHeaderElement.style.opacity = 1 - transitionRatio;
-    otherHeaderElement.style.transform = `translateX(${xOffset}px)`;
+    setTransform(otherHeaderElement, `translateX(${xOffset}px)`);
   }
 }
 
@@ -186,7 +187,7 @@ export default class NavStack extends Component {
   repositionX() {
     let itemContainerElement = this.element.querySelector('.NavStack-itemContainer');
     let newX = this.computeXPosition();
-    itemContainerElement.style.transform = `translateX(${newX}px)`;
+    setTransform(itemContainerElement, `translateX(${newX}px)`);
   }
 
   cut() {
@@ -257,7 +258,7 @@ export default class NavStack extends Component {
     this.transitionDidBegin();
     this.notifyTransitionStart();
     let finish = () => {
-      itemContainerElement.style.transform = `translateX(${toValue}px)`;
+      setTransform(itemContainerElement, `translateX(${toValue}px)`);
       styleHeaderElements(
         currentTransitionPercentage(fromValue, toValue, toValue),
         fromValue === undefined || fromValue > toValue,
@@ -278,7 +279,7 @@ export default class NavStack extends Component {
       }
       let spring = this._createSpring({ fromValue, toValue });
       spring.onUpdate((s) => {
-        itemContainerElement.style.transform = `translateX(${s.currentValue}px)`;
+        setTransform(itemContainerElement, `translateX(${s.currentValue}px)`);
         styleHeaderElements(
           currentTransitionPercentage(fromValue, toValue, s.currentValue),
           fromValue > toValue,
@@ -297,7 +298,7 @@ export default class NavStack extends Component {
     this.transitionDidBegin();
     this.notifyTransitionStart();
     let finish = () => {
-      element.style.transform = `translateY(${toValue}px)`;
+      setTransform(element, `translateY(${toValue}px)`);
       this.notifyTransitionEnd();
       this.transitionDidEnd();
       if (finishCallback) {
@@ -305,14 +306,14 @@ export default class NavStack extends Component {
       }
     };
     if (animate) {
-      fromValue = fromValue || element.getBoundingClientRect().y;
+      fromValue = fromValue || element.getBoundingClientRect().top;
       if (fromValue === toValue) {
         run(finish);
         return;
       }
       let spring = this._createSpring({ fromValue, toValue });
       spring.onUpdate((s) => {
-        element.style.transform = `translateY(${s.currentValue}px)`;
+        setTransform(element, `translateY(${s.currentValue}px)`);
       }).onStop(() => {
         run(finish);
       }).start();
@@ -378,7 +379,7 @@ export default class NavStack extends Component {
     if (this._activeSpring) {
       return;
     }
-    this.containerElement.style.transform = `translateX(${this.startingX + ev.deltaX}px)`;
+    setTransform(this.containerElement, `translateX(${this.startingX + ev.deltaX}px)`);
     styleHeaderElements(
       currentTransitionPercentage(this.startingX, this.backX, this.startingX + ev.deltaX),
       true,
@@ -414,7 +415,7 @@ export default class NavStack extends Component {
         );
         this.back();
       } else {
-        this.containerElement.style.transform = `translateX(${this.startingX}px)`;
+        setTransform(this.containerElement, `translateX(${this.startingX}px)`);
         styleHeaderElements(
           currentTransitionPercentage(this.startingX, this.backX, this.startingX),
           false,
@@ -424,11 +425,11 @@ export default class NavStack extends Component {
       }
       if (this.currentHeaderElement) {
         this.currentHeaderElement.style.opacity = 1;
-        this.currentHeaderElement.style.transform = 'translateX(0px)';
+        setTransform(this.currentHeaderElement, 'translateX(0px)');
       }
       if (this.parentHeaderElement) {
         this.parentHeaderElement.style.opacity = 0;
-        this.parentHeaderElement.style.transform = 'translateX(-60px)';
+        setTransform(this.parentHeaderElement, 'translateX(-60px)');
       }
       this.navStacksService.notifyTransitionEnd();
       this._activeSpring = null;
@@ -440,7 +441,7 @@ export default class NavStack extends Component {
     let spring = this._createSpring({ initialVelocity, fromValue, toValue });
     this._activeSpring = spring;
     spring.onUpdate((s) => {
-      this.containerElement.style.transform = `translateX(${s.currentValue}px)`;
+      setTransform(this.containerElement, `translateX(${s.currentValue}px)`);
       styleHeaderElements(
         currentTransitionPercentage(this.startingX, this.backX, s.currentValue),
         false,
@@ -494,6 +495,7 @@ export default class NavStack extends Component {
   attachClonedElement(clone) {
     this.element.parentNode.appendChild(clone);
     clone.style.transform; // force layout, without this CSS transition does not run
+    clone.style.webkitTransform; // force layout, without this CSS transition does not run
   }
 
   removeClonedHeader() {
@@ -526,14 +528,14 @@ export default class NavStack extends Component {
   }
 
   getX(element) {
-    return this.adjustX(element.getBoundingClientRect().x);
+    return this.adjustX(element.getBoundingClientRect().left);
   }
 
   adjustX(x) {
     if (DEBUG) {
       let testContainerEl = this.getTestContainerEl();
       if (testContainerEl) {
-        return x - testContainerEl.getBoundingClientRect().x;
+        return x - testContainerEl.getBoundingClientRect().left;
       }
     }
     return x;
