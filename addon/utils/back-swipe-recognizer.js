@@ -72,7 +72,7 @@ export default class BackSwipeRecognizer extends Hammer.Pan {
     if (DEBUG) {
       let testingEl = document.querySelector('#ember-testing');
       if (testingEl) {
-        let minValidX = testingEl.getBoundingClientRect().x;
+        let minValidX = testingEl.getBoundingClientRect().left;
         let maxValidX = minValidX + (testingEl.clientWidth * (this.options.validLeftAreaPercent/100));
         return inputData.center.x >= minValidX && inputData.center.x <= maxValidX;
       }

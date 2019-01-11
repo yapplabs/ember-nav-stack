@@ -63,16 +63,14 @@ export function computeTimeout(element) {
   return (maxDelay + maxDuration) * 1000;
 }
 
-const TRANSFORM_STYLE_KEYS = [
-  "webkitTransform",
-  "mozTransform",
-  "msTransform",
-  "oTransform",
-  "transform"
-];
-export function setTransformTranslateStyle(element, plane, amount) {
-  let transformValue = `translate${plane}(${amount})`;
-  TRANSFORM_STYLE_KEYS.forEach((transformKey) => {
-    element.style[transformKey] = transformValue;
-  });
+let setTransformImpl = function setTransformFunc(element, value) {
+  element.style.transform = value;
 }
+// Android <= 4.x does not support element.style.transform
+if (document.body.style.transform === undefined) {
+  setTransformImpl = function setTransformFunc(element, value) {
+    element.style.webkitTransform = value;
+  }
+}
+
+export let setTransform = setTransformImpl;
