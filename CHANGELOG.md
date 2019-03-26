@@ -1,7 +1,14 @@
 # Change Log
 
-## [2.0.8](https://github.com/yapplabs/ember-nav-stack/tree/2.0.8) (2019-01-11)
-[Full Changelog](https://github.com/yapplabs/ember-nav-stack/compare/v2.0.7...2.0.8)
+## [2.0.9](https://github.com/yapplabs/ember-nav-stack/tree/2.0.9) (2019-03-26)
+[Full Changelog](https://github.com/yapplabs/ember-nav-stack/compare/v2.0.8...2.0.9)
+
+**Merged pull requests:**
+
+- Make cloned element cleanup more resilient [\#18](https://github.com/yapplabs/ember-nav-stack/pull/18) ([lukemelia](https://github.com/lukemelia))
+
+## [v2.0.8](https://github.com/yapplabs/ember-nav-stack/tree/v2.0.8) (2019-01-11)
+[Full Changelog](https://github.com/yapplabs/ember-nav-stack/compare/v2.0.7...v2.0.8)
 
 **Merged pull requests:**
 
