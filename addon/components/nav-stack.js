@@ -104,6 +104,12 @@ export default class NavStack extends Component {
     return config['ember-nav-stack'] && config['ember-nav-stack'].suppressAnimation;
   }
 
+  clones = {
+    stackItems: [],
+    headers: [],
+    elements: []
+  }
+
   didInsertElement(){
     this._super(...arguments);
     this.hammer = new Hammer.Manager(this.element, {
@@ -235,16 +241,14 @@ export default class NavStack extends Component {
 
   slideDown() {
     let debug = this.get('birdsEyeDebugging');
-    let y = debug ? 480 : this._clonedElement.getBoundingClientRect().height;
+    let clonedElement = this.clones.elements[this.clones.elements.length - 1];
+    let y = debug ? 480 : clonedElement.getBoundingClientRect().height;
     nextTick().then(() => {
       this.verticalTransition({
-        element: this._clonedElement,
+        element: clonedElement,
         toValue: y,
         finishCallback: () => {
-          if (this._clonedElement) {
-            this._clonedElement.parentNode.removeChild(this._clonedElement);
-            this._clonedElement = null;
-          }
+          this.removeClonedElement();
         }
       });
     });
@@ -460,7 +464,8 @@ export default class NavStack extends Component {
   }
 
   cloneLastStackItem() {
-    let clone = this._clonedStackItem = this.element.querySelector('.NavStack-item:last-child').cloneNode(true);
+    let clone = this.element.querySelector('.NavStack-item:last-child').cloneNode(true);
+    this.clones.stackItems.push(clone);
     clone.setAttribute('id', `${this.elementId}_clonedStackItem`);
     this.attachClonedStackItem(clone);
   }
@@ -471,14 +476,16 @@ export default class NavStack extends Component {
     if (!liveHeader) {
       return;
     }
-    let clonedHeader = this._clonedHeader = liveHeader.cloneNode(true);
+    let clonedHeader = liveHeader.cloneNode(true);
+    this.clones.headers.push(clonedHeader);
     clonedHeader.classList.remove('NavStack-currentHeaderContainer');
     clonedHeader.classList.add('NavStack-clonedHeaderContainer');
     this.attachClonedHeader(clonedHeader);
   }
 
   cloneElement() {
-    let clone = this._clonedElement = this.element.cloneNode(true);
+    let clone = this.element.cloneNode(true);
+    this.clones.elements.push(clone);
     clone.setAttribute('id', `${this.elementId}_clone`);
     this.attachClonedElement(clone);
   }
@@ -499,16 +506,23 @@ export default class NavStack extends Component {
   }
 
   removeClonedHeader() {
-    if (this._clonedHeader) {
-      this._clonedHeader.parentNode.removeChild(this._clonedHeader);
-      this._clonedHeader = null;
+    var clonedHeader;
+    while (clonedHeader = this.clones.headers.pop()) { //eslint-disable-line no-cond-assign
+      clonedHeader.parentNode.removeChild(clonedHeader);
     }
   }
 
   removeClonedStackItem() {
-    if (this._clonedStackItem) {
-      this._clonedStackItem.parentNode.removeChild(this._clonedStackItem);
-      this._clonedStackItem = null;
+    var clonedStackItem;
+    while (clonedStackItem = this.clones.stackItems.pop()) { //eslint-disable-line no-cond-assign
+      clonedStackItem.parentNode.removeChild(clonedStackItem);
+    }
+  }
+
+  removeClonedElement() {
+    var clonedElement;
+    while (clonedElement = this.clones.elements.pop()) { //eslint-disable-line no-cond-assign
+      clonedElement.parentNode.removeChild(clonedElement);
     }
   }
 

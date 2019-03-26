@@ -23,7 +23,7 @@ export default Mixin.create({
     return `${this.getRouteComponent(model)}/header`;
   },
   layerIndex: computed(function() {
-    let parentRoute = getParentRoute(this.router, this);
+    let parentRoute = getParentRoute(this._router, this);
     let parentRouteLayerIndex = parentRoute.get('layerIndex');
     let currentLayerIndex = parentRouteLayerIndex || 0;
     if (this.get('newLayer') === true) {
@@ -41,7 +41,7 @@ export default Mixin.create({
     });
   },
   getParentRouteName() {
-    return getParentRoute(this.router, this).routeName;
+    return getParentRoute(this._router, this).routeName;
   },
   actions: {
     back() {
