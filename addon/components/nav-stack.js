@@ -13,7 +13,7 @@ import { ClosureAction } from '@ember-decorators/argument/types';
 import { required } from '@ember-decorators/argument/validation';
 import { service } from '@ember-decorators/service';
 import { bool, mapBy, reads } from '@ember-decorators/object/computed';
-import { Spring } from 'wobble';
+import { Spring } from 'ember-nav-stack/utils/wobble';
 import { getOwner } from '@ember/application';
 import { DEBUG } from '@glimmer/env';
 import { setTransform } from 'ember-nav-stack/utils/animation';
@@ -441,7 +441,7 @@ export default class NavStack extends Component {
     if (fromValue === toValue && initialVelocity === 0) {
       finalize();
       return;
-    } 
+    }
     let spring = this._createSpring({ initialVelocity, fromValue, toValue });
     this._activeSpring = spring;
     spring.onUpdate((s) => {
