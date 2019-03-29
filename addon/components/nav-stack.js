@@ -441,7 +441,7 @@ export default class NavStack extends Component {
     if (fromValue === toValue && initialVelocity === 0) {
       finalize();
       return;
-    } 
+    }
     let spring = this._createSpring({ initialVelocity, fromValue, toValue });
     this._activeSpring = spring;
     spring.onUpdate((s) => {
