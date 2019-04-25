@@ -1,5 +1,6 @@
 import { className, classNames, layout } from '@ember-decorators/component';
-import { computed, observes } from '@ember-decorators/object';
+import { observes } from '@ember-decorators/object';
+import { computed } from '@ember/object';
 import Component from '@ember/component';
 import { get } from '@ember/object';
 import { run, scheduleOnce } from '@ember/runloop';
@@ -7,16 +8,14 @@ import { nextTick } from 'ember-nav-stack/utils/animation';
 import BackSwipeRecognizer from 'ember-nav-stack/utils/back-swipe-recognizer';
 import Hammer from 'hammerjs';
 import template from '../templates/components/nav-stack';
-import { argument } from '@ember-decorators/argument';
-import { optional, type } from '@ember-decorators/argument/type';
-import { ClosureAction } from '@ember-decorators/argument/types';
-import { required } from '@ember-decorators/argument/validation';
-import { service } from '@ember-decorators/service';
-import { bool, mapBy, reads } from '@ember-decorators/object/computed';
+// import { argument } from '@ember-decorators/argument';
+// import { Action, optional } from '@ember-decorators/argument/types';
+import { bool, mapBy, readOnly } from '@ember/object/computed';
 import { Spring } from 'wobble';
 import { getOwner } from '@ember/application';
 import { DEBUG } from '@glimmer/env';
 import { setTransform } from 'ember-nav-stack/utils/animation';
+import { inject as service } from '@ember/service';
 
 function currentTransitionPercentage(fromValue, toValue, currentValue) {
   if (fromValue === undefined || fromValue === toValue) {
@@ -49,16 +48,16 @@ function styleHeaderElements(transitionRatio, isForward, currentHeaderElement, o
 @layout(template)
 @classNames('NavStack')
 export default class NavStack extends Component {
-  @argument @type('number') @required
+  // @argument('number')
   layer;
 
-  @argument // ComponentRef
-  footer
+  // @argument('any') // ComponentRef
+  footer;
 
-  @argument @type(ClosureAction)
+  // @argument(Action)
   back;
 
-  @argument @type(optional('boolean'))
+  // @argument(optional('boolean'))
   @className('is-birdsEyeDebugging')
   birdsEyeDebugging = false;
 
@@ -88,7 +87,7 @@ export default class NavStack extends Component {
     return this.get(`navStacksService.stacks.layer${this.get('layer')}`);
   }
 
-  @reads('stackItems.length')
+  @readOnly('stackItems.length')
   stackDepth;
 
   @mapBy('stackItems', 'component')
@@ -98,7 +97,7 @@ export default class NavStack extends Component {
   @className('NavStack--withFooter')
   hasFooter;
 
-  @computed
+  @computed()
   get suppressAnimation() {
     const config = getOwner(this).resolveRegistration('config:environment');
     return config['ember-nav-stack'] && config['ember-nav-stack'].suppressAnimation;
