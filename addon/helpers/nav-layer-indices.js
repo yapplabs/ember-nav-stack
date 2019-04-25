@@ -1,7 +1,7 @@
 import Helper from '@ember/component/helper';
-import { computed, observes } from '@ember-decorators/object';
-import { service } from '@ember-decorators/service';
-
+import { computed } from '@ember/object';
+import { observes } from '@ember-decorators/object';
+import { inject as service } from '@ember/service';
 export default class NavLayerIndices extends Helper {
 
   @service
