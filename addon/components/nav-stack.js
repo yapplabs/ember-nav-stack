@@ -8,8 +8,8 @@ import { nextTick } from 'ember-nav-stack/utils/animation';
 import BackSwipeRecognizer from 'ember-nav-stack/utils/back-swipe-recognizer';
 import Hammer from 'hammerjs';
 import template from '../templates/components/nav-stack';
-// import { argument } from '@ember-decorators/argument';
-// import { Action, optional } from '@ember-decorators/argument/types';
+import { argument } from '@ember-decorators/argument';
+import { Action, optional } from '@ember-decorators/argument/types';
 import { bool, mapBy, readOnly } from '@ember/object/computed';
 import { Spring } from 'wobble';
 import { getOwner } from '@ember/application';
@@ -48,16 +48,16 @@ function styleHeaderElements(transitionRatio, isForward, currentHeaderElement, o
 @layout(template)
 @classNames('NavStack')
 export default class NavStack extends Component {
-  // @argument('number')
+  @argument('number')
   layer;
 
-  // @argument('any') // ComponentRef
+  @argument('any') // ComponentRef
   footer;
 
-  // @argument(Action)
+  @argument(Action)
   back;
 
-  // @argument(optional('boolean'))
+  @argument(optional('boolean'))
   @className('is-birdsEyeDebugging')
   birdsEyeDebugging = false;
 
