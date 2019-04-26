@@ -7,7 +7,7 @@ export function getParentRoute(router, route) {
   if (!handlerInfos) {
     return;
   }
-  let routes = handlerInfos.map(hi => hi._handler);
+  let routes = handlerInfos.map(hi => hi._handler || hi._route);
   let routeIndex = routes.indexOf(route);
   if (routeIndex > 0) {
     return routes[routes.indexOf(route) - 1];
