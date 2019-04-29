@@ -1,19 +1,19 @@
 import { guidFor } from '@ember/object/internals';
 import Component from '@ember/component';
-import { argument } from '@ember-decorators/argument';
+// import { argument } from '@ember-decorators/argument';
 import { tagName } from '@ember-decorators/component';
 import { inject as service } from '@ember/service';
 
 @tagName('')
 export default class ToNavStack extends Component {
-  @argument('number')
-  layer;
+  // @argument('number')
+  // layer;
 
-  @argument('any')
-  item = null;
+  // @argument('any')
+  // item = null;
 
-  @argument('any')
-  header = null;
+  // @argument('any')
+  // header = null;
 
   @service('nav-stacks')
   service;
