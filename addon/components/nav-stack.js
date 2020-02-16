@@ -1,3 +1,4 @@
+/* eslint-disable ember/no-observers */
 import { className, classNames, layout } from '@ember-decorators/component';
 import { observes } from '@ember-decorators/object';
 import { computed } from '@ember/object';
@@ -77,7 +78,7 @@ export default class NavStack extends Component {
   @computed('stackItems.@each.headerComponent')
   get parentItemHeaderComponent() {
     if (this.stackItems.length < 2) {
-      return;
+      return null;
     }
     return this.stackItems[this.stackItems.length - 2].headerComponent;
   }
@@ -110,7 +111,7 @@ export default class NavStack extends Component {
   }
 
   didInsertElement(){
-    this._super(...arguments);
+    super.didInsertElement(...arguments);
     this.hammer = new Hammer.Manager(this.element, {
       inputClass: Hammer.TouchMouseInput,
       recognizers: [

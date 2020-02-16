@@ -1,10 +1,10 @@
 import EmberRouter from '@ember/routing/router';
 import config from './config/environment';
 
-const Router = EmberRouter.extend({
-  location: config.locationType,
-  rootURL: config.rootURL
-});
+export default class Router extends EmberRouter {
+  location = config.locationType;
+  rootURL = config.rootURL;
+}
 
 function myScheduleRoutes(dsl, resetNamespace = false) {
   dsl.route('my-schedule', { resetNamespace }, function() {
@@ -40,5 +40,3 @@ let dsl = function() {
 };
 
 Router.map(dsl);
-
-export default Router;

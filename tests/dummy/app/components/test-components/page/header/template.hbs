@@ -1,9 +1,11 @@
-{{#if model.isUnderMorePage~}}
-  <button {{action 'back'}} class="y-button left-button theme-color back-button">Back</button>
-{{/if~}}
+<div class={{@class}}>
+  {{#if @model.isUnderMorePage~}}
+    <button {{action (route-action 'back')}} class="y-button left-button theme-color back-button">Back</button>
+  {{/if~}}
 
-{{#if model.hasMySchedule}}
-  <button {{action 'visitMySchedule'}} class="y-button right-button theme-color icon-button my-schedule-button js-myScheduleButton"></button>
-{{/if~}}
+  {{#if @model.hasMySchedule}}
+    <button {{action (route-action 'visitMySchedule')}} class="y-button right-button theme-color icon-button my-schedule-button js-myScheduleButton"></button>
+  {{/if~}}
 
-<div class="page-title">{{model.pageTitle}}</div>
+  <div class="page-title">{{@model.pageTitle}}</div>
+</div>
