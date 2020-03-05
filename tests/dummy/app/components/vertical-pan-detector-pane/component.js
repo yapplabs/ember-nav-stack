@@ -10,7 +10,7 @@ import template from './template';
 export default class VerticalPanDetectorPane extends Component {
 
   didInsertElement(){
-    this._super(...arguments);
+    super.didInsertElement(...arguments);
 
     this.element.querySelector('.status').textContent = 'Hello';
 
@@ -28,7 +28,7 @@ export default class VerticalPanDetectorPane extends Component {
   }
 
   willDestroyElement(){
-    this._super(...arguments);
+    super.willDestroyElement(...arguments);
     stopPreferringRecognizer(this, this.mc.get('pan'));
   }
 }

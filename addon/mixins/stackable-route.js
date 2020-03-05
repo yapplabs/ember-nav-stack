@@ -1,13 +1,15 @@
+/* eslint-disable ember/no-new-mixins */
 import Mixin from '@ember/object/mixin';
 import { computed } from '@ember/object';
 
 export function getParentRoute(router, route) {
   let routerMicroLib = router._routerMicrolib;
-  let { handlerInfos } = routerMicroLib.state;
-  if (!handlerInfos) {
+  let { routeInfos, handlerInfos } = routerMicroLib.state;
+  routeInfos = routeInfos || handlerInfos; // routeInfos is in newer Ember versions
+  if (!routeInfos) {
     return;
   }
-  let routes = handlerInfos.map(hi => hi._handler || hi._route);
+  let routes = routeInfos.map(hi => hi._handler || hi._route);
   let routeIndex = routes.indexOf(route);
   if (routeIndex > 0) {
     return routes[routes.indexOf(route) - 1];

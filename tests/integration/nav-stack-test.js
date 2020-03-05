@@ -6,9 +6,24 @@ import { panX } from 'ember-simulant-test-helpers';
 import delay from '../helpers/delay';
 import RSVP from 'rsvp';
 import { getElementInViewportRatio, isInViewport } from 'ember-nav-stack/test-support/in-viewport';
+import { helper } from '@ember/component/helper';
+
+function overrideRouteActions(hooks, actions) {
+  hooks.beforeEach(function () {
+    this.owner.__registry__
+      .registrations['helper:route-action'] = helper((arg) => {
+        return this.routeActions[arg];
+      });
+
+    this.routeActions = actions;
+  });
+}
 
 module('Integration | Component | nav-stack', function(hooks) {
   setupRenderingTest(hooks);
+  overrideRouteActions(hooks, {
+    back() {}
+  });
 
   hooks.beforeEach(async function() {
     this.set('shouldRenderNavStack', false);

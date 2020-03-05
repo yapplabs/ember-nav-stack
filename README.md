@@ -6,7 +6,6 @@ This addon's current status is "opensource, but unpolished". It lacks tests, doc
 
 See the [Contributing](CONTRIBUTING.md) guide for details on contributing.
 
-
 License
 ------------------------------------------------------------------------------
 

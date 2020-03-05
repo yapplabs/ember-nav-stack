@@ -1,3 +1,4 @@
+/* eslint-disable ember/no-observers */
 import Helper from '@ember/component/helper';
 import { computed } from '@ember/object';
 import { observes } from '@ember-decorators/object';

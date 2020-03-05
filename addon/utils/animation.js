@@ -4,7 +4,7 @@
 import { run } from '@ember/runloop';
 import RSVP from 'rsvp';
 import Ember from 'ember';
-const { testing } = Ember;
+
 /**
  * @private
  * T (period) = 1 / f (frequency)
@@ -18,9 +18,13 @@ const TICK = 17;
  * While on testing or if raf not available, use a run-loop friendly equivalent.
  * This also makes the tests work as expected.
  */
-export const rAF = testing || !window.requestAnimationFrame ? function(fn) {
-  return run.later(fn, TICK);
-} : window.requestAnimationFrame;
+function rAF(cb) {
+  if (Ember.testing || !window.requestAnimationFrame) {
+    return run.later(cb, TICK);  
+  } else {
+    return window.requestAnimationFrame(cb);
+  }
+}
 
 /**
  * @public
