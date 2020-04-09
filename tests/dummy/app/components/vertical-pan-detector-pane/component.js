@@ -1,25 +1,21 @@
-import Component from '@ember/component';
-import { classNames, layout } from '@ember-decorators/component';
+import Component from '@glimmer/component';
 import Hammer from 'hammerjs';
 import { schedule } from '@ember/runloop';
 import { preferRecognizer, stopPreferringRecognizer } from 'ember-nav-stack/utils/recognizers';
-import template from './template';
+import { tracked } from '@glimmer/tracking';
+import { action } from '@ember/object';
 
-@layout(template)
-@classNames('VerticalPanDetectorPane')
 export default class VerticalPanDetectorPane extends Component {
+  @tracked statusText = 'hello';
+  element;
 
-  didInsertElement(){
-    super.didInsertElement(...arguments);
-
-    this.element.querySelector('.status').textContent = 'Hello';
-
+  @action
+  setupHammer(el){
+    this.element = el;
     let mc = this.mc = new Hammer(this.element);
     mc.get('pan').set({ direction: Hammer.DIRECTION_VERTICAL });
     mc.on("panup pandown", (ev) => {
-      if (this.element) {
-        this.element.querySelector('.status').textContent = ev.type +" gesture detected";
-      }
+      this.statusText = ev.type +" gesture detected";
     });
 
     schedule('afterRender', this, () => {
@@ -27,8 +23,8 @@ export default class VerticalPanDetectorPane extends Component {
     });
   }
 
-  willDestroyElement(){
-    super.willDestroyElement(...arguments);
+  @action
+  teardownHammer(){
     stopPreferringRecognizer(this, this.mc.get('pan'));
   }
 }
