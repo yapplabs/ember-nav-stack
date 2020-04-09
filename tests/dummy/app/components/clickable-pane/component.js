@@ -1,13 +1,6 @@
-import Component from '@ember/component';
-import { classNames } from '@ember-decorators/component';
+import Component from '@glimmer/component';
+import { tracked } from '@glimmer/tracking';
 
-@classNames('ClickablePane')
 export default class ClickablePane extends Component {
-  didInsertElement(){
-    super.didInsertElement();
-    this.element.textContent = 'clickable';
-  }
-  click() {
-    this.element.textContent = 'clicked';
-  }
+  @tracked clicked;
 }

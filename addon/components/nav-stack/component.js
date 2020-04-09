@@ -1,22 +1,19 @@
 /* eslint-disable ember/no-observers */
-import { className, classNames, layout } from '@ember-decorators/component';
-import { observes } from '@ember-decorators/object';
-import { computed } from '@ember/object';
-import Component from '@ember/component';
-import { get } from '@ember/object';
+import Component from '@glimmer/component';
+import { action, get } from '@ember/object';
 import { run, scheduleOnce } from '@ember/runloop';
 import { nextTick } from 'ember-nav-stack/utils/animation';
 import BackSwipeRecognizer from 'ember-nav-stack/utils/back-swipe-recognizer';
 import Hammer from 'hammerjs';
-import template from '../templates/components/nav-stack';
 // import { argument } from '@ember-decorators/argument';
 // import { Action, optional } from '@ember-decorators/argument/types';
-import { bool, mapBy, readOnly } from '@ember/object/computed';
 import { Spring } from 'wobble';
 import { getOwner } from '@ember/application';
 import { DEBUG } from '@glimmer/env';
 import { setTransform } from 'ember-nav-stack/utils/animation';
 import { inject as service } from '@ember/service';
+import { bool, mapBy, reads } from 'macro-decorators';
+import { guidFor } from '@ember/object/internals';
 
 function currentTransitionPercentage(fromValue, toValue, currentValue) {
   if (fromValue === undefined || fromValue === toValue) {
@@ -46,8 +43,6 @@ function styleHeaderElements(transitionRatio, isForward, currentHeaderElement, o
   }
 }
 
-@layout(template)
-@classNames('NavStack')
 export default class NavStack extends Component {
   // @argument('number')
   // layer;
@@ -59,23 +54,41 @@ export default class NavStack extends Component {
   // back;
 
   // @argument(optional('boolean'))
-  @className('is-birdsEyeDebugging')
-  birdsEyeDebugging = this.birdsEyeDebugging || false;
-
-  @service('nav-stacks')
-  navStacksService;
-
-  @computed('layer')
-  @className
-  get layerIndexCssClass() {
-    return `NavStack--layer${this.layer}`;
+  get birdsEyeDebugging() {
+    return this.args.birdsEyeDebugging || false;
   }
-  @computed('stackItems.@each.headerComponent')
+
+  get elementId() {
+    return guidFor(this);
+  }
+
+  get layer() {
+    return this.args.layer;
+  }
+
+  @service('nav-stacks') navStacksService;
+
+  constructor() {
+    super(...arguments);
+    this.navStacksService.register(this);
+  }
+
+  willDestroy() {
+    super.willDestroy(...arguments);
+    this.navStacksService.unregister(this);
+  }
+
+  get layerIndexCssClass() {
+    return `NavStack--layer${this.args.layer}`;
+  }
+
   get headerComponent() {
+    if (this.stackItems.length === 0) {
+      return null;
+    }
     return this.stackItems[this.stackItems.length - 1].headerComponent;
   }
 
-  @computed('stackItems.@each.headerComponent')
   get parentItemHeaderComponent() {
     if (this.stackItems.length < 2) {
       return null;
@@ -83,25 +96,22 @@ export default class NavStack extends Component {
     return this.stackItems[this.stackItems.length - 2].headerComponent;
   }
 
-  @computed('layer', 'navStacksService.stacks')
   get stackItems(){
-    return this.get(`navStacksService.stacks.layer${this.get('layer')}`);
+    return get(this.navStacksService, `stacks.layer${this.args.layer}`) || [];
   }
 
-  @readOnly('stackItems.length')
-  stackDepth;
+  @reads('stackItems.length') stackDepth;
 
-  @mapBy('stackItems', 'component')
-  components;
+  @mapBy('stackItems', 'component') components;
 
-  @bool('footer')
-  @className('NavStack--withFooter')
-  hasFooter;
+  @bool('args.footer') hasFooter;
 
-  @computed()
   get suppressAnimation() {
-    const config = getOwner(this).resolveRegistration('config:environment');
-    return config['ember-nav-stack'] && config['ember-nav-stack'].suppressAnimation;
+    if (this._suppressAnimation === undefined) {
+      const config = getOwner(this).resolveRegistration('config:environment');
+      this._suppressAnimation = config['ember-nav-stack'] && config['ember-nav-stack'].suppressAnimation;
+    }
+    return this._suppressAnimation;
   }
 
   clones = {
@@ -110,8 +120,9 @@ export default class NavStack extends Component {
     elements: []
   }
 
-  didInsertElement(){
-    super.didInsertElement(...arguments);
+  @action
+  setupHammer(el) {
+    this.element = el
     this.hammer = new Hammer.Manager(this.element, {
       inputClass: Hammer.TouchMouseInput,
       recognizers: [
@@ -124,13 +135,13 @@ export default class NavStack extends Component {
     this.hammer.on('pan', this.handlePanEvent.bind(this));
   }
 
-  willDestroyElement(){
+  @action
+  tearDownHammer(){
     this.hammer.off('pan');
-    super.willDestroyElement(...arguments);
   }
 
-  @observes('stackItems')
-  stackItemDidChange() {
+  @action
+  stackItemsDidChange() {
     this.handleStackDepthChange(false);
   }
 
@@ -140,7 +151,7 @@ export default class NavStack extends Component {
     let rootComponentRef = stackItems[0] && stackItems[0].component;
     let rootComponentIdentifier = getComponentIdentifier(rootComponentRef);
 
-    let layer = this.layer;
+    let layer = this.args.layer;
     if (isInitialRender) {
       this.schedule(this.cut);
     }
@@ -202,7 +213,7 @@ export default class NavStack extends Component {
       animate: false
     });
 
-    if (this.get('layer') > 0 & this.stackDepth > 0) {
+    if (this.args.layer > 0 & this.stackDepth > 0) {
       this.verticalTransition({
         element: this.element,
         toValue: 0,
@@ -231,7 +242,7 @@ export default class NavStack extends Component {
   }
 
   slideUp() {
-    let debug = this.get('birdsEyeDebugging');
+    let debug = this.birdsEyeDebugging;
     this.verticalTransition({
       element: this.element,
       toValue: 0,
@@ -240,7 +251,7 @@ export default class NavStack extends Component {
   }
 
   slideDown() {
-    let debug = this.get('birdsEyeDebugging');
+    let debug = this.birdsEyeDebugging;
     let clonedElement = this.clones.elements[this.clones.elements.length - 1];
     let y = debug ? 480 : clonedElement.getBoundingClientRect().height;
     nextTick().then(() => {
@@ -349,7 +360,7 @@ export default class NavStack extends Component {
     if (this._currentStackItemElement)  {
       this.disablePanRecognizer();
     }
-    if (!this.element || this.get('stackDepth') <= 1) {
+    if (!this.element || this.stackDepth <= 1) {
       return;
     }
     this._setupPanHandlerContext();
@@ -375,7 +386,7 @@ export default class NavStack extends Component {
     let itemWidth = currentStackItemElement.getBoundingClientRect().width;
     this.backX = this.startingX + itemWidth;
     this.thresholdX = itemWidth / 2;
-    this.canNavigateBack = this.back && this.get('stackDepth') > 1;
+    this.canNavigateBack = this.back && this.stackDepth > 1;
     this.hammer.get('pan').set({ enable: true, threshold: 9 });
   }
 
@@ -417,7 +428,7 @@ export default class NavStack extends Component {
           this.parentHeaderElement,
           this.currentHeaderElement
         );
-        this.back();
+        this.args.back();
       } else {
         setTransform(this.containerElement, `translateX(${this.startingX}px)`);
         styleHeaderElements(

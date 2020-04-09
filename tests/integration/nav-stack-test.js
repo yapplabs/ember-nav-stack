@@ -170,7 +170,7 @@ module('Integration | Component | nav-stack', function(hooks) {
       assert.ok(!isInViewport('.NavStack-item-1'), 'Item 1 is off screen');
       await panX(find('.NavStack-item-2'), {
         position: [50, 100],
-        amount: 150,
+        amount: 160,
         duration: 200,
       });
       await settled();
@@ -271,7 +271,7 @@ module('Integration | Component | nav-stack', function(hooks) {
       assert.ok(isInViewport('.NavStack-item-2'), 'Item 2 is on screen');
       await panX(find('.NavStack-item-2'), {
         position: [50, 100],
-        amount: 150,
+        amount: 160,
         duration: 200,
       });
       await settled();

@@ -1,10 +1,8 @@
 import { guidFor } from '@ember/object/internals';
-import Component from '@ember/component';
+import Component from '@glimmer/component';
 // import { argument } from '@ember-decorators/argument';
-import { tagName } from '@ember-decorators/component';
 import { inject as service } from '@ember/service';
 
-@tagName('')
 export default class ToNavStack extends Component {
   // @argument('number')
   // layer;
@@ -15,19 +13,19 @@ export default class ToNavStack extends Component {
   // @argument('any')
   // header = null;
 
-  @service('nav-stacks')
-  service;
+  @service('nav-stacks') service;
 
-  willRender() {
+  constructor() {
+    super(...arguments);
     this.service.pushItem(
       guidFor(this),
-      this.get('layer'),
-      this.get('item'),
-      this.get('header')
+      this.args.layer,
+      this.args.item,
+      this.args.header
     );
   }
 
-  willDestroyElement() {
+  willDestroy() {
     this.service.removeItem(guidFor(this));
   }
 }

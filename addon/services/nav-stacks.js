@@ -10,6 +10,7 @@ export default class NavStacks extends Service {
   constructor() {
     super(...arguments);
     this.set('stacks', EmberObject.create());
+    this._listeners = A([]);
     this._itemsById = {};
     this._counter = 1;
     this._runningTransitions = 0;
@@ -34,6 +35,14 @@ export default class NavStacks extends Service {
   removeItem(sourceId) {
     delete this._itemsById[sourceId];
     this._schedule();
+  }
+
+  register(layerContainerComponent) {
+    this._listeners.pushObject(layerContainerComponent);
+  }
+
+  unregister(layerContainerComponent) {
+    this._listeners.removeObject(layerContainerComponent);
   }
 
   notifyTransitionStart() {
@@ -97,6 +106,7 @@ export default class NavStacks extends Service {
     if (this.isInitialRender === true) {
       run.next(this, this._clearIsInitialRender);
     }
+    this._listeners.invoke('stackItemsDidChange');
     this.didUpdate();
   }
 
