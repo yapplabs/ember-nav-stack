@@ -6085,16 +6085,6 @@ ember-cli-htmlbars-inline-precompile@^2.1.0:
     heimdalljs-logger "^0.1.9"
     silent-error "^1.1.0"
 
-ember-cli-htmlbars@^3.0.0:
-  version "3.0.1"
-  resolved "https://registry.yarnpkg.com/ember-cli-htmlbars/-/ember-cli-htmlbars-3.0.1.tgz#01e21f0fd05e0a6489154f26614b1041769e3e58"
-  integrity sha512-pyyB2s52vKTXDC5svU3IjU7GRLg2+5O81o9Ui0ZSiBS14US/bZl46H2dwcdSJAK+T+Za36ZkQM9eh1rNwOxfoA==
-  dependencies:
-    broccoli-persistent-filter "^1.4.3"
-    hash-for-dep "^1.2.3"
-    json-stable-stringify "^1.0.0"
-    strip-bom "^3.0.0"
-
 ember-cli-htmlbars@^4.2.2:
   version "4.2.2"
   resolved "https://registry.yarnpkg.com/ember-cli-htmlbars/-/ember-cli-htmlbars-4.2.2.tgz#3db341a0c866b6e16919db071be9592b9702f014"
@@ -6419,14 +6409,14 @@ ember-load-initializers@^2.1.1:
     ember-cli-babel "^7.11.0"
     ember-cli-typescript "^2.0.2"
 
-ember-math-helpers@^2.7.1:
-  version "2.7.1"
-  resolved "https://registry.yarnpkg.com/ember-math-helpers/-/ember-math-helpers-2.7.1.tgz#19c1e676d74e6166a57c4d0b52b72cdf10263a49"
-  integrity sha512-FKXP9Ammi1e29cN3W1aDOCUfh4P2vZIQBkuTr3+4IMPl1SbHpOjszmMUpK3B4R4fjGy1xnDR/Wvvao8iIwA6YQ==
+ember-math-helpers@^2.13.0:
+  version "2.14.0"
+  resolved "https://registry.yarnpkg.com/ember-math-helpers/-/ember-math-helpers-2.14.0.tgz#5845eaa52f3d258aa1369e9cf614b4b9bcf45d8f"
+  integrity sha512-ZgDnTx1Za//qRtWpDM6ZAKjG2jhR1pQuo/txA2BZKIiKudJ4CWeXnKDOb498s7tQDsr2UNgo4+5bVG3EHmfazw==
   dependencies:
-    broccoli-funnel "^2.0.0"
-    ember-cli-babel "^6.16.0"
-    ember-cli-htmlbars "^3.0.0"
+    broccoli-funnel "^3.0.1"
+    ember-cli-babel "^7.17.2"
+    ember-cli-htmlbars "^4.2.2"
 
 ember-maybe-import-regenerator@^0.1.6:
   version "0.1.6"
