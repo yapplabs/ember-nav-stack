@@ -201,6 +201,7 @@ export default class NavStack extends Component {
     return layerX;
   }
 
+  @action
   repositionX() {
     let itemContainerElement = this.element.querySelector('.NavStack-itemContainer');
     let newX = this.computeXPosition();
