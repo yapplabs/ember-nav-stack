@@ -67,6 +67,7 @@ export default class NavStack extends Component {
   }
 
   @service('nav-stacks') navStacksService;
+  @service gesture;
 
   constructor() {
     super(...arguments);
@@ -122,7 +123,7 @@ export default class NavStack extends Component {
 
   @action
   setupHammer(el) {
-    this.element = el
+    this.element = el;
     this.hammer = new Hammer.Manager(this.element, {
       inputClass: Hammer.TouchMouseInput,
       recognizers: [
@@ -132,12 +133,17 @@ export default class NavStack extends Component {
     let isInitialRender = this.navStacksService.isInitialRender;
     scheduleOnce('afterRender', this, this.handleStackDepthChange, isInitialRender);
     this._setupPanHandlerContext();
-    this.hammer.on('pan', this.handlePanEvent.bind(this));
+
+    let { hammer, gesture } = this;
+    hammer.on('pan', this.handlePanEvent);
+    gesture.register(this, hammer.get('pan'));
   }
 
   @action
   tearDownHammer(){
-    this.hammer.off('pan');
+    let { hammer, gesture } = this;
+    gesture.unregister(this, hammer.get('pan'));
+    hammer.off('pan');
   }
 
   @action
@@ -391,6 +397,7 @@ export default class NavStack extends Component {
     this.hammer.get('pan').set({ enable: true, threshold: 9 });
   }
 
+  @action
   handlePanEvent(ev) {
     if (this._activeSpring) {
       return;

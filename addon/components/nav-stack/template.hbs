@@ -4,7 +4,7 @@
     'NavStack '
     (if this.birdsEyeDebugging 'is-birdsEyeDebugging ')
     this.layerIndexCssClass ' '
-    (if this.hasFooter 'NavStack--withFooter')
+    (if this.hasFooter 'NavStack--withFooter ')
   }}
   {{did-insert this.setupHammer}}
   {{will-destroy this.tearDownHammer}}
@@ -13,7 +13,7 @@
   <div class="NavStack-itemContainer">
     {{#each this.components as |stackItemComponent index|}}
       <div class={{concat 'NavStack-item NavStack-item-' index}}>
-        {{#if (lte (sub stackDepth index) 2)}}
+        {{#if (lte (sub this.stackDepth index) 2)}}
           {{component stackItemComponent}}
         {{/if}}
       </div>
@@ -29,7 +29,7 @@
       {{component this.headerComponent class="NavStack-headerComponent"}}
     </div>
   </div>
-  {{#if hasFooter}}
+  {{#if this.hasFooter}}
     <div class="NavStack-footer">
       {{component @footer}}
     </div>
