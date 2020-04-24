@@ -2,7 +2,7 @@ import { module, test } from 'qunit';
 import { setupRenderingTest } from 'ember-qunit';
 import hbs from 'htmlbars-inline-precompile';
 import { click, find, settled, waitUntil } from '@ember/test-helpers';
-import { panX } from 'ember-simulant-test-helpers';
+import { panX, panAlongPath } from 'ember-simulant-test-helpers';
 import delay from '../helpers/delay';
 import RSVP from 'rsvp';
 import { getElementInViewportRatio, isInViewport } from 'ember-nav-stack/test-support/in-viewport';
@@ -171,7 +171,7 @@ module('Integration | Component | nav-stack', function(hooks) {
       await panX(find('.NavStack-item-2'), {
         position: [50, 100],
         amount: 160,
-        duration: 200,
+        duration: 150,
       });
       await settled();
       assert.ok(isInViewport('.NavStack-item-1'), 'Item 1 is on screen');
@@ -271,12 +271,56 @@ module('Integration | Component | nav-stack', function(hooks) {
       assert.ok(isInViewport('.NavStack-item-2'), 'Item 2 is on screen');
       await panX(find('.NavStack-item-2'), {
         position: [50, 100],
-        amount: 160,
-        duration: 200,
+        amount: 170,
+        duration: 100,
       });
       await settled();
       assert.ok(isInViewport('.NavStack-item-1'), 'Item 1 is on screen');
       assert.dom('.NavStack-item-2').doesNotExist();
+    });
+    test('engage preferred recognizer, does not back swipe', async function(assert) {
+      await this.renderNavStack(exampleHbs);
+      assert.ok(!isInViewport('.NavStack-item-1'), 'Item 1 is off screen');
+      let mouseUpDeferred = RSVP.defer();
+      panAlongPath(find('.VerticalPanDetectorPane'), {
+        position: [50, 100],
+        amounts: [
+          [0, 60],
+          [0, 90],
+          [50, 0]
+        ],
+        duration: 800,
+        waitForMouseUp: mouseUpDeferred.promise
+      });
+      await delay(800);
+      assert.dom('.VerticalPanDetectorPane .status').hasText('pandown gesture detected');
+      assert.ok(!isInViewport('.NavStack-item-1'), 'Item 1 is off screen');
+      mouseUpDeferred.resolve();
+      assert.dom('.VerticalPanDetectorPane .status').hasText('pandown gesture detected');
+      assert.ok(!isInViewport('.NavStack-item-1'), 'Item 1 is off screen');
+    });
+    test('engage back swipe, does not engage vertical pan recognizer', async function(assert) {
+      await this.renderNavStack(exampleHbs);
+      assert.ok(!isInViewport('.NavStack-item-1'), 'Item 1 is off screen');
+      let mouseUpDeferred = RSVP.defer();
+      panAlongPath(find('.VerticalPanDetectorPane'), {
+        position: [10, 100],
+        amounts: [
+          [300, 0],
+          [-280, 0],
+          [0, -50],
+          [0, 50]
+        ],
+        duration: 1000,
+        waitForMouseUp: mouseUpDeferred.promise
+      });
+      await delay(200);
+      assert.ok(getElementInViewportRatio('.NavStack-item-1') > 0.1, 'Item 1 is partially on screen');
+      assert.dom('.VerticalPanDetectorPane .status').hasText('hello');
+      await delay(800);
+      mouseUpDeferred.resolve();
+      assert.dom('.VerticalPanDetectorPane .status').hasText('hello');
+      assert.ok(!isInViewport('.NavStack-item-1'), 'Item 1 is off screen');
     });
   });
   module('page under more', function() {

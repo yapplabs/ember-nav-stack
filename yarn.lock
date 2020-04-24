@@ -6461,10 +6461,10 @@ ember-router-generator@^2.0.0:
     "@babel/traverse" "^7.4.5"
     recast "^0.18.1"
 
-ember-simulant-test-helpers@^0.3.0:
-  version "0.3.0"
-  resolved "https://registry.yarnpkg.com/ember-simulant-test-helpers/-/ember-simulant-test-helpers-0.3.0.tgz#95fe189fa78137724d0ec0946721295e135db0f6"
-  integrity sha512-D4lNE+awHEhMilv266TaacLmBK43tzCLi61pMlE29BY2ANmguVov0tj4dg3Bk3uhl/dfP42Zvu4nbUIPHN4uCg==
+ember-simulant-test-helpers@^0.3.1:
+  version "0.3.1"
+  resolved "https://registry.yarnpkg.com/ember-simulant-test-helpers/-/ember-simulant-test-helpers-0.3.1.tgz#245ad95959a2a3e23dbdf8c27582f283e73bc1a9"
+  integrity sha512-rXjl+ko9XaAOTxO3IZhRsgX7z8EEaPBI+VY+V9YVdMbx/3AU0RRDhKW4f8++hwRn4UJ0imI1MpDvpU/Yf/Ogfg==
   dependencies:
     broccoli-debug "^0.6.5"
     broccoli-funnel "^2.0.1"
