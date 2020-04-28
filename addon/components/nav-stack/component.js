@@ -171,7 +171,7 @@ export default class NavStack extends Component {
       this.element.style.display = 'none';
       this.schedule(this.slideDown);
 
-    } else if (stackDepth === 1 && rootComponentIdentifier !== this._rootComponentIdentifier) {
+    } else if (rootComponentIdentifier !== this._rootComponentIdentifier) {
       this.schedule(this.cut);
 
     } else if (stackDepth < this._stackDepth) {
