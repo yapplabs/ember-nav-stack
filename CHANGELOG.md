@@ -1,3 +1,16 @@
+## v4.1.0 (2020-05-18)
+
+#### :rocket: Enhancement
+* [#40](https://github.com/yapplabs/ember-nav-stack/pull/40) No animation when transitioning to a page deep under another root component ([@lukemelia](https://github.com/lukemelia))
+
+#### :house: Internal
+* [#37](https://github.com/yapplabs/ember-nav-stack/pull/37) Bump acorn from 5.7.3 to 5.7.4 ([@dependabot[bot]](https://github.com/apps/dependabot))
+* [#41](https://github.com/yapplabs/ember-nav-stack/pull/41) Bump jquery from 3.4.1 to 3.5.0 ([@dependabot[bot]](https://github.com/apps/dependabot))
+* [#42](https://github.com/yapplabs/ember-nav-stack/pull/42) Use release-it instead of ember-cli-release-tag ([@lukemelia](https://github.com/lukemelia))
+
+#### Committers: 1
+- Luke Melia ([@lukemelia](https://github.com/lukemelia))
+
 # Change Log
 
 ## [2.0.9](https://github.com/yapplabs/ember-nav-stack/tree/2.0.9) (2019-03-26)
