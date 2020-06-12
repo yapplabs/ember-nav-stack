@@ -66,9 +66,7 @@ export default class NavigatorRouter extends Service {
           ),
           pageStackRouter(
             'moreStack',
-            pageRoutes().concat(
-              [route('more')]
-            ),
+            [route('more')].concat(pageRoutes()),
             { componentName: 'page-stack', initialPageParams: {} }
           ),
         ]),

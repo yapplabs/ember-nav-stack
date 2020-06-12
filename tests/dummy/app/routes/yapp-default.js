@@ -1,5 +1,6 @@
 import { PublicRoute } from 'ember-navigator/-private/public-route';
 import { action } from '@ember/object';
+import { tracked } from '@glimmer/tracking';
 
 function parentNode(node) {
   let mountedRouter = node.mountedRouter;
@@ -23,6 +24,8 @@ function parentNode(node) {
 }
 
 export default class extends PublicRoute {
+  @tracked node;
+
   static create(props) {
     let instance = new this();
     Object.assign(instance, props);

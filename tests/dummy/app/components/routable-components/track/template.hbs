@@ -1,4 +1,4 @@
 <div ...attributes>
   <h1>track {{@route.model.id}}</h1>
-  <a href="#" {{on 'click' (fn @route.navigate (hash routeName='schedule-item' params=(hash schedule_item_id=2)))}}>Schedule Item 2</a>
+  <a href="#" {{on 'click' (fn @route.navigate (hash routeName='schedule-item' params=(hash schedule_item_id=2) key="schedule-item:2"))}}>Schedule Item 2</a>
 </div>

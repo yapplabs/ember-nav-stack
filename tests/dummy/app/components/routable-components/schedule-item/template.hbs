@@ -1,6 +1,11 @@
 <div ...attributes>
   <div class='y-page-content' style="position:absolute;top:0;bottom:0;left:0;right:0">
     <h1>schedule-item {{@route.model.slug}}</h1>
+    {{#if (eq @route.model.id 2)}}
+      <a href="#" {{on 'click' (fn @route.navigate (hash routeName='track' params=(hash track=1) key="track:1"))}}>Part of Track 1</a> |
+      <a href="#" {{on 'click' (fn @route.navigate (hash routeName='track' params=(hash track=2) key="track:2"))}}>Not Part of Track 2</a>
+      <br>
+    {{/if}}
     <button {{on 'click' (fn @route.logThenGoToRating)}}>Log Then Rate</button>
     <button {{on 'click' (fn @route.navigate (hash routeName='rating-form' params=@route.params))}}>Rate</button>
     <button {{on 'click' (fn @route.navigate (hash routeName='person' params=(hash person_id=1)))}}>John Doe</button>

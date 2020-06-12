@@ -23,6 +23,7 @@ export default class extends YappDefaultRoute {
 
   get model() {
     return {
+      id: this.params.schedule_item_id,
       slug: this.params.schedule_item_id,
       yapp: {
         myScheduleEnabled: true

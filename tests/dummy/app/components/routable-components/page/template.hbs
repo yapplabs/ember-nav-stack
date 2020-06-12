@@ -6,9 +6,9 @@
     <h2>@route.model</h2>
     {{json-stringify @route.model pretty=true}}
     {{#if (eq @route.model.slug 'schedule2') }}
-      <a href="#" {{on 'click' (fn @route.navigate (hash routeName='schedule-item' params=(hash schedule_item_id=1)))}}>Schedule Item 1</a>
+      <a href="#" {{on 'click' (fn @route.navigate (hash routeName='schedule-item' params=(hash schedule_item_id=1) key="schedule-item:1"))}}>Schedule Item 1</a>
     {{else if (eq @route.model.slug 'multi_track') }}
-      <a href="#" {{action (fn @route.navigate (hash routeName='track' params=(hash track_id=1)))}}>Track 1</a>
+      <a href="#" {{action (fn @route.navigate (hash routeName='track' params=(hash track_id=1)  key="track:1"))}}>Track 1</a>
     {{/if}}
   </div>
 </div>
