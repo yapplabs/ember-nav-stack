@@ -2,6 +2,12 @@ import { PublicRoute } from 'ember-navigator/-private/public-route';
 import { action } from '@ember/object';
 
 export default class extends PublicRoute {
+  static create(props) {
+    let instance = new this();
+    Object.assign(instance, props);
+    return instance;
+  }
+
   layerIndex = 0;
   get headerComponentName() {
     return `${this.node.routeableState.componentName}/header`;
