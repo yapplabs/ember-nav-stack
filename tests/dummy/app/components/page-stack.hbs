@@ -1,7 +1,7 @@
 {{#each this.currentNodes key="key" as |childNode|}}
   {{to-nav-stack
       layer=childNode.route.layerIndex
-      item=(component childNode.componentName node=childNode route=childNode.route)
+      item=(component childNode.route.componentName node=childNode route=childNode.route)
       header=(component childNode.route.headerComponentName node=childNode route=childNode.route)
   }}
 {{/each}}

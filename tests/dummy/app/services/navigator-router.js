@@ -26,7 +26,7 @@ function mount(routerMap, resolver) {
 class RouteResolver {
   resolve(componentName) {
     let owner = getOwner(this);
-    let factory = owner.factoryFor(`route:${componentName.replace('routable-components/','')}`);
+    let factory = owner.factoryFor(`route:${componentName}`);
     if (factory) {
       return factory;
     }
@@ -46,25 +46,25 @@ export default class NavigatorRouter extends Service {
       this._mountedRouter = mount(
         tabRouter('tabs', [
           pageStackRouter('page1Stack', [
-            route('page', { componentName: 'routable-components/page' }),
-            route('track', { componentName: 'routable-components/track' }),
-            route('schedule-item', { componentName: 'routable-components/schedule-item' }),
-            route('rating-form', { componentName: 'routable-components/rating-form' }),
+            route('page'),
+            route('track'),
+            route('schedule-item'),
+            route('rating-form'),
           ], { componentName: 'page-stack', initialPageParams: { page_id: 1 }}
           ),
           pageStackRouter('page2Stack', [
-            route('page', { componentName: 'routable-components/page' }),
-            route('track', { componentName: 'routable-components/track' }),
-            route('schedule-item', { componentName: 'routable-components/schedule-item' }),
-            route('rating-form', { componentName: 'routable-components/rating-form' }),
+            route('page'),
+            route('track'),
+            route('schedule-item'),
+            route('rating-form'),
           ], { componentName: 'page-stack', initialPageParams: { page_id: 2 }}
           ),
           pageStackRouter('moreStack', [
-            route('more', { componentName: 'routable-components/more' }),
-            route('page', { componentName: 'routable-components/page' }),
-            route('track', { componentName: 'routable-components/track' }),
-            route('schedule-item', { componentName: 'routable-components/schedule-item' }),
-            route('rating-form', { componentName: 'routable-components/rating-form' }),
+            route('more'),
+            route('page'),
+            route('track'),
+            route('schedule-item'),
+            route('rating-form'),
           ], { componentName: 'page-stack', initialPageParams: {}}
           ),
         ]),

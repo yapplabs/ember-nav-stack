@@ -9,8 +9,13 @@ export default class extends PublicRoute {
   }
 
   layerIndex = 0;
+
+  get componentName() {
+    return `routable-components/${this.node.routeableState.componentName}`;
+  }
+
   get headerComponentName() {
-    return `${this.node.routeableState.componentName}/header`;
+    return `${this.componentName}/header`;
   }
 
   @action
