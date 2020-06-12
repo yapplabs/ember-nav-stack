@@ -1,15 +1,17 @@
-import Route from '@ember/routing/route';
-import StackableRoute from 'ember-nav-stack/mixins/stackable-route';
-import { get } from '@ember/object';
+import YappDefaultRoute from './yapp-default';
 
-export default Route.extend(StackableRoute, {
-  templateName: 'page',
-  model(params = {}) {
+export default class extends YappDefaultRoute {
+  get key() {
+    return 'more';
+  }
+
+  get model() {
+    let pageId = this.params.page_id.toString();
     let result = {
-      id: params.page_id,
-      isUnderMorePage: params.page_id > 2,
+      id: pageId,
+      isUnderMorePage: pageId > 2,
     };
-    switch(params.page_id) {
+    switch(pageId) {
       case '1':
         result.pageTitle = 'Agenda';
         result.slug = 'schedule2';
@@ -32,29 +34,5 @@ export default Route.extend(StackableRoute, {
         break;
     }
     return result;
-  },
-  setupController(controller, model) {
-    this._super(controller, model);
-    controller.set('shouldRenderMore', model.isUnderMorePage); // TODO make this true for iOS-only
-  },
-
-  actions: {
-    drillDownToScheduleItem(scheduleItem) {
-      this.transitionTo('schedule-item', scheduleItem);
-    },
-    drillDownToTrack(track) {
-      this.transitionTo('track', track);
-    },
-    visitMySchedule() {
-      this.transitionTo('my-schedule');
-    },
-    back() {
-      let model = this.modelFor(this.routeName);
-      if (get(model, 'isUnderMorePage')) {
-        this.transitionTo('yapp.more');
-      } else {
-        this.transitionTo(this.getParentRouteName());
-      }
-    }
   }
-});
+}

@@ -5,6 +5,7 @@ import { getOwner } from '@ember/application';
 import { mount, route, tabRouter } from 'ember-navigator';
 import { pageStackRouter } from 'ember-nav-stack/navigator';
 import { action } from '@ember/object';
+import YappDefaultRoute from 'dummy/routes/yapp-default';
 
 export default Controller.extend({
   queryParams: ['debug'],
@@ -35,8 +36,13 @@ export default Controller.extend({
 
     let routeResolver = {
       resolve: (componentName) => {
-        let factory = owner.factoryFor(`component:${componentName}`);
-        return factory && factory.class && factory.class.Route;
+        let factory = owner.factoryFor(`route:${componentName.replace('routable-components/','')}`);
+        if (factory && factory.class) {
+          return factory.class;
+        }
+        return YappDefaultRoute;
+        // let factory = owner.factoryFor(`component:${componentName}`);
+        // return factory && factory.class && factory.class.Route;
       }
     };
 
@@ -46,14 +52,14 @@ export default Controller.extend({
           route('page', { componentName: 'routable-components/page' }),
           route('track', { componentName: 'routable-components/track' }),
           route('schedule-item', { componentName: 'routable-components/schedule-item' }),
-          route('rating-form', { componentName: 'routable-components/schedule-item/rating-form' }),
+          route('rating-form', { componentName: 'routable-components/rating-form' }),
         ], { componentName: 'page-stack', initialPageParams: { page_id: 1 }}
         ),
         pageStackRouter('page2Stack', [
           route('page', { componentName: 'routable-components/page' }),
           route('track', { componentName: 'routable-components/track' }),
           route('schedule-item', { componentName: 'routable-components/schedule-item' }),
-          route('rating-form', { componentName: 'routable-components/schedule-item/rating-form' }),
+          route('rating-form', { componentName: 'routable-components/rating-form' }),
         ], { componentName: 'page-stack', initialPageParams: { page_id: 2 }}
         ),
         pageStackRouter('moreStack', [
@@ -61,7 +67,7 @@ export default Controller.extend({
           route('page', { componentName: 'routable-components/page' }),
           route('track', { componentName: 'routable-components/track' }),
           route('schedule-item', { componentName: 'routable-components/schedule-item' }),
-          route('rating-form', { componentName: 'routable-components/schedule-item/rating-form' }),
+          route('rating-form', { componentName: 'routable-components/rating-form' }),
         ], { componentName: 'page-stack', initialPageParams: {}}
         ),
       ]),
