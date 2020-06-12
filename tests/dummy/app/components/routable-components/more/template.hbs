@@ -1,0 +1,6 @@
+<div ...attributes>
+  <ul>
+    <li><a href="#" {{on 'click' (fn @route.push (hash routeName='page' params=(hash page_id=3)))}}>Page 3</a></li>
+    <li><a href="#" {{on 'click' (fn @route.push (hash routeName='page' params=(hash page_id=4)))}}>Page 4</a></li>
+  </ul>
+</div>

@@ -1,7 +1,7 @@
 <div ...attributes>
   <ul class="TabBar-list">
-    <li>{{#link-to 'page' 1}}Page 1{{/link-to}}</li>
-    <li>{{#link-to 'page' 2}}Page 2{{/link-to}}</li>
-    <li>{{#link-to 'yapp.more'}}More{{/link-to}}</li>
+    <li><a href="#" {{on 'click' (fn @switchToTab 'page1Stack')}}>Page 1</a></li>
+    <li><a href="#" {{on 'click' (fn @switchToTab 'page2Stack')}}>Page 2</a></li>
+    <li><a href="#" {{on 'click' (fn @switchToTab 'moreStack')}}>More</a></li>
   </ul>
 </div>

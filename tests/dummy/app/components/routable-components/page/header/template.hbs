@@ -1,13 +1,13 @@
 <div class={{@class}}>
 
-  {{#if @model.isUnderMorePage~}}
-    <button {{action (route-action 'back')}} class="y-button left-button theme-color back-button">Back</button>
+  {{#if @route.model.isUnderMorePage~}}
+    <button {{action @route.pop}} class="y-button left-button theme-color back-button">Back</button>
   {{/if~}}
 
-  {{#if @model.hasMySchedule}}
+  {{!-- {{#if @route.model.hasMySchedule}}
     <button {{action (route-action 'visitMySchedule')}} class="y-button right-button theme-color icon-button my-schedule-button js-myScheduleButton"></button>
-  {{/if~}}
+  {{/if~}} --}}
 
-  <div class="page-title">{{@model.pageTitle}}</div>
+  <div class="page-title">{{@route.model.pageTitle}}</div>
 
 </div>

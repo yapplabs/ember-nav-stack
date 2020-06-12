@@ -1,10 +1,14 @@
 <div ...attributes>
   <div class='y-page-content' style="position:absolute;top:0;bottom:0;left:0;right:0" data-test-route-name={{@controller.routeName}}>
-    <h1>page {{@model.id}}</h1>
-    {{#if (eq @model.slug 'schedule2') }}
-      <a href="#" {{action (route-action 'drillDownToScheduleItem') '1'}}>Schedule Item 1</a>
-    {{else if (eq @model.slug 'multi_track') }}
-      <a href="#" {{action (route-action 'drillDownToTrack') '1'}}>Track 1</a>
+    <h1>page {{@route.model.id}}</h1>
+    <h2>@route.node.routeableState</h2>
+    {{json-stringify @route.node.routeableState pretty=true}}
+    <h2>@route.model</h2>
+    {{json-stringify @route.model pretty=true}}
+    {{#if (eq @route.model.slug 'schedule2') }}
+      <a href="#" {{on 'click' (fn @route.navigate (hash routeName='schedule-item' params=(hash schedule_item_id=1)))}}>Schedule Item 1</a>
+    {{else if (eq @route.model.slug 'multi_track') }}
+      <a href="#" {{action (fn @route.navigate (hash routeName='track' params=(hash track_id=1)))}}>Track 1</a>
     {{/if}}
   </div>
 </div>

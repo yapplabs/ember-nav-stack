@@ -1,9 +1,9 @@
 <div ...attributes>
   <div class='y-page-content' style="position:absolute;top:0;bottom:0;left:0;right:0">
-    <h1>schedule-item {{@model.slug}}</h1>
-    <button {{action (route-action 'drillDownToRatingForm')}}>Rate</button>
-    <button {{action (route-action 'logThenGoToRating')}}>Log Then Rate</button>
-    <button {{action (route-action 'showAttachedPerson')}}>John Doe</button>
+    <h1>schedule-item {{@route.model.slug}}</h1>
+    <button {{on 'click' (fn this.logThenGoToRating)}}>Log Then Rate</button>
+    <button {{on 'click' (fn @route.navigate (hash routeName='rating-form' params=@route.params))}}>Rate</button>
+    <button {{on 'click' (fn @route.navigate (hash routeName='person' params=(hash person_id=1)))}}>John Doe</button>
     <textarea rows="8" cols="40" style="border-style: inset;"></textarea>
     <VerticalPanDetectorPane>
       <ClickablePane />

@@ -1,9 +1,9 @@
 <div class={{@class}}>
-  <div class="page-title">{{@model.pageTitle}}</div>
+  <div class="page-title">{{@route.model.pageTitle}}</div>
 
-  <button {{action (route-action 'back')}} class="y-button left-button theme-color back-button">Back</button>
+  <button {{action @route.pop}} class="y-button left-button theme-color back-button">Back</button>
 
-  {{#if @model.hasMySchedule}}
+  {{!-- {{#if @model.hasMySchedule}}
     <button {{action (route-action 'visitMySchedule')}} class="y-button right-button theme-color icon-button my-schedule-button js-myScheduleButton"></button>
-  {{/if~}}
+  {{/if}} --}}
 </div>

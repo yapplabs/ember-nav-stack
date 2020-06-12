@@ -6,28 +6,14 @@ import { panX, panAlongPath } from 'ember-simulant-test-helpers';
 import delay from '../helpers/delay';
 import RSVP from 'rsvp';
 import { getElementInViewportRatio, isInViewport } from 'ember-nav-stack/test-support/in-viewport';
-import { helper } from '@ember/component/helper';
-
-function overrideRouteActions(hooks, actions) {
-  hooks.beforeEach(function () {
-    this.owner.__registry__
-      .registrations['helper:route-action'] = helper((arg) => {
-        return this.routeActions[arg];
-      });
-
-    this.routeActions = actions;
-  });
-}
 
 module('Integration | Component | nav-stack', function(hooks) {
   setupRenderingTest(hooks);
-  overrideRouteActions(hooks, {
-    back() {}
-  });
 
   hooks.beforeEach(async function() {
     this.set('shouldRenderNavStack', false);
     this.set('back', function(){});
+    this.set('switchToTab', function(){});
     this.set('pageModel', { id: '1', pageTitle: 'Page One' });
     this.set('trackModel', { id: '1', pageTitle: 'Track One' });
     this.set('scheduleItemModel', { id: '1' });
@@ -46,9 +32,9 @@ module('Integration | Component | nav-stack', function(hooks) {
       {{#if shouldRenderNavStack}}
         <div style="width:320px;height:480px;position:relative">
           <NavStack
-              @layer={{0}}
-              @footer={{component 'tab-bar'}}
-              @back={{back}}
+            @layer={{0}}
+            @footer={{component 'tab-bar' switchToTab=this.switchToTab}}
+            @back={{back}}
           />
         </div>
       {{/if}}
@@ -71,7 +57,7 @@ module('Integration | Component | nav-stack', function(hooks) {
         <div style="width:320px;height:480px;position:relative">
           <NavStack
               @layer={{0}}
-              @footer={{component 'tab-bar'}}
+              @footer={{component 'tab-bar' switchToTab=this.switchToTab}}
               @back={{back}}
           />
         </div>
@@ -95,7 +81,7 @@ module('Integration | Component | nav-stack', function(hooks) {
         <div style="width:320px;height:480px;position:relative">
           <NavStack
               @layer={{0}}
-              @footer={{component 'tab-bar'}}
+              @footer={{component 'tab-bar' switchToTab=this.switchToTab}}
               @back={{back}}
           />
         </div>
@@ -124,7 +110,7 @@ module('Integration | Component | nav-stack', function(hooks) {
         <div style="width:320px;height:480px;position:relative">
           <NavStack
               @layer={{0}}
-              @footer={{component 'tab-bar'}}
+              @footer={{component 'tab-bar' switchToTab=this.switchToTab}}
               @back={{back}}
           />
         </div>
@@ -329,7 +315,7 @@ module('Integration | Component | nav-stack', function(hooks) {
         <div style="width:320px;height:480px;position:relative">
           <NavStack
               @layer={{0}}
-              @footer={{component 'tab-bar'}}
+              @footer={{component 'tab-bar' switchToTab=this.switchToTab}}
               @back={{back}}
           />
         </div>
