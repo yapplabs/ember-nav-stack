@@ -13,24 +13,32 @@ export default class VerticalPanDetectorPane extends Component {
   @action
   setupHammer(el){
     this.element = el;
-    let mc = this.mc = new Hammer.Manager(this.element, {
+    let hammer = this.hammer = new Hammer.Manager(this.element, {
       inputClass: Hammer.TouchMouseInput,
       recognizers: [
         [Hammer.Pan]
       ]
     });
-    mc.get('pan').set({ direction: Hammer.DIRECTION_VERTICAL });
-    mc.on("panup pandown", (ev) => {
+    hammer.get('pan').set({ direction: Hammer.DIRECTION_VERTICAL });
+    hammer.on("panup pandown", (ev) => {
       this.statusText = ev.type +" gesture detected";
     });
 
     schedule('afterRender', this, () => {
-      this.gesture.register(this, mc.get('pan'));
+      this.gesture.register(this, hammer.get('pan'));
     });
   }
 
   @action
   teardownHammer(){
-    this.gesture.unregister(this, this.mc.get('pan'));
+    this.gesture.unregister(this, this.hammer.get('pan'));
+  }
+
+  preferRecognizer(recognizer) {
+    this.hammer.get('pan').requireFailure(recognizer);
+  }
+
+  stopPreferringRecognizer(recognizer) {
+    this.hammer.get('pan').dropRequireFailure(recognizer);
   }
 }

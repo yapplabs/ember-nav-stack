@@ -34,38 +34,42 @@ class RouteResolver {
   }
 }
 
+function pageRoutes() {
+  return [
+    route('page'),
+    route('track'),
+    route('schedule-item'),
+    route('rating-form'),
+    route('person'),
+    route('my-schedule')
+  ];
+}
+
 export default class NavigatorRouter extends Service {
   _mountedRouter;
   get mountedRouter() {
     if (!this._mountedRouter) {
-      let owner = getOwner(this);
-
       let resolver = new RouteResolver();
-      setOwner(resolver, owner);
+      setOwner(resolver, getOwner(this));
 
       this._mountedRouter = mount(
         tabRouter('tabs', [
-          pageStackRouter('page1Stack', [
-            route('page'),
-            route('track'),
-            route('schedule-item'),
-            route('rating-form'),
-          ], { componentName: 'page-stack', initialPageParams: { page_id: 1 }}
+          pageStackRouter(
+            'page1Stack',
+            pageRoutes(),
+            { componentName: 'page-stack', initialPageParams: { page_id: 1 } }
           ),
-          pageStackRouter('page2Stack', [
-            route('page'),
-            route('track'),
-            route('schedule-item'),
-            route('rating-form'),
-          ], { componentName: 'page-stack', initialPageParams: { page_id: 2 }}
+          pageStackRouter(
+            'page2Stack',
+            pageRoutes(),
+            { componentName: 'page-stack', initialPageParams: { page_id: 2 } }
           ),
-          pageStackRouter('moreStack', [
-            route('more'),
-            route('page'),
-            route('track'),
-            route('schedule-item'),
-            route('rating-form'),
-          ], { componentName: 'page-stack', initialPageParams: {}}
+          pageStackRouter(
+            'moreStack',
+            pageRoutes().concat(
+              [route('more')]
+            ),
+            { componentName: 'page-stack', initialPageParams: {} }
           ),
         ]),
         resolver
