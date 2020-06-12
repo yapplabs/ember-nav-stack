@@ -593,6 +593,11 @@ function getComponentIdentifier(componentRef) {
         result += `:${modelId}`;
       }
     }
+  } else if (componentRef.args.named.has && componentRef.args.named.has('route')) {
+    let route = componentRef.args.named.get('route').value();
+    if (route) {
+      result += `:${route.key}`;
+    }
   }
   return result;
 }
