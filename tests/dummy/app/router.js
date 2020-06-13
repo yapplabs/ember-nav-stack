@@ -16,7 +16,8 @@ export default class Router extends EmberRouter {
 // }
 
 let dsl = function() {
-  this.route('yapp', { path: '/yapp/', resetNamespace: true });
+  this.route('yapp', { path: '/yapp/*path' });
+
     // this.route('yapp', { path: '/yapp/', resetNamespace: true }, function() {
       // this.route('more');
     // this.route('page', { path: '/pages/:page_id', resetNamespace: true }, function() {
