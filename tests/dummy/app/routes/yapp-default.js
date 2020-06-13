@@ -1,6 +1,8 @@
 import { PublicRoute } from 'ember-navigator/-private/public-route';
 import { action } from '@ember/object';
 import { tracked } from '@glimmer/tracking';
+import { underscore } from '@ember/string';
+import { dasherize } from '@ember/string';
 
 function parentNode(node) {
   let mountedRouter = node.mountedRouter;
@@ -56,13 +58,48 @@ export default class extends PublicRoute {
     return `${this.componentName}/header`;
   }
 
+  get pathFragment() {
+    return dasherize(this.key).replace(':', '/');
+  }
+
   @action
-  navigate(options) {
+  navigate(options, ev = null) {
+    if (ev) {
+      ev.preventDefault();
+    }
     return super.navigate(options);
   }
 
   @action
-  pop(options) {
+  navigateTo(modelName, modelId, ev = null) {
+    if (modelId instanceof Event) {
+      ev = modelId;
+      modelId = null;
+    }
+    if (ev) {
+      ev.preventDefault();
+    }
+    if (modelId) {
+      let params = {};
+      params[`${underscore(modelName)}_id`] = modelId;
+      return super.navigate({
+        routeName: modelName,
+        params,
+        key: `${modelName}:${modelName}`
+      });
+    }
+    return super.navigate({
+      routeName: modelName,
+      params: {},
+      key: modelName
+    });
+  }
+
+  @action
+  pop(options, ev = null) {
+    if (ev) {
+      ev.preventDefault();
+    }
     return super.pop(options);
   }
 }

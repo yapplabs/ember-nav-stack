@@ -1,6 +1,6 @@
 <div ...attributes>
   <ul>
-    <li><a href="#" {{on 'click' (fn @route.navigate (hash routeName='page' params=(hash page_id=3) key="page:3"))}}>Page 3</a></li>
-    <li><a href="#" {{on 'click' (fn @route.navigate (hash routeName='page' params=(hash page_id=4) key="page:4"))}}>Page 4</a></li>
+    <li><a href="#" {{on 'click' (fn @route.navigateTo 'page' 3)}}>Page 3</a></li>
+    <li><a href="#" {{on 'click' (fn @route.navigateTo 'page' 4)}}>Page 4</a></li>
   </ul>
 </div>

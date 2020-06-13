@@ -25,12 +25,18 @@ export default class YappController extends Controller {
   }
 
   @action
-  pop() {
+  pop(ev) {
+    if (ev) {
+      ev.preventDefault();
+    }
     this.mountedRouter.pop();
   }
 
   @action
-  switchToTab(tabName) {
+  switchToTab(tabName, ev) {
+    if (ev) {
+      ev.preventDefault();
+    }
     this.mountedRouter.navigate({ routeName: tabName });
   }
 

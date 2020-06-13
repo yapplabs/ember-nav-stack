@@ -5,7 +5,7 @@
   {{/if~}}
 
   {{#if @route.model.hasMySchedule}}
-    <button {{action (fn @route.navigate (hash routeName='my-schedule'))}} class="y-button right-button theme-color icon-button my-schedule-button"></button>
+    <button {{action (fn @route.navigateTo 'my-schedule')}} class="y-button right-button theme-color icon-button my-schedule-button"></button>
   {{/if~}}
 
   <div class="page-title">{{@route.model.pageTitle}}</div>
