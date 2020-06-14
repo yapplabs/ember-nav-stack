@@ -62,12 +62,12 @@ export default class NavigatorRouter extends Service {
         }),
         resolver,
       );
-    }
-    this.router.transitionTo('yapp-navigator', { path: this.generateCurrentUrlPath() });
-
-    addListener(this._mountedRouter, 'didTransition', ()=>{
       this.router.transitionTo('yapp-navigator', { path: this.generateCurrentUrlPath() });
-    });
+
+      addListener(this._mountedRouter, 'didTransition', ()=>{
+        this.router.transitionTo('yapp-navigator', { path: this.generateCurrentUrlPath() });
+      });
+    }
 
     return this._mountedRouter;
   }
