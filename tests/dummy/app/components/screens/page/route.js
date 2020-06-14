@@ -1,10 +1,6 @@
-import YappDefaultRoute from './yapp-default';
+import YappDefaultRoute from 'dummy/navigator-routes/yapp-default';
 
 export default class extends YappDefaultRoute {
-  get key() {
-    return `page:${this.params.page_id}`;
-  }
-
   get model() {
     let pageId = this.params.page_id.toString();
     let result = {

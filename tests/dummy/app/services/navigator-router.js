@@ -1,19 +1,22 @@
 import Service from '@ember/service';
 import { route } from 'ember-navigator';
-import { mount, pageStackRouter, yappTabRouter } from 'ember-nav-stack/navigator';
+import { mount, pageStackRouter, yappTabRouter } from 'ember-nav-stack/utils/navigator';
 import { getOwner, setOwner } from '@ember/application';
 import { addListener } from '@ember/object/events';
 import { inject as service } from '@ember/service';
 import { action } from '@ember/object';
+import StackpathGrammar from 'dummy/grammar/stackpath';
+import nearley from 'nearley';
+import { underscore } from '@ember/string';
 
 class RouteResolver {
   resolve(componentName) {
     let owner = getOwner(this);
-    let factory = owner.factoryFor(`route:${componentName}`);
+    let factory = owner.factoryFor(`navigator-route:${componentName}`);
     if (factory) {
       return factory;
     }
-    return owner.factoryFor('route:yapp-default');
+    return owner.factoryFor('navigator-route:yapp-default');
   }
 }
 
@@ -30,35 +33,7 @@ function pageRoutes() {
 
 export default class NavigatorRouter extends Service {
   _mountedRouter;
-  location;
   @service router;
-  init() {
-    super.init(...arguments);
-    // this._setupLocation();
-  }
-
-  // _setupLocation() {
-  //   let rootURL = '/yapp/';
-  //   let owner = getOwner(this);
-  //   let resolvedLocation = owner.lookup(`location:history`);
-
-  //   let location = this.location = resolvedLocation;
-
-  //   if (rootURL) {
-  //     set(location, 'rootURL', rootURL);
-  //   }
-  //   if (typeof location.initState === 'function') {
-  //     location.initState();
-  //   }
-  // }
-
-  updateURL(path) {
-    this.location.setURL(path);
-  }
-
-  replaceURL(url) {
-    this.location.replaceURL(url);
-  }
 
   get mountedRouter() {
     if (!this._mountedRouter) {
@@ -88,24 +63,71 @@ export default class NavigatorRouter extends Service {
         resolver,
       );
     }
-    this.router.transitionTo('yapp', { path: this.generateCurrentUrlPath() });
+    this.router.transitionTo('yapp-navigator', { path: this.generateCurrentUrlPath() });
 
     addListener(this._mountedRouter, 'didTransition', ()=>{
-      this.router.transitionTo('yapp', { path: this.generateCurrentUrlPath() });
+      this.router.transitionTo('yapp-navigator', { path: this.generateCurrentUrlPath() });
     });
 
     return this._mountedRouter;
   }
 
+  get urlParser() {
+    if (!this._urlParser) {
+      this._urlParser = new nearley.Parser(nearley.Grammar.fromCompiled(StackpathGrammar));
+    }
+    return this._urlParser;
+  }
+
+  applyUrlStackItemsToInitialState(initialState, stackItems) {
+    let routeState = initialState;
+    if (stackItems[0].name === 'default') {
+      return initialState;
+    }
+
+    let isMorePath = stackItems[0].name === 'more';
+    let tabRoute;
+    if (isMorePath) {
+      tabRoute = routeState.routes[routeState.routes.length - 1];
+    } else {
+      let rootPageId = stackItems[0].id;
+      tabRoute = routeState.routes.find(r => r.routes[0].key === `page:${rootPageId}`);
+    }
+    routeState.index = routeState.routes.indexOf(tabRoute);
+
+    // add additional stack items to state
+    tabRoute.routes = tabRoute.routes.concat(stackItems.slice(1).map((stackItem) => {
+      let params = {};
+      let componentName, key, routeName;
+      componentName = key = routeName = stackItem.name;
+      if (stackItem.id) {
+        key = `${key}:${stackItem.id}`;
+        params[`${underscore(stackItem.name)}_id`] = stackItem.id;
+      }
+      return { componentName, key, params, routeName };
+    }));
+    tabRoute.index = tabRoute.routes.length - 1;
+
+    return routeState;
+  }
+
   @action
   buildInitialState(defaultInitialState) {
-    let currentPath = this.router.currentURL.replace(/^yapp\//);
-    if (currentPath === '' || currentPath === 'default') {
+    let { router, urlParser } = this;
+    let currentPath = router.currentURL;
+    try {
+      urlParser.feed(currentPath);
+    } catch(e) {
+      console.warn(e);
+    }
+    if (!urlParser.results || urlParser.results.length === 0) {
       return defaultInitialState;
     }
-    // TODO parse the currentPath into descriptive json and build the initial state from that json
 
-    return defaultInitialState;
+    let parsedStackItems = urlParser.results[0];
+    urlParser.finish();
+
+    return this.applyUrlStackItemsToInitialState(defaultInitialState, parsedStackItems);
   }
 
   generateCurrentUrlPath() {
@@ -114,18 +136,9 @@ export default class NavigatorRouter extends Service {
     let activeChild = rootRouterState.routes[rootRouterState.index];
     let activeTabNode = rootNode.childNodes[activeChild.key];
 
-
     let tabRouterState = activeTabNode.routeableState;
     let activeStackNodes = tabRouterState.routes.map(route => activeTabNode.childNodes[route.key])
 
     return activeStackNodes.map(n => n.route.pathFragment).join('/');
   }
-
-  handleURL(url) {
-    // Until we have an ember-idiomatic way of accessing #hashes, we need to
-    // remove it because router.js doesn't know how to handle it.
-    let _url = url.split(/#(.+)?/)[0];
-    return this._doURLTransition('handleURL', _url);
-  }
-
 }

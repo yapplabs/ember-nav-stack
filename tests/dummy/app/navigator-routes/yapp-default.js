@@ -51,7 +51,7 @@ export default class extends PublicRoute {
   }
 
   get componentName() {
-    return `routable-components/${this.node.routeableState.componentName}`;
+    return `screens/${this.node.routeableState.componentName}`;
   }
 
   get headerComponentName() {
@@ -60,6 +60,17 @@ export default class extends PublicRoute {
 
   get pathFragment() {
     return dasherize(this.key).replace(':', '/');
+  }
+
+  get idParamName() {
+    return `${underscore(this.node.routeableState.componentName)}_id`;
+  }
+
+  get key() {
+    if (this.params[this.idParamName]) {
+      return `${this.node.routeableState.componentName}:${this.params[this.idParamName]}`;
+    }
+    return this.node.routeableState.componentName;
   }
 
   @action

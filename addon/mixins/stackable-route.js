@@ -19,7 +19,7 @@ export function getParentRoute(router, route) {
 export default Mixin.create({
   templateName: 'stackable',
   getRouteComponent(/* model */) {
-    return `routable-components/${(this.routableTemplateName || this.routeName).replace(/\./g,'/')}`;
+    return `screens/${(this.routableTemplateName || this.routeName).replace(/\./g,'/')}`;
   },
   getHeaderComponent(model) {
     return `${this.getRouteComponent(model)}/header`;

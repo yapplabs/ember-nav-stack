@@ -1,10 +1,6 @@
-import YappDefaultRoute from './yapp-default';
+import YappDefaultRoute from 'dummy/navigator-routes/yapp-default';
 
 export default class extends YappDefaultRoute {
-  get key() {
-    return `track:${this.params.track_id}`;
-  }
-
   get model() {
     return {
       slug: this.params.track_id,
