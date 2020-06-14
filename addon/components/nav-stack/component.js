@@ -436,7 +436,7 @@ export default class NavStack extends Component {
           this.parentHeaderElement,
           this.currentHeaderElement
         );
-        this.args.back();
+        run(this.args, this.args.back);
       } else {
         setTransform(this.containerElement, `translateX(${this.startingX}px)`);
         styleHeaderElements(
