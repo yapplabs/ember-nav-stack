@@ -96,7 +96,7 @@ export default class extends PublicRoute {
       return super.navigate({
         routeName: modelName,
         params,
-        key: `${modelName}:${modelName}`
+        key: `${modelName}:${modelId}`
       });
     }
     return super.navigate({

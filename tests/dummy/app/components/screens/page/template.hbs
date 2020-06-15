@@ -6,9 +6,9 @@
     <h2>@route.model</h2>
     {{json-stringify @route.model pretty=true}}
     {{#if (eq @route.model.slug 'schedule2') }}
-      <a href="#" {{on 'click' (fn @route.navigateTo 'schedule-item' 1)}}>Schedule Item 1</a>
+      <a href="#" {{on 'click' (fn @route.navigateTo 'schedule-item' '1ccde2ab-d5a2-4a50-b57f-f46e25b092c2')}}>Schedule Item 1</a>
     {{else if (eq @route.model.slug 'multi_track') }}
-      <a href="#" {{action (fn @route.navigateTo 'track' 1)}}>Track 1</a>
+      <a href="#" {{action (fn @route.navigateTo 'track' '1b4259e9-7c82-495c-b7f0-fbb16ea34918')}}>Track 1</a>
     {{/if}}
   </div>
 </div>

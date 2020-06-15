@@ -2,13 +2,13 @@
   <div class='y-page-content' style="position:absolute;top:0;bottom:0;left:0;right:0">
     <h1>schedule-item {{@route.model.slug}}</h1>
     {{#if (eq @route.model.id 2)}}
-      <a href="#" {{on 'click' (fn @route.navigateTo 'track' 1)}}>Part of Track 1</a> |
-      <a href="#" {{on 'click' (fn @route.navigateTo 'track' 2)}}>Not Part of Track 2</a>
+      <a href="#" {{on 'click' (fn @route.navigateTo 'track' '1b4259e9-7c82-495c-b7f0-fbb16ea34918')}}>Part of Track 1</a> |
+      <a href="#" {{on 'click' (fn @route.navigateTo 'track' '2bd1b97b-a39a-4712-a4fe-54dd2bb6f634')}}>Not Part of Track 2</a>
       <br>
     {{/if}}
     <button {{on 'click' (fn @route.logThenGoToRating)}}>Log Then Rate</button>
     <button {{on 'click' (fn @route.navigate (hash routeName='rating-form' params=@route.params key="rating-form"))}}>Rate</button>
-    <button {{on 'click' (fn @route.navigateTo 'person' 1)}}>John Doe</button>
+    <button {{on 'click' (fn @route.navigateTo 'person' '1df50e8c-8f73-4bbc-b092-e7ec83a503cf')}}>John Doe</button>
     <textarea rows="8" cols="40" style="border-style: inset;"></textarea>
     <VerticalPanDetectorPane>
       <ClickablePane />

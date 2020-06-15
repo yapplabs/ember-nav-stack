@@ -45,12 +45,12 @@ export default class NavigatorRouter extends Service {
           pageStackRouter(
             'page1Stack',
             pageRoutes(),
-            { componentName: 'page-stack', initialPageParams: { page_id: 1 } }
+            { componentName: 'page-stack', initialPageParams: { page_id: '1a718e2c-fee0-4eaf-884b-e2d730e37102' } }
           ),
           pageStackRouter(
             'page2Stack',
             pageRoutes(),
-            { componentName: 'page-stack', initialPageParams: { page_id: 2 } }
+            { componentName: 'page-stack', initialPageParams: { page_id: '2a8ac478-3414-4dfe-a4b5-4779a64f5a7e' } }
           ),
           pageStackRouter(
             'moreStack',
