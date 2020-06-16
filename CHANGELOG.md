@@ -1,3 +1,18 @@
+## v4.3.0 (2020-06-16)
+
+#### :rocket: Enhancement
+* [#45](https://github.com/yapplabs/ember-nav-stack/pull/45) Refactor <NavStack> to add an extension point for the logic of identifying the current root component ([@lukemelia](https://github.com/lukemelia))
+
+#### :bug: Bug Fix
+* [#44](https://github.com/yapplabs/ember-nav-stack/pull/44) Ensure that the back action fired after a back gesture animation completes runs within a run loop ([@lukemelia](https://github.com/lukemelia))
+
+#### :house: Internal
+* [#43](https://github.com/yapplabs/ember-nav-stack/pull/43) Bump websocket-extensions from 0.1.3 to 0.1.4 ([@dependabot[bot]](https://github.com/apps/dependabot))
+* [#46](https://github.com/yapplabs/ember-nav-stack/pull/46) Improve hammer handling in <VerticalPanDetectorPane> in dummy app ([@lukemelia](https://github.com/lukemelia))
+
+#### Committers: 1
+- Luke Melia ([@lukemelia](https://github.com/lukemelia))
+
 ## v4.1.0 (2020-05-18)
 
 #### :rocket: Enhancement
