@@ -14,6 +14,7 @@ import { setTransform } from 'ember-nav-stack/utils/animation';
 import { inject as service } from '@ember/service';
 import { bool, mapBy, reads } from 'macro-decorators';
 import { guidFor } from '@ember/object/internals';
+import { extractComponentKey } from 'ember-nav-stack/utils/component'
 
 function currentTransitionPercentage(fromValue, toValue, currentValue) {
   if (fromValue === undefined || fromValue === toValue) {
@@ -155,7 +156,7 @@ export default class NavStack extends Component {
     let stackItems = this.stackItems || [];
     let stackDepth = stackItems.length;
     let rootComponentRef = stackItems[0] && stackItems[0].component;
-    let rootComponentIdentifier = getComponentIdentifier(rootComponentRef);
+    let rootComponentKey = this.args.extractComponentKey ? this.args.extractComponentKey(rootComponentRef) : extractComponentKey(rootComponentRef);
 
     let layer = this.args.layer;
     if (isInitialRender) {
@@ -171,7 +172,7 @@ export default class NavStack extends Component {
       this.element.style.display = 'none';
       this.schedule(this.slideDown);
 
-    } else if (rootComponentIdentifier !== this._rootComponentIdentifier) {
+    } else if (rootComponentKey !== this._rootComponentKey) {
       this.schedule(this.cut);
 
     } else if (stackDepth < this._stackDepth) {
@@ -185,7 +186,7 @@ export default class NavStack extends Component {
     }
 
     this._stackDepth = stackDepth;
-    this._rootComponentIdentifier = rootComponentIdentifier;
+    this._rootComponentKey = rootComponentKey;
   }
 
   schedule(method) {
@@ -573,26 +574,4 @@ export default class NavStack extends Component {
     }
     return x;
   }
-}
-
-function getComponentIdentifier(componentRef) {
-  if (!componentRef) {
-    return 'none';
-  }
-  let result = componentRef.name || componentRef.inner.name;
-  if (componentRef.args.named.model) {
-    let model = componentRef.args.named.model.value();
-    if (model) {
-      result += `:${get(model, 'id')}`;
-    }
-  } else if (componentRef.args.named.has && componentRef.args.named.has('model')) {
-    let model = componentRef.args.named.get('model').value();
-    if (model) {
-      let modelId = get(model, 'id');
-      if (modelId) {
-        result += `:${modelId}`;
-      }
-    }
-  }
-  return result;
 }
