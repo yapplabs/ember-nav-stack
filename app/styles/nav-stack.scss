@@ -93,7 +93,7 @@ $easing: cubic-bezier(.23, 1, .32, 1);
   &-footer {
     position: absolute;
     bottom: 0;
-    height: $nav-stack-footer-height;
+    min-height: $nav-stack-footer-height;
     left: 0;
     right: 0;
     background: rgba(0,0,0,.2);
