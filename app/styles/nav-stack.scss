@@ -1,5 +1,7 @@
-$nav-stack-header-height: 44px;
-$nav-stack-footer-height: 50px;
+:root {
+  --nav-stack-header-height: 44px;
+  --nav-stack-footer-height: 50px;
+}
 
 $easing: cubic-bezier(.23, 1, .32, 1);
 
@@ -26,14 +28,14 @@ $easing: cubic-bezier(.23, 1, .32, 1);
   }
   &-itemContainer {
     position: absolute;
-    top: $nav-stack-header-height;
+    top: var(--nav-stack-header-height);
     bottom: 0;
     left: 0;
     width: 500%;
   }
 
   &--withFooter &-itemContainer {
-    bottom: $nav-stack-footer-height;
+    bottom: var(--nav-stack-footer-height);
   }
 
   &-item {
@@ -63,7 +65,8 @@ $easing: cubic-bezier(.23, 1, .32, 1);
 
   &-header {
     position: absolute;
-    height: $nav-stack-header-height;
+    height: var(--nav-stack-header-height);
+    box-sizing: content-box;
     top: 0;
     left: 0;
     right: 0;
@@ -93,7 +96,8 @@ $easing: cubic-bezier(.23, 1, .32, 1);
   &-footer {
     position: absolute;
     bottom: 0;
-    min-height: $nav-stack-footer-height;
+    height: var(--nav-stack-footer-height);
+    box-sizing: content-box;
     left: 0;
     right: 0;
     background: rgba(0,0,0,.2);
