@@ -1,6 +1,7 @@
 import Route from '@ember/routing/route';
 import StackableRoute from 'ember-nav-stack/mixins/stackable-route';
 import { get } from '@ember/object';
+import { defer } from 'rsvp';
 
 export default Route.extend(StackableRoute, {
   templateName: 'page',
@@ -9,6 +10,7 @@ export default Route.extend(StackableRoute, {
       id: params.page_id,
       isUnderMorePage: params.page_id > 2,
     };
+    let deferred, resolvedResult;
     switch(params.page_id) {
       case '1':
         result.pageTitle = 'Agenda';
@@ -30,6 +32,16 @@ export default Route.extend(StackableRoute, {
         result.slug = 'multi_track';
         result.hasMySchedule = true;
         break;
+      case '5':
+        result.pageTitle = "Slow loading page";
+        result.slug = 'rich_text';
+        result.hasMySchedule = false;
+
+        deferred = defer();
+        resolvedResult = result;
+        result = deferred.promise;
+        setTimeout(() => deferred.resolve(resolvedResult), 1);
+        break;
     }
     return result;
   },
@@ -47,6 +59,9 @@ export default Route.extend(StackableRoute, {
     },
     visitMySchedule() {
       this.transitionTo('my-schedule');
+    },
+    slowTransition() {
+      this.transitionTo('page', '4');
     },
     back() {
       let model = this.modelFor(this.routeName);

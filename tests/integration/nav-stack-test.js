@@ -31,6 +31,7 @@ module('Integration | Component | nav-stack', function(hooks) {
     this.set('pageModel', { id: '1', pageTitle: 'Page One' });
     this.set('trackModel', { id: '1', pageTitle: 'Track One' });
     this.set('scheduleItemModel', { id: '1' });
+    this.set('pageModel2', { id: '2', pageTitle: 'Page Two' });
     this.set('controller', {});
 
     this.renderNavStack = async function(hbs) {
@@ -347,6 +348,59 @@ module('Integration | Component | nav-stack', function(hooks) {
     `;
     test('it renders', async function(assert) {
       await this.renderNavStack(exampleHbs);
+      assert.dom('.NavStack-currentHeaderContainer .page-title').hasText('Page One');
+      assert.dom('.NavStack-item-1 h1').hasText('page 1');
+      assert.ok(isInViewport('.NavStack-item-1'), 'Item 1 is on screen');
+    });
+  });
+  module('nav stack renders, removed for loading screen, then renders to page under more', function() {
+    let exampleHbs = hbs`
+      {{#if shouldRenderNavStack}}
+        <div style="width:320px;height:480px;position:relative">
+          <NavStack
+              @layer={{0}}
+              @footer={{component 'tab-bar'}}
+              @back={{back}}
+          />
+        </div>
+      {{else}}
+        <div data-test-loading>Loading</div>
+      {{/if}}
+
+      {{#if showPageModel2}}
+        {{to-nav-stack
+          layer=0
+          item=(component 'test-components/page' model=pageModel2 controller=controller)
+          header=(component 'test-components/page/header' model=pageModel2 controller=controller)
+        }}
+      {{/if}}
+
+      {{#if showPageModel}}
+        {{to-nav-stack
+          layer=0
+          item=(component 'test-components/yapp/more' model=moreModel controller=controller)
+          header=(component 'test-components/yapp/more/header' model=moreModel controller=controller)
+        }}
+        {{to-nav-stack
+          layer=0
+          item=(component 'test-components/page' model=pageModel controller=controller)
+          header=(component 'test-components/page/header' model=pageModel controller=controller)
+        }}
+      {{/if}}
+    `;
+    test('it renders', async function(assert) {
+      await this.renderNavStack(exampleHbs);
+      this.set('showPageModel', false);
+      this.set('showPageModel2', true);
+      assert.dom('.NavStack-currentHeaderContainer .page-title').hasText('Page Two');
+      assert.dom('.NavStack-item-0 h1').hasText('page 2');
+      assert.ok(isInViewport('.NavStack-item-0'), 'Item 0 is on screen');
+      this.set('shouldRenderNavStack', false);
+      assert.notOk(isInViewport('.NavStack-item-0'), 'Item 0 is not screen');
+      assert.dom('[data-test-loading]').exists('Loading text displayed');
+      this.set('showPageModel', true);
+      this.set('showPageModel2', false);
+      this.set('shouldRenderNavStack', true);
       assert.dom('.NavStack-currentHeaderContainer .page-title').hasText('Page One');
       assert.dom('.NavStack-item-1 h1').hasText('page 1');
       assert.ok(isInViewport('.NavStack-item-1'), 'Item 1 is on screen');
