@@ -132,7 +132,7 @@ export default class NavStack extends Component {
       ]
     });
     let isInitialRender = this.navStacksService.isInitialRender;
-    scheduleOnce('afterRender', this, this.handleStackDepthChange, isInitialRender);
+    scheduleOnce('afterRender', this, this.handleStackDepthChange, isInitialRender, !isInitialRender);
     this._setupPanHandlerContext();
 
     let { hammer, gesture } = this;
@@ -149,17 +149,17 @@ export default class NavStack extends Component {
 
   @action
   stackItemsDidChange() {
-    this.handleStackDepthChange(false);
+    this.handleStackDepthChange(false, false);
   }
 
-  handleStackDepthChange(isInitialRender) {
+  handleStackDepthChange(isInitialRender, isRerender) {
     let stackItems = this.stackItems || [];
     let stackDepth = stackItems.length;
     let rootComponentRef = stackItems[0] && stackItems[0].component;
     let rootComponentKey = this.args.extractComponentKey ? this.args.extractComponentKey(rootComponentRef) : extractComponentKey(rootComponentRef);
 
     let layer = this.args.layer;
-    if (isInitialRender) {
+    if (isInitialRender || isRerender) {
       this.schedule(this.cut);
     }
 
