@@ -251,6 +251,7 @@ export default class NavStack extends Component {
 
   slideUp() {
     let debug = this.birdsEyeDebugging;
+    this.repositionX();
     this.verticalTransition({
       element: this.element,
       toValue: 0,
