@@ -352,4 +352,56 @@ module('Integration | Component | nav-stack', function(hooks) {
       assert.ok(isInViewport('.NavStack-item-1'), 'Item 1 is on screen');
     });
   });
+  module('nav stack is unrendered and rerendered for loading screen', function() {
+    let exampleHbs = hbs`
+      {{#if loading}}
+        <div data-test-loading>Loading</div>
+      {{else}}
+        {{#if shouldRenderNavStack}}
+          <div style="width:320px;height:480px;position:relative">
+            <NavStack
+                @layer={{0}}
+                @footer={{component 'tab-bar'}}
+                @back={{back}}
+            />
+          </div>
+        {{/if}}
+        {{to-nav-stack
+          layer=0
+          item=(component 'test-components/yapp/more' model=moreModel controller=controller)
+          header=(component 'test-components/yapp/more/header' model=moreModel controller=controller)
+        }}
+        {{to-nav-stack
+          layer=0
+          item=(component 'test-components/page' model=pageModel controller=controller)
+          header=(component 'test-components/page/header' model=pageModel controller=controller)
+        }}
+      {{/if}}
+    `;
+    test('it renders', async function(assert) {
+      this.set('loading', false);
+      await this.renderNavStack(exampleHbs);
+      await delay(500);
+      await settled();
+      assert.dom('.NavStack-item-0').exists();
+      assert.notOk(isInViewport('.NavStack-item-0'), 'Item 0 is off screen');
+      assert.dom('.NavStack-currentHeaderContainer .page-title').hasText('Page One');
+      assert.dom('.NavStack-item-1 h1').hasText('page 1');
+      assert.ok(isInViewport('.NavStack-item-1'), 'Item 1 is on screen');
+      this.set('loading', true);
+      await delay(500);
+      await settled();
+      assert.dom('[data-test-loading]').exists();
+      assert.dom('.NavStack-item-0').doesNotExist();
+      assert.dom('.NavStack-item-1').doesNotExist();
+      this.set('loading', false);
+      await delay(500);
+      await settled();
+      assert.dom('.NavStack-item-0').exists();
+      assert.notOk(isInViewport('.NavStack-item-0'), 'Item 0 is off screen');
+      assert.dom('.NavStack-currentHeaderContainer .page-title').hasText('Page One');
+      assert.dom('.NavStack-item-1 h1').hasText('page 1');
+      assert.ok(isInViewport('.NavStack-item-1'), 'Item 1 is on screen');
+    });
+  });
 });
