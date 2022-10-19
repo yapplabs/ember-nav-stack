@@ -1,6 +1,6 @@
 import { A } from '@ember/array';
 import Service from '@ember/service';
-import { cancel, run, next } from '@ember/runloop';
+import { run, next } from '@ember/runloop';
 import EmberObject from '@ember/object';
 import { Promise as EmberPromise } from 'rsvp';
 import { registerWaiter } from '@ember/test';
@@ -43,9 +43,6 @@ export default class NavStacks extends Service {
 
   unregister(layerContainerComponent) {
     this._listeners.removeObject(layerContainerComponent);
-    if (this._listeners.length === 0 && this._scheduledWork) {
-      cancel(this._scheduledWork);
-    }
   }
 
   notifyTransitionStart() {
@@ -87,7 +84,7 @@ export default class NavStacks extends Service {
   }
 
   _schedule() {
-    this._scheduledWork = run.scheduleOnce('afterRender', this, this._process);
+    run.scheduleOnce('afterRender', this, this._process);
   }
 
   _process() {
