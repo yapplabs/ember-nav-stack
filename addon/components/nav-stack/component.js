@@ -190,7 +190,11 @@ export default class NavStack extends Component {
   }
 
   schedule(method) {
-    scheduleOnce('afterRender', this, method);
+    scheduleOnce('afterRender', this, this.transition, method);
+  }
+
+  transition(method) {
+    method.call(this);
   }
 
   computeXPosition() {
