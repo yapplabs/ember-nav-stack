@@ -1,6 +1,6 @@
 /* eslint-disable ember/no-observers */
 import Component from '@glimmer/component';
-import { action, get } from '@ember/object';
+import { action } from '@ember/object';
 import { run, scheduleOnce } from '@ember/runloop';
 import { nextTick } from 'ember-nav-stack/utils/animation';
 import BackSwipeRecognizer from 'ember-nav-stack/utils/back-swipe-recognizer';
@@ -70,16 +70,6 @@ export default class NavStack extends Component {
   @service('nav-stacks') navStacksService;
   @service gesture;
 
-  constructor() {
-    super(...arguments);
-    this.navStacksService.register(this);
-  }
-
-  willDestroy() {
-    super.willDestroy(...arguments);
-    this.navStacksService.unregister(this);
-  }
-
   get layerIndexCssClass() {
     return `NavStack--layer${this.args.layer}`;
   }
@@ -99,7 +89,7 @@ export default class NavStack extends Component {
   }
 
   get stackItems(){
-    return get(this.navStacksService, `stacks.layer${this.args.layer}`) || [];
+    return this.navStacksService.stacks.get(`layer${this.args.layer}`);
   }
 
   @reads('stackItems.length') stackDepth;
@@ -107,6 +97,8 @@ export default class NavStack extends Component {
   @mapBy('stackItems', 'component') components;
 
   @bool('args.footer') hasFooter;
+
+  isRerender = true;
 
   get suppressAnimation() {
     if (this._suppressAnimation === undefined) {
@@ -120,7 +112,7 @@ export default class NavStack extends Component {
     stackItems: [],
     headers: [],
     elements: []
-  }
+  };
 
   @action
   setupHammer(el) {
@@ -131,10 +123,7 @@ export default class NavStack extends Component {
         [BackSwipeRecognizer]
       ]
     });
-    let isInitialRender = this.navStacksService.isInitialRender;
-    scheduleOnce('afterRender', this, this.handleStackDepthChange, isInitialRender, !isInitialRender);
     this._setupPanHandlerContext();
-
     let { hammer, gesture } = this;
     hammer.on('pan', this.handlePanEvent);
     gesture.register(this, hammer.get('pan'));
@@ -148,19 +137,17 @@ export default class NavStack extends Component {
   }
 
   @action
-  stackItemsDidChange() {
-    this.handleStackDepthChange(false, false);
-  }
-
-  handleStackDepthChange(isInitialRender, isRerender) {
+  handleStackDepthChange() {
     let stackItems = this.stackItems || [];
     let stackDepth = stackItems.length;
     let rootComponentRef = stackItems[0] && stackItems[0].component;
     let rootComponentKey = this.args.extractComponentKey ? this.args.extractComponentKey(rootComponentRef) : extractComponentKey(rootComponentRef);
-
     let layer = this.args.layer;
-    if (isInitialRender || isRerender) {
+
+    if (this.navStacksService.isInitialRender || this.isRerender) {
       this.schedule(this.cut);
+      this.isRerender = false;
+      this.navStacksService.isInitialRender = false;
     }
 
     else if (layer > 0 && stackDepth > 0 && this._stackDepth === 0 || this._stackDepth === undefined) {

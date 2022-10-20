@@ -3,7 +3,7 @@ import Helper from '@ember/component/helper';
 import { computed } from '@ember/object';
 import { observes } from '@ember-decorators/object';
 import { inject as service } from '@ember/service';
-export default class NavLayerIndices extends Helper {
+export default class NavLayerIndices extends Helper { // TODO DELETE
 
   @service
   navStacks;
