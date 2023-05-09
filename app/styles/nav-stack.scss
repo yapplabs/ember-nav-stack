@@ -44,7 +44,8 @@ $easing: cubic-bezier(.23, 1, .32, 1);
     top: 0;
     bottom: 0;
     box-sizing: border-box;
-    overflow:hidden;
+    overflow-x: hidden;
+    overflow-y: auto;
 
     &-0 {
       left: 0;
