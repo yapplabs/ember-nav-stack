@@ -1,7 +1,7 @@
 import { module, test } from 'qunit';
 import { setupRenderingTest } from 'ember-qunit';
 import hbs from 'htmlbars-inline-precompile';
-import { click, find, settled, waitUntil } from '@ember/test-helpers';
+import { click, find, render, settled, waitUntil } from '@ember/test-helpers';
 import { panX, panAlongPath } from 'ember-simulant-test-helpers';
 import delay from '../helpers/delay';
 import RSVP from 'rsvp';
@@ -34,7 +34,7 @@ module('Integration | Component | nav-stack', function(hooks) {
     this.set('controller', {});
 
     this.renderNavStack = async function(hbs) {
-      await this.render(hbs);
+      await render(hbs);
       let navStacksService = this.owner.lookup('service:nav-stacks');
       navStacksService.set('isInitialRender', true);
       this.set('shouldRenderNavStack', true);
@@ -118,7 +118,7 @@ module('Integration | Component | nav-stack', function(hooks) {
       assert.ok(isInViewport('.NavStack-item-1'), 'Item 1 is on screen');
     });
   });
-  module('drilled down two levels', function() {
+  module('drilled down two levels', function(hooks) {
     let exampleHbs = hbs`
       {{#if shouldRenderNavStack}}
         <div style="width:320px;height:480px;position:relative">

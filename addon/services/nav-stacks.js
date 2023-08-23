@@ -3,10 +3,13 @@ import Service from '@ember/service';
 import { run, next } from '@ember/runloop';
 import EmberObject from '@ember/object';
 import { Promise as EmberPromise } from 'rsvp';
-import { registerWaiter } from '@ember/test';
-import { DEBUG } from '@glimmer/env';
+import { buildWaiter } from '@ember/test-waiters';
+
+let waiter = buildWaiter('ember-nav-stack:transition-waiter');
 
 export default class NavStacks extends Service {
+  waiterToken;
+
   constructor() {
     super(...arguments);
     this.set('stacks', EmberObject.create());
@@ -15,11 +18,6 @@ export default class NavStacks extends Service {
     this._counter = 1;
     this._runningTransitions = 0;
     this.isInitialRender = true;
-    if (DEBUG) {
-      registerWaiter(this, function() {
-        return this._runningTransitions === 0;
-      });
-    }
   }
 
   pushItem(sourceId, layer, component, headerComponent) {
@@ -47,10 +45,17 @@ export default class NavStacks extends Service {
 
   notifyTransitionStart() {
     this._runningTransitions++;
+    if (this._runningTransitions === 1) {
+      this.waiterToken = waiter.beginAsync();
+    }
   }
 
   notifyTransitionEnd() {
     this._runningTransitions--;
+    if (this._runningTransitions === 0) {
+      waiter.endAsync(this.waiterToken);
+      this.waiterToken = undefined;
+    }
     next(() => {
       this._maybeResolveIdle();
     });

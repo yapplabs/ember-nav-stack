@@ -59,6 +59,8 @@ export default class NavStack extends Component {
     return this.args.birdsEyeDebugging || false;
   }
 
+  element;
+
   get elementId() {
     return guidFor(this);
   }

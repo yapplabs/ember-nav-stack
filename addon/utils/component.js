@@ -4,20 +4,39 @@ export function extractComponentKey(componentRef) {
   if (!componentRef) {
     return 'none';
   }
-  let result = componentRef.name || componentRef.inner.name;
-  if (componentRef.args.named.model) {
-    let model = componentRef.args.named.model.value();
-    if (model) {
-      result += `:${get(model, 'id')}`;
-    }
-  } else if (componentRef.args.named.has && componentRef.args.named.has('model')) {
-    let model = componentRef.args.named.get('model').value();
-    if (model) {
-      let modelId = get(model, 'id');
-      if (modelId) {
-        result += `:${modelId}`;
-      }
-    }
+  let result = getComponentRefName(componentRef);
+  let modelId = getComponentRefModelId(componentRef);
+  if (modelId) {
+    result += `:${modelId}`;
   }
   return result;
+}
+
+function getComponentRefName(componentRef) {
+  let componentRefInner =
+    componentRef.inner?.name ||
+    componentRef[
+      Object.getOwnPropertySymbols(componentRef).find(
+        (s) => s.description === 'INNER'
+      )
+    ];
+  let result = componentRef.name || componentRefInner?.name;
+  return result;
+}
+
+function getComponentRefModelId(componentRef) {
+  let componentRefArgs =
+    componentRef.args ||
+    componentRef[
+      Object.getOwnPropertySymbols(componentRef).find(
+        (s) => s.description === 'ARGS'
+      )
+    ];
+  if (componentRefArgs.named.has && componentRefArgs.named.has('model')) {
+    let model = componentRefArgs.named.get('model').value();
+    if (model) {
+      return model.id;
+    }
+  }
+  return;
 }
