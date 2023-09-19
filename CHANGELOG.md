@@ -1,3 +1,11 @@
+## v5.0.0 (2023-09-19)
+
+#### :rocket: Enhancement
+* [#70](https://github.com/yapplabs/ember-nav-stack/pull/70) Update to ember 3.24 ([@lukemelia](https://github.com/lukemelia))
+
+#### Committers: 1
+- Luke Melia ([@lukemelia](https://github.com/lukemelia))
+
 ## v4.3.3 (2021-02-08)
 
 ## v4.3.2 (2021-02-05)
