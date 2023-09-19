@@ -49,9 +49,9 @@ module.exports = async function () {
         name: 'ember-canary',
         npm: {
           devDependencies: {
-            'ember-source': await getChannelURL('canary')
-          }
-        }
+            'ember-source': await getChannelURL('canary'),
+          },
+        },
       },
       // The default `.travis.yml` runs this scenario via `npm test`,
       // not via `ember try`. It's still included here so that running
@@ -60,8 +60,8 @@ module.exports = async function () {
       {
         name: 'ember-default',
         npm: {
-          devDependencies: {}
-        }
+          devDependencies: {},
+        },
       },
       {
         name: 'ember-default-with-jquery',

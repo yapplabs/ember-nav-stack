@@ -21,11 +21,12 @@ export default class ToNavStack extends Component {
       guidFor(this),
       this.args.layer,
       this.args.item,
-      this.args.header
+      this.args.header,
     );
   }
 
   willDestroy() {
+    super.willDestroy(...arguments);
     this.service.removeItem(guidFor(this));
   }
 }

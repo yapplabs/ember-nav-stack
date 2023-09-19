@@ -12,8 +12,12 @@ export default class BackSwipeRecognizer extends Hammer.Pan {
     this.options = Object.assign({}, this.defaults, options || {});
     this.captureClick = (ev) => {
       ev.stopPropagation(); // Stop the click from being propagated.
-      this.manager.element.removeEventListener('click', this.captureClick, true);
-    }
+      this.manager.element.removeEventListener(
+        'click',
+        this.captureClick,
+        true,
+      );
+    };
   }
 
   defaults = {
@@ -22,14 +26,16 @@ export default class BackSwipeRecognizer extends Hammer.Pan {
     threshold: 10,
     pointers: 1,
     direction: DIRECTION_RIGHT,
-    validLeftAreaPercent: 33
+    validLeftAreaPercent: 33,
   };
 
   recognize(inputData) {
     if (inputData.isFirst) {
-      this.isInitialTouchInValidArea = this.checkInitialTouchInValidArea(inputData);
+      this.isInitialTouchInValidArea =
+        this.checkInitialTouchInValidArea(inputData);
     }
-    let isOverElementThatPreventsScrollingInteraction = this.shouldPreventScrollingInteraction(inputData);
+    let isOverElementThatPreventsScrollingInteraction =
+      this.shouldPreventScrollingInteraction(inputData);
     if (isOverElementThatPreventsScrollingInteraction) {
       this.manager.stop();
       return;
@@ -45,17 +51,25 @@ export default class BackSwipeRecognizer extends Hammer.Pan {
 
   shouldPreventScrollingInteraction(inputData) {
     let { target } = inputData;
-    return inputData.isFirst
-      && (target && target.tagName.match(FIELD_REGEXP)
-          || target && target.hasAttribute('data-prevent-scrolling')
-         );
+    return (
+      inputData.isFirst &&
+      ((target && target.tagName.match(FIELD_REGEXP)) ||
+        (target && target.hasAttribute('data-prevent-scrolling')))
+    );
   }
 
   captureGhostClickIfNeeded(inputData) {
-    if (inputData.srcEvent.type === 'mouseup' && (this.state & (Hammer.STATE_BEGAN))) {
+    if (
+      inputData.srcEvent.type === 'mouseup' &&
+      this.state & Hammer.STATE_BEGAN
+    ) {
       this.manager.element.addEventListener('click', this.captureClick, true);
       setTimeout(() => {
-        this.manager.element.removeEventListener('click', this.captureClick, true);
+        this.manager.element.removeEventListener(
+          'click',
+          this.captureClick,
+          true,
+        );
       }, 0);
     }
   }
@@ -73,11 +87,16 @@ export default class BackSwipeRecognizer extends Hammer.Pan {
       let testingEl = document.querySelector('#ember-testing');
       if (testingEl) {
         let minValidX = testingEl.getBoundingClientRect().left;
-        let maxValidX = minValidX + (testingEl.clientWidth * (this.options.validLeftAreaPercent/100));
-        return inputData.center.x >= minValidX && inputData.center.x <= maxValidX;
+        let maxValidX =
+          minValidX +
+          testingEl.clientWidth * (this.options.validLeftAreaPercent / 100);
+        return (
+          inputData.center.x >= minValidX && inputData.center.x <= maxValidX
+        );
       }
     }
-    let maxValidX = window.innerWidth * (this.options.validLeftAreaPercent/100);
+    let maxValidX =
+      window.innerWidth * (this.options.validLeftAreaPercent / 100);
     return inputData.center.x <= maxValidX;
   }
 }

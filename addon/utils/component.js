@@ -1,5 +1,3 @@
-import { get } from '@ember/object';
-
 export function extractComponentKey(componentRef) {
   if (!componentRef) {
     return 'none';
@@ -17,7 +15,7 @@ function getComponentRefName(componentRef) {
     componentRef.inner?.name ||
     componentRef[
       Object.getOwnPropertySymbols(componentRef).find(
-        (s) => s.description === 'INNER'
+        (s) => s.description === 'INNER',
       )
     ];
   let result = componentRef.name || componentRefInner?.name;
@@ -29,7 +27,7 @@ function getComponentRefModelId(componentRef) {
     componentRef.args ||
     componentRef[
       Object.getOwnPropertySymbols(componentRef).find(
-        (s) => s.description === 'ARGS'
+        (s) => s.description === 'ARGS',
       )
     ];
   if (componentRefArgs.named.has && componentRefArgs.named.has('model')) {

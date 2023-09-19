@@ -1,3 +1,6 @@
+/* eslint-disable ember/no-mixins */
+/* eslint-disable ember/no-actions-hash */
+/* eslint-disable ember/no-classic-classes */
 import Route from '@ember/routing/route';
 import StackableRoute from 'ember-nav-stack/mixins/stackable-route';
 import AnimationAwareMixin from 'dummy/mixins/animation-aware';
@@ -9,9 +12,9 @@ export default Route.extend(AnimationAwareMixin, StackableRoute, {
       slug: params.track_id,
       page,
       yapp: {
-        myScheduleEnabled: true
+        myScheduleEnabled: true,
       },
-      hasMySchedule: true
+      hasMySchedule: true,
     };
   },
   actions: {
@@ -20,6 +23,6 @@ export default Route.extend(AnimationAwareMixin, StackableRoute, {
     },
     visitMySchedule() {
       this.transitionTo('track.my-schedule');
-    }
-  }
+    },
+  },
 });

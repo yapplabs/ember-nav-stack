@@ -1,6 +1,8 @@
+/* eslint-disable ember/no-actions-hash */
+/* eslint-disable ember/no-mixins */
+/* eslint-disable ember/no-classic-classes */
 import Route from '@ember/routing/route';
 import StackableRoute from 'ember-nav-stack/mixins/stackable-route';
-import { get } from '@ember/object';
 
 export default Route.extend(StackableRoute, {
   templateName: 'page',
@@ -9,7 +11,7 @@ export default Route.extend(StackableRoute, {
       id: params.page_id,
       isUnderMorePage: params.page_id > 2,
     };
-    switch(params.page_id) {
+    switch (params.page_id) {
       case '1':
         result.pageTitle = 'Agenda';
         result.slug = 'schedule2';
@@ -50,11 +52,11 @@ export default Route.extend(StackableRoute, {
     },
     back() {
       let model = this.modelFor(this.routeName);
-      if (get(model, 'isUnderMorePage')) {
+      if (model.isUnderMorePage) {
         this.transitionTo('yapp.more');
       } else {
         this.transitionTo(this.getParentRouteName());
       }
-    }
-  }
+    },
+  },
 });

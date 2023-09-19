@@ -1,9 +1,13 @@
 import Route from '@ember/routing/route';
 
-export default Route.extend({
+export default class extends Route {
   beforeModel() {
-    document.addEventListener('touchmove', function(ev){
-      ev.preventDefault();
-    }, false)
+    document.addEventListener(
+      'touchmove',
+      function (ev) {
+        ev.preventDefault();
+      },
+      false,
+    );
   }
-});
+}

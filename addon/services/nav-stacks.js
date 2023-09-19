@@ -4,7 +4,7 @@ import { run, next } from '@ember/runloop';
 import EmberObject from '@ember/object';
 import { Promise as EmberPromise } from 'rsvp';
 import { buildWaiter } from '@ember/test-waiters';
-
+import { set } from '@ember/object';
 let waiter = buildWaiter('ember-nav-stack:transition-waiter');
 
 export default class NavStacks extends Service {
@@ -12,7 +12,7 @@ export default class NavStacks extends Service {
 
   constructor() {
     super(...arguments);
-    this.set('stacks', EmberObject.create());
+    set(this, 'stacks', EmberObject.create());
     this._listeners = A([]);
     this._itemsById = {};
     this._counter = 1;
@@ -25,7 +25,7 @@ export default class NavStacks extends Service {
       layer,
       component,
       headerComponent,
-      order: this._counter++
+      order: this._counter++,
     };
     this._schedule();
   }
@@ -69,12 +69,12 @@ export default class NavStacks extends Service {
     if (this._waitingPromise) {
       return this._waitingPromise;
     }
-    return this._waitingPromise = new EmberPromise((resolve) => {
+    return (this._waitingPromise = new EmberPromise((resolve) => {
       this._resolveWaiting = resolve;
       next(() => {
         this._maybeResolveIdle();
       });
-    });
+    }));
   }
 
   didUpdate() {} // hook
@@ -107,7 +107,7 @@ export default class NavStacks extends Service {
     for (var layerName in newStacks) {
       newStacks[layerName] = newStacks[layerName].sortBy('order');
     }
-    this.set('stacks', EmberObject.create(newStacks));
+    set(this, 'stacks', EmberObject.create(newStacks));
     if (this.isInitialRender === true) {
       run.next(this, this._clearIsInitialRender);
     }
@@ -119,6 +119,6 @@ export default class NavStacks extends Service {
     if (this.isDestroyed || this.isDestroying) {
       return;
     }
-    this.set('isInitialRender', false);
+    set(this, 'isInitialRender', false);
   }
 }
