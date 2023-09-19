@@ -20,7 +20,9 @@ export default class extends Service {
 
   unregister(component, recognizer) {
     let registry = this.#registry;
-    let registerable = registry.find(r => r.component === component && r.recognizer === recognizer);
+    let registerable = registry.find(
+      (r) => r.component === component && r.recognizer === recognizer,
+    );
     if (registerable) {
       registry.splice(registry.indexOf(registerable), 1);
     }

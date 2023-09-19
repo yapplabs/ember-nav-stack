@@ -14,7 +14,7 @@ import { setTransform } from 'ember-nav-stack/utils/animation';
 import { inject as service } from '@ember/service';
 import { bool, mapBy, reads } from 'macro-decorators';
 import { guidFor } from '@ember/object/internals';
-import { extractComponentKey } from 'ember-nav-stack/utils/component'
+import { extractComponentKey } from 'ember-nav-stack/utils/component';
 
 function currentTransitionPercentage(fromValue, toValue, currentValue) {
   if (fromValue === undefined || fromValue === toValue) {
@@ -27,7 +27,12 @@ function currentTransitionPercentage(fromValue, toValue, currentValue) {
   return percentage;
 }
 
-function styleHeaderElements(transitionRatio, isForward, currentHeaderElement, otherHeaderElement) {
+function styleHeaderElements(
+  transitionRatio,
+  isForward,
+  currentHeaderElement,
+  otherHeaderElement,
+) {
   let startingOffset = 60;
   if (!isForward) {
     transitionRatio = 1 - transitionRatio;
@@ -36,7 +41,10 @@ function styleHeaderElements(transitionRatio, isForward, currentHeaderElement, o
   let xOffset = transitionRatio * -1 * startingOffset;
   if (currentHeaderElement) {
     currentHeaderElement.style.opacity = transitionRatio;
-    setTransform(currentHeaderElement, `translateX(${startingOffset + xOffset}px)`);
+    setTransform(
+      currentHeaderElement,
+      `translateX(${startingOffset + xOffset}px)`,
+    );
   }
   if (otherHeaderElement) {
     otherHeaderElement.style.opacity = 1 - transitionRatio;
@@ -58,6 +66,8 @@ export default class NavStack extends Component {
   get birdsEyeDebugging() {
     return this.args.birdsEyeDebugging || false;
   }
+
+  element;
 
   get elementId() {
     return guidFor(this);
@@ -98,7 +108,7 @@ export default class NavStack extends Component {
     return this.stackItems[this.stackItems.length - 2].headerComponent;
   }
 
-  get stackItems(){
+  get stackItems() {
     return get(this.navStacksService, `stacks.layer${this.args.layer}`) || [];
   }
 
@@ -111,7 +121,10 @@ export default class NavStack extends Component {
   get suppressAnimation() {
     if (this._suppressAnimation === undefined) {
       const config = getOwner(this).resolveRegistration('config:environment');
-      this._suppressAnimation = config['ember-nav-stack'] && config['ember-nav-stack'].suppressAnimation;
+      // eslint-disable-next-line ember/no-side-effects
+      this._suppressAnimation =
+        config['ember-nav-stack'] &&
+        config['ember-nav-stack'].suppressAnimation;
     }
     return this._suppressAnimation;
   }
@@ -119,20 +132,23 @@ export default class NavStack extends Component {
   clones = {
     stackItems: [],
     headers: [],
-    elements: []
-  }
+    elements: [],
+  };
 
   @action
   setupHammer(el) {
     this.element = el;
     this.hammer = new Hammer.Manager(this.element, {
       inputClass: Hammer.TouchMouseInput,
-      recognizers: [
-        [BackSwipeRecognizer]
-      ]
+      recognizers: [[BackSwipeRecognizer]],
     });
     let isInitialRender = this.navStacksService.isInitialRender;
-    scheduleOnce('afterRender', this, this.handleStackDepthChange, isInitialRender);
+    scheduleOnce(
+      'afterRender',
+      this,
+      this.handleStackDepthChange,
+      isInitialRender,
+    );
     this._setupPanHandlerContext();
 
     let { hammer, gesture } = this;
@@ -141,7 +157,7 @@ export default class NavStack extends Component {
   }
 
   @action
-  tearDownHammer(){
+  tearDownHammer() {
     let { hammer, gesture } = this;
     gesture.unregister(this, hammer.get('pan'));
     hammer.off('pan');
@@ -156,30 +172,28 @@ export default class NavStack extends Component {
     let stackItems = this.stackItems || [];
     let stackDepth = stackItems.length;
     let rootComponentRef = stackItems[0] && stackItems[0].component;
-    let rootComponentKey = this.args.extractComponentKey ? this.args.extractComponentKey(rootComponentRef) : extractComponentKey(rootComponentRef);
+    let rootComponentKey = this.args.extractComponentKey
+      ? this.args.extractComponentKey(rootComponentRef)
+      : extractComponentKey(rootComponentRef);
 
     let layer = this.args.layer;
     if (isInitialRender) {
       this.schedule(this.cut);
-    }
-
-    else if (layer > 0 && stackDepth > 0 && this._stackDepth === 0 || this._stackDepth === undefined) {
+    } else if (
+      (layer > 0 && stackDepth > 0 && this._stackDepth === 0) ||
+      this._stackDepth === undefined
+    ) {
       this.schedule(this.slideUp);
-    }
-
-    else if (layer > 0 && stackDepth === 0 && this._stackDepth > 0) {
+    } else if (layer > 0 && stackDepth === 0 && this._stackDepth > 0) {
       this.cloneElement();
       this.element.style.display = 'none';
       this.schedule(this.slideDown);
-
     } else if (rootComponentKey !== this._rootComponentKey) {
       this.schedule(this.cut);
-
     } else if (stackDepth < this._stackDepth) {
       this.cloneLastStackItem();
       this.cloneHeader();
       this.schedule(this.slideBack);
-
     } else if (stackDepth > this._stackDepth) {
       this.cloneHeader();
       this.schedule(this.slideForward);
@@ -198,7 +212,9 @@ export default class NavStack extends Component {
     if (stackDepth === 0) {
       return 0;
     }
-    let currentStackItemElement = this.element.querySelector('.NavStack-item:last-child');
+    let currentStackItemElement = this.element.querySelector(
+      '.NavStack-item:last-child',
+    );
     if (!currentStackItemElement) {
       return 0;
     }
@@ -210,7 +226,9 @@ export default class NavStack extends Component {
 
   @action
   repositionX() {
-    let itemContainerElement = this.element.querySelector('.NavStack-itemContainer');
+    let itemContainerElement = this.element.querySelector(
+      '.NavStack-itemContainer',
+    );
     let newX = this.computeXPosition();
     setTransform(itemContainerElement, `translateX(${newX}px)`);
   }
@@ -218,14 +236,14 @@ export default class NavStack extends Component {
   cut() {
     this.horizontalTransition({
       toValue: this.computeXPosition(),
-      animate: false
+      animate: false,
     });
 
-    if (this.args.layer > 0 & this.stackDepth > 0) {
+    if ((this.args.layer > 0) & (this.stackDepth > 0)) {
       this.verticalTransition({
         element: this.element,
         toValue: 0,
-        animate: false
+        animate: false,
       });
     }
   }
@@ -235,7 +253,7 @@ export default class NavStack extends Component {
       toValue: this.computeXPosition(),
       finishCallback: () => {
         this.removeClonedHeader();
-      }
+      },
     });
   }
 
@@ -245,7 +263,7 @@ export default class NavStack extends Component {
       finishCallback: () => {
         this.removeClonedStackItem();
         this.removeClonedHeader();
-      }
+      },
     });
   }
 
@@ -254,7 +272,7 @@ export default class NavStack extends Component {
     this.verticalTransition({
       element: this.element,
       toValue: 0,
-      fromValue: debug ? 480 : this.element.getBoundingClientRect().height
+      fromValue: debug ? 480 : this.element.getBoundingClientRect().height,
     });
   }
 
@@ -268,15 +286,26 @@ export default class NavStack extends Component {
         toValue: y,
         finishCallback: () => {
           this.removeClonedElement();
-        }
+        },
       });
     });
   }
 
-  horizontalTransition({ toValue, fromValue, animate=!this.suppressAnimation, finishCallback }) {
-    let itemContainerElement = this.element.querySelector('.NavStack-itemContainer');
-    let currentHeaderElement = this.element.querySelector('.NavStack-currentHeaderContainer');
-    let clonedHeaderElement = this.element.querySelector('.NavStack-clonedHeaderContainer');
+  horizontalTransition({
+    toValue,
+    fromValue,
+    animate = !this.suppressAnimation,
+    finishCallback,
+  }) {
+    let itemContainerElement = this.element.querySelector(
+      '.NavStack-itemContainer',
+    );
+    let currentHeaderElement = this.element.querySelector(
+      '.NavStack-currentHeaderContainer',
+    );
+    let clonedHeaderElement = this.element.querySelector(
+      '.NavStack-clonedHeaderContainer',
+    );
 
     this.transitionDidBegin();
     this.notifyTransitionStart();
@@ -286,7 +315,7 @@ export default class NavStack extends Component {
         currentTransitionPercentage(fromValue, toValue, toValue),
         fromValue === undefined || fromValue > toValue,
         currentHeaderElement,
-        clonedHeaderElement
+        clonedHeaderElement,
       );
       this.notifyTransitionEnd();
       this.transitionDidEnd();
@@ -301,23 +330,32 @@ export default class NavStack extends Component {
         return;
       }
       let spring = this._createSpring({ fromValue, toValue });
-      spring.onUpdate((s) => {
-        setTransform(itemContainerElement, `translateX(${s.currentValue}px)`);
-        styleHeaderElements(
-          currentTransitionPercentage(fromValue, toValue, s.currentValue),
-          fromValue > toValue,
-          currentHeaderElement,
-          clonedHeaderElement
-        );
-      }).onStop(() => {
-        run(finish);
-      }).start();
+      spring
+        .onUpdate((s) => {
+          setTransform(itemContainerElement, `translateX(${s.currentValue}px)`);
+          styleHeaderElements(
+            currentTransitionPercentage(fromValue, toValue, s.currentValue),
+            fromValue > toValue,
+            currentHeaderElement,
+            clonedHeaderElement,
+          );
+        })
+        .onStop(() => {
+          run(finish);
+        })
+        .start();
       return;
     }
     run(finish);
   }
 
-  verticalTransition({ element, toValue, fromValue, animate=!this.suppressAnimation, finishCallback }) {
+  verticalTransition({
+    element,
+    toValue,
+    fromValue,
+    animate = !this.suppressAnimation,
+    finishCallback,
+  }) {
     this.transitionDidBegin();
     this.notifyTransitionStart();
     let finish = () => {
@@ -335,24 +373,27 @@ export default class NavStack extends Component {
         return;
       }
       let spring = this._createSpring({ fromValue, toValue });
-      spring.onUpdate((s) => {
-        setTransform(element, `translateY(${s.currentValue}px)`);
-      }).onStop(() => {
-        run(finish);
-      }).start();
+      spring
+        .onUpdate((s) => {
+          setTransform(element, `translateY(${s.currentValue}px)`);
+        })
+        .onStop(() => {
+          run(finish);
+        })
+        .start();
       return;
     }
     run(finish);
   }
 
-  _createSpring({ initialVelocity=0, fromValue, toValue }) {
+  _createSpring({ initialVelocity = 0, fromValue, toValue }) {
     return new Spring({
       initialVelocity,
       fromValue,
       toValue,
       stiffness: 1000,
       damping: 500,
-      mass: 3
+      mass: 3,
     });
   }
 
@@ -360,12 +401,12 @@ export default class NavStack extends Component {
     this.hammer.get('pan').set({ enable: false });
   }
 
-  transitionDidBegin(){
+  transitionDidBegin() {
     this.disablePanRecognizer();
   }
 
-  transitionDidEnd(){
-    if (this._currentStackItemElement)  {
+  transitionDidEnd() {
+    if (this._currentStackItemElement) {
       this.disablePanRecognizer();
     }
     if (!this.element || this.stackDepth <= 1) {
@@ -383,11 +424,18 @@ export default class NavStack extends Component {
   }
 
   _setupPanHandlerContext() {
-    this.containerElement = this.element.querySelector('.NavStack-itemContainer');
-    this.currentHeaderElement = this.element.querySelector('.NavStack-currentHeaderContainer');
-    this.parentHeaderElement = this.element.querySelector('.NavStack-parentItemHeaderContainer');
+    this.containerElement = this.element.querySelector(
+      '.NavStack-itemContainer',
+    );
+    this.currentHeaderElement = this.element.querySelector(
+      '.NavStack-currentHeaderContainer',
+    );
+    this.parentHeaderElement = this.element.querySelector(
+      '.NavStack-parentItemHeaderContainer',
+    );
     this.startingX = this.getX(this.containerElement);
-    let currentStackItemElement = this._currentStackItemElement = this.element.querySelector('.NavStack-item:last-child');
+    let currentStackItemElement = (this._currentStackItemElement =
+      this.element.querySelector('.NavStack-item:last-child'));
     if (!currentStackItemElement) {
       return;
     }
@@ -403,15 +451,26 @@ export default class NavStack extends Component {
     if (this._activeSpring) {
       return;
     }
-    setTransform(this.containerElement, `translateX(${this.startingX + ev.deltaX}px)`);
+    setTransform(
+      this.containerElement,
+      `translateX(${this.startingX + ev.deltaX}px)`,
+    );
     styleHeaderElements(
-      currentTransitionPercentage(this.startingX, this.backX, this.startingX + ev.deltaX),
+      currentTransitionPercentage(
+        this.startingX,
+        this.backX,
+        this.startingX + ev.deltaX,
+      ),
       true,
       this.currentHeaderElement,
-      this.parentHeaderElement
+      this.parentHeaderElement,
     );
 
-    let transitionRatio = currentTransitionPercentage(this.startingX, this.backX, this.startingX + ev.deltaX);
+    let transitionRatio = currentTransitionPercentage(
+      this.startingX,
+      this.backX,
+      this.startingX + ev.deltaX,
+    );
     if (this.currentHeaderElement) {
       this.currentHeaderElement.style.opacity = transitionRatio;
     }
@@ -424,7 +483,8 @@ export default class NavStack extends Component {
   }
 
   handlePanEnd(ev) {
-    let shouldNavigateBack = this.adjustX(ev.center.x) >= this.thresholdX && this.canNavigateBack;
+    let shouldNavigateBack =
+      this.adjustX(ev.center.x) >= this.thresholdX && this.canNavigateBack;
     let initialVelocity = ev.velocityX;
     let fromValue = this.startingX + ev.deltaX;
     let toValue = shouldNavigateBack ? this.backX : this.startingX;
@@ -435,16 +495,20 @@ export default class NavStack extends Component {
           currentTransitionPercentage(this.startingX, this.backX, this.backX),
           false,
           this.parentHeaderElement,
-          this.currentHeaderElement
+          this.currentHeaderElement,
         );
         run(this.args, this.args.back);
       } else {
         setTransform(this.containerElement, `translateX(${this.startingX}px)`);
         styleHeaderElements(
-          currentTransitionPercentage(this.startingX, this.backX, this.startingX),
+          currentTransitionPercentage(
+            this.startingX,
+            this.backX,
+            this.startingX,
+          ),
           false,
           this.parentHeaderElement,
-          this.currentHeaderElement
+          this.currentHeaderElement,
         );
       }
       if (this.currentHeaderElement) {
@@ -464,27 +528,39 @@ export default class NavStack extends Component {
     }
     let spring = this._createSpring({ initialVelocity, fromValue, toValue });
     this._activeSpring = spring;
-    spring.onUpdate((s) => {
-      setTransform(this.containerElement, `translateX(${s.currentValue}px)`);
-      styleHeaderElements(
-        currentTransitionPercentage(this.startingX, this.backX, s.currentValue),
-        false,
-        this.parentHeaderElement,
-        this.currentHeaderElement
-      );
-      if (!shouldNavigateBack && s.currentValue >= this.startingX + this.thresholdX) {
-        shouldNavigateBack = true;
-        spring.updateConfig({
-          toValue: this.backX
-        });
-      }
-    }).onStop(() => {
-      finalize();
-    }).start();
+    spring
+      .onUpdate((s) => {
+        setTransform(this.containerElement, `translateX(${s.currentValue}px)`);
+        styleHeaderElements(
+          currentTransitionPercentage(
+            this.startingX,
+            this.backX,
+            s.currentValue,
+          ),
+          false,
+          this.parentHeaderElement,
+          this.currentHeaderElement,
+        );
+        if (
+          !shouldNavigateBack &&
+          s.currentValue >= this.startingX + this.thresholdX
+        ) {
+          shouldNavigateBack = true;
+          spring.updateConfig({
+            toValue: this.backX,
+          });
+        }
+      })
+      .onStop(() => {
+        finalize();
+      })
+      .start();
   }
 
   cloneLastStackItem() {
-    let clone = this.element.querySelector('.NavStack-item:last-child').cloneNode(true);
+    let clone = this.element
+      .querySelector('.NavStack-item:last-child')
+      .cloneNode(true);
     this.clones.stackItems.push(clone);
     clone.setAttribute('id', `${this.elementId}_clonedStackItem`);
     this.attachClonedStackItem(clone);
@@ -492,7 +568,9 @@ export default class NavStack extends Component {
 
   cloneHeader() {
     this.removeClonedHeader();
-    let liveHeader = this.element.querySelector('.NavStack-currentHeaderContainer');
+    let liveHeader = this.element.querySelector(
+      '.NavStack-currentHeaderContainer',
+    );
     if (!liveHeader) {
       return;
     }
@@ -527,21 +605,24 @@ export default class NavStack extends Component {
 
   removeClonedHeader() {
     var clonedHeader;
-    while (clonedHeader = this.clones.headers.pop()) { //eslint-disable-line no-cond-assign
+    while ((clonedHeader = this.clones.headers.pop())) {
+      //eslint-disable-line no-cond-assign
       clonedHeader.parentNode.removeChild(clonedHeader);
     }
   }
 
   removeClonedStackItem() {
     var clonedStackItem;
-    while (clonedStackItem = this.clones.stackItems.pop()) { //eslint-disable-line no-cond-assign
+    while ((clonedStackItem = this.clones.stackItems.pop())) {
+      //eslint-disable-line no-cond-assign
       clonedStackItem.parentNode.removeChild(clonedStackItem);
     }
   }
 
   removeClonedElement() {
     var clonedElement;
-    while (clonedElement = this.clones.elements.pop()) { //eslint-disable-line no-cond-assign
+    while ((clonedElement = this.clones.elements.pop())) {
+      //eslint-disable-line no-cond-assign
       clonedElement.parentNode.removeChild(clonedElement);
     }
   }

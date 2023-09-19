@@ -3,23 +3,21 @@ import Service from '@ember/service';
 import { run, next } from '@ember/runloop';
 import EmberObject from '@ember/object';
 import { Promise as EmberPromise } from 'rsvp';
-import { registerWaiter } from '@ember/test';
-import { DEBUG } from '@glimmer/env';
+import { buildWaiter } from '@ember/test-waiters';
+import { set } from '@ember/object';
+let waiter = buildWaiter('ember-nav-stack:transition-waiter');
 
 export default class NavStacks extends Service {
+  waiterToken;
+
   constructor() {
     super(...arguments);
-    this.set('stacks', EmberObject.create());
+    set(this, 'stacks', EmberObject.create());
     this._listeners = A([]);
     this._itemsById = {};
     this._counter = 1;
     this._runningTransitions = 0;
     this.isInitialRender = true;
-    if (DEBUG) {
-      registerWaiter(this, function() {
-        return this._runningTransitions === 0;
-      });
-    }
   }
 
   pushItem(sourceId, layer, component, headerComponent) {
@@ -27,7 +25,7 @@ export default class NavStacks extends Service {
       layer,
       component,
       headerComponent,
-      order: this._counter++
+      order: this._counter++,
     };
     this._schedule();
   }
@@ -47,10 +45,17 @@ export default class NavStacks extends Service {
 
   notifyTransitionStart() {
     this._runningTransitions++;
+    if (this._runningTransitions === 1) {
+      this.waiterToken = waiter.beginAsync();
+    }
   }
 
   notifyTransitionEnd() {
     this._runningTransitions--;
+    if (this._runningTransitions === 0) {
+      waiter.endAsync(this.waiterToken);
+      this.waiterToken = undefined;
+    }
     next(() => {
       this._maybeResolveIdle();
     });
@@ -64,12 +69,12 @@ export default class NavStacks extends Service {
     if (this._waitingPromise) {
       return this._waitingPromise;
     }
-    return this._waitingPromise = new EmberPromise((resolve) => {
+    return (this._waitingPromise = new EmberPromise((resolve) => {
       this._resolveWaiting = resolve;
       next(() => {
         this._maybeResolveIdle();
       });
-    });
+    }));
   }
 
   didUpdate() {} // hook
@@ -102,7 +107,7 @@ export default class NavStacks extends Service {
     for (var layerName in newStacks) {
       newStacks[layerName] = newStacks[layerName].sortBy('order');
     }
-    this.set('stacks', EmberObject.create(newStacks));
+    set(this, 'stacks', EmberObject.create(newStacks));
     if (this.isInitialRender === true) {
       run.next(this, this._clearIsInitialRender);
     }
@@ -114,6 +119,6 @@ export default class NavStacks extends Service {
     if (this.isDestroyed || this.isDestroying) {
       return;
     }
-    this.set('isInitialRender', false);
+    set(this, 'isInitialRender', false);
   }
 }

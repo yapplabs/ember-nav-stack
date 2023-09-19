@@ -5,6 +5,6 @@ import Mixin from '@ember/object/mixin';
 export default Mixin.create({
   navStacks: service(),
   isRunningTransitions() {
-    return this.get('navStacks').runningTransitions() > 0;
-  }
+    return this.navStacks.runningTransitions() > 0;
+  },
 });

@@ -1,3 +1,6 @@
+/* eslint-disable ember/no-actions-hash */
+/* eslint-disable ember/no-classic-classes */
+/* eslint-disable ember/no-mixins */
 import Route from '@ember/routing/route';
 import StackableRoute from 'ember-nav-stack/mixins/stackable-route';
 import AnimationAwareMixin from 'dummy/mixins/animation-aware';
@@ -10,8 +13,8 @@ export default Route.extend(AnimationAwareMixin, StackableRoute, {
       slug: params.schedule_item_id,
       page,
       yapp: {
-        myScheduleEnabled: true
-      }
+        myScheduleEnabled: true,
+      },
     };
   },
   actions: {
@@ -30,6 +33,6 @@ export default Route.extend(AnimationAwareMixin, StackableRoute, {
       }
       console.log('LOGGING BEFORE GOING TO RATING. THIS ACTION SHOULD NOT RUN IF ANIMATED TRANSITION HAS STARTED'); // eslint-disable-line
       this.transitionTo(`${this.routeName}.rating-form`);
-    }
-  }
+    },
+  },
 });
