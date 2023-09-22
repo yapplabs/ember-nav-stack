@@ -1,20 +1,16 @@
-/* eslint-disable ember/no-actions-hash */
-/* eslint-disable ember/no-mixins */
-/* eslint-disable ember/no-classic-classes */
-import Route from '@ember/routing/route';
-import StackableRoute from 'ember-nav-stack/mixins/stackable-route';
+import StackableRoute from 'ember-nav-stack/routes/stackable-route';
+import { action } from '@ember/object';
 
-export default Route.extend(StackableRoute, {
-  newLayer: true,
-  routableTemplateName: 'my-schedule',
+export default class extends StackableRoute {
+  newLayer = true;
+  routableTemplateName = 'my-schedule';
   model() {
     return {
       slug: 'my-schedule',
     };
-  },
-  actions: {
-    drillDownToScheduleItem(scheduleItem) {
-      this.transitionTo(`${this.routeName}.schedule-item`, scheduleItem);
-    },
-  },
-});
+  }
+  @action
+  drillDownToScheduleItem(scheduleItem) {
+    this.router.transitionTo(`${this.routeName}.schedule-item`, scheduleItem);
+  }
+}

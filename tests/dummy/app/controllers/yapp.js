@@ -1,23 +1,18 @@
-/* eslint-disable ember/no-classic-classes */
-import { set } from '@ember/object';
 import Controller from '@ember/controller';
 import config from 'dummy/config/environment';
-import { computed } from '@ember/object';
+import { tracked } from '@glimmer/tracking';
 
-export default Controller.extend({
-  queryParams: ['debug'],
-  debug: computed('_debug', {
-    get() {
-      return this._debug;
-    },
-    set(key, val) {
-      set(this, '_debug', val);
-      this.set('birdsEyeDebugging', !!val);
-      return this._debug;
-    },
-  }),
-  init() {
-    this._super(...arguments);
-    this.set('birdsEyeDebugging', !!config.BIRDS_EYE_DEBUGGING);
-  },
-});
+export default class extends Controller {
+  @tracked birdsEyeDebugging = !!config.BIRDS_EYE_DEBUGGING;
+  @tracked _debug = false;
+
+  queryParams = ['debug'];
+
+  get debug() {
+    return this._debug;
+  }
+  set debug(val) {
+    this._debug = val;
+    this.birdsEyeDebugging = !!val;
+  }
+}

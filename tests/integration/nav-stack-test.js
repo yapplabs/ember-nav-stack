@@ -9,25 +9,9 @@ import {
   getElementInViewportRatio,
   isInViewport,
 } from 'ember-nav-stack/test-support/in-viewport';
-import { helper } from '@ember/component/helper';
-
-function overrideRouteActions(hooks, actions) {
-  hooks.beforeEach(function () {
-    this.owner.__registry__.registrations['helper:route-action'] = helper(
-      (arg) => {
-        return this.routeActions[arg];
-      },
-    );
-
-    this.routeActions = actions;
-  });
-}
 
 module('Integration | Component | nav-stack', function (hooks) {
   setupRenderingTest(hooks);
-  overrideRouteActions(hooks, {
-    back() {},
-  });
 
   hooks.beforeEach(async function () {
     this.set('shouldRenderNavStack', false);
@@ -47,19 +31,19 @@ module('Integration | Component | nav-stack', function (hooks) {
 
   module('top level page', function () {
     let exampleHbs = hbs`
-      {{#if shouldRenderNavStack}}
+      {{#if this.shouldRenderNavStack}}
         <div style="width:320px;height:480px;position:relative">
           <NavStack
               @layer={{0}}
               @footer={{component 'tab-bar'}}
-              @back={{back}}
+              @back={{this.back}}
           />
         </div>
       {{/if}}
       {{to-nav-stack
         layer=0
-        item=(component 'test-components/page' model=pageModel controller=controller)
-        header=(component 'test-components/page/header' model=pageModel controller=controller)
+        item=(component 'test-components/page' model=this.pageModel controller=this.controller)
+        header=(component 'test-components/page/header' model=this.pageModel controller=this.controller)
       }}
     `;
     test('it renders', async function (assert) {
@@ -73,19 +57,19 @@ module('Integration | Component | nav-stack', function (hooks) {
   });
   module('more page', function () {
     let exampleHbs = hbs`
-      {{#if shouldRenderNavStack}}
+      {{#if this.shouldRenderNavStack}}
         <div style="width:320px;height:480px;position:relative">
           <NavStack
               @layer={{0}}
               @footer={{component 'tab-bar'}}
-              @back={{back}}
+              @back={{this.back}}
           />
         </div>
       {{/if}}
       {{to-nav-stack
         layer=0
-        item=(component 'test-components/yapp/more' model=moreModel controller=controller)
-        header=(component 'test-components/yapp/more/header' model=moreModel controller=controller)
+        item=(component 'test-components/yapp/more' model=this.moreModel controller=this.controller)
+        header=(component 'test-components/yapp/more/header' model=this.moreModel controller=this.controller)
       }}
     `;
     test('it renders', async function (assert) {
@@ -99,24 +83,24 @@ module('Integration | Component | nav-stack', function (hooks) {
   });
   module('drilled down one level', function () {
     let exampleHbs = hbs`
-      {{#if shouldRenderNavStack}}
+      {{#if this.shouldRenderNavStack}}
         <div style="width:320px;height:480px;position:relative">
           <NavStack
               @layer={{0}}
               @footer={{component 'tab-bar'}}
-              @back={{back}}
+              @back={{this.back}}
           />
         </div>
       {{/if}}
       {{to-nav-stack
         layer=0
-        item=(component 'test-components/page' model=pageModel controller=controller)
-        header=(component 'test-components/page/header' model=pageModel controller=controller)
+        item=(component 'test-components/page' model=this.pageModel controller=this.controller)
+        header=(component 'test-components/page/header' model=this.pageModel controller=this.controller)
       }}
       {{to-nav-stack
         layer=0
-        item=(component 'test-components/track' model=trackModel controller=controller)
-        header=(component 'test-components/track/header' model=trackModel controller=controller)
+        item=(component 'test-components/track' model=this.trackModel controller=this.controller)
+        header=(component 'test-components/track/header' model=this.trackModel controller=this.controller)
       }}
     `;
     test('it renders', async function (assert) {
@@ -130,30 +114,30 @@ module('Integration | Component | nav-stack', function (hooks) {
   });
   module('drilled down two levels', function (hooks) {
     let exampleHbs = hbs`
-      {{#if shouldRenderNavStack}}
+      {{#if this.shouldRenderNavStack}}
         <div style="width:320px;height:480px;position:relative">
           <NavStack
               @layer={{0}}
               @footer={{component 'tab-bar'}}
-              @back={{back}}
+              @back={{this.back}}
           />
         </div>
       {{/if}}
       {{to-nav-stack
         layer=0
-        item=(component 'test-components/page' model=pageModel controller=controller)
-        header=(component 'test-components/page/header' model=pageModel controller=controller)
+        item=(component 'test-components/page' model=this.pageModel controller=this.controller)
+        header=(component 'test-components/page/header' model=this.pageModel controller=this.controller)
       }}
       {{to-nav-stack
         layer=0
-        item=(component 'test-components/track' model=trackModel controller=controller)
-        header=(component 'test-components/track/header' model=trackModel controller=controller)
+        item=(component 'test-components/track' model=this.trackModel controller=this.controller)
+        header=(component 'test-components/track/header' model=this.trackModel controller=this.controller)
       }}
-      {{#if isThirdLevelShowing}}
+      {{#if this.isThirdLevelShowing}}
         {{to-nav-stack
           layer=0
-          item=(component 'test-components/schedule-item' model=scheduleItemModel controller=controller)
-          header=(component 'test-components/schedule-item/header' model=scheduleItemModel controller=controller back=back)
+          item=(component 'test-components/schedule-item' model=this.scheduleItemModel controller=this.controller)
+          header=(component 'test-components/schedule-item/header' model=this.scheduleItemModel controller=this.controller back=this.back)
         }}
       {{/if}}
     `;
@@ -172,14 +156,14 @@ module('Integration | Component | nav-stack', function (hooks) {
     });
     test('back button from level 3 to level 2', async function (assert) {
       await this.renderNavStack(exampleHbs);
-      assert.ok(!isInViewport('.NavStack-item-1'), 'Item 1 is off screen');
+      assert.notOk(isInViewport('.NavStack-item-1'), 'Item 1 is off screen');
       await click('.NavStack-currentHeaderContainer .back-button');
       assert.ok(isInViewport('.NavStack-item-1'), 'Item 1 is on screen');
       assert.dom('.NavStack-item-2').doesNotExist();
     });
     test('back swipe from level 3 to level 2', async function (assert) {
       await this.renderNavStack(exampleHbs);
-      assert.ok(!isInViewport('.NavStack-item-1'), 'Item 1 is off screen');
+      assert.notOk(isInViewport('.NavStack-item-1'), 'Item 1 is off screen');
       await panX(find('.NavStack-item-2'), {
         position: [50, 100],
         amount: 170,
@@ -191,7 +175,7 @@ module('Integration | Component | nav-stack', function (hooks) {
     });
     test('partial back swipe from level 3 (not enough to snap to level 2)', async function (assert) {
       await this.renderNavStack(exampleHbs);
-      assert.ok(!isInViewport('.NavStack-item-1'), 'Item 1 is off screen');
+      assert.notOk(isInViewport('.NavStack-item-1'), 'Item 1 is off screen');
       let mouseUpDeferred = RSVP.defer();
       let panXPromise = panX(find('.NavStack-item-2'), {
         position: [50, 100],
@@ -203,12 +187,12 @@ module('Integration | Component | nav-stack', function (hooks) {
       mouseUpDeferred.resolve();
       await panXPromise;
       await settled();
-      assert.ok(!isInViewport('.NavStack-item-1'), 'Item 1 is off screen');
+      assert.notOk(isInViewport('.NavStack-item-1'), 'Item 1 is off screen');
       assert.ok(isInViewport('.NavStack-item-2'), 'Item 2 is on screen');
     });
     test('partial back swipe from level 3, during animation, additional swipe is ignored', async function (assert) {
       await this.renderNavStack(exampleHbs);
-      assert.ok(!isInViewport('.NavStack-item-1'), 'Item 1 is off screen');
+      assert.notOk(isInViewport('.NavStack-item-1'), 'Item 1 is off screen');
       let firstMouseUpDeferred = RSVP.defer();
       let panXPromise = panX(find('.NavStack-item-2'), {
         position: [50, 100],
@@ -230,15 +214,15 @@ module('Integration | Component | nav-stack', function (hooks) {
       secondMouseUpDeferred.resolve();
       await panXPromise;
       await settled();
-      assert.ok(
-        !isInViewport('.NavStack-item-1'),
+      assert.notOk(
+        isInViewport('.NavStack-item-1'),
         'Item 1 is still off screen',
       );
       assert.ok(isInViewport('.NavStack-item-2'), 'Item 2 is on screen');
     });
     test('partial back swipe from level 3, then user trying to swipe again near end', async function (assert) {
       await this.renderNavStack(exampleHbs);
-      assert.ok(!isInViewport('.NavStack-item-1'), 'Item 1 is off screen');
+      assert.notOk(isInViewport('.NavStack-item-1'), 'Item 1 is off screen');
       panX(find('.NavStack-item-2'), {
         position: [50, 100],
         amount: 200,
@@ -262,9 +246,8 @@ module('Integration | Component | nav-stack', function (hooks) {
         }
         return !find('.NavStack-item-2');
       });
-      assert.equal(
+      assert.false(
         elementReanimated,
-        false,
         'should not show another swipe animation',
       );
       await delay(50);
@@ -274,7 +257,7 @@ module('Integration | Component | nav-stack', function (hooks) {
     });
     test('partial back swipe from level 3 and then return exactly to original position, then swipe back', async function (assert) {
       await this.renderNavStack(exampleHbs);
-      assert.ok(!isInViewport('.NavStack-item-1'), 'Item 1 is off screen');
+      assert.notOk(isInViewport('.NavStack-item-1'), 'Item 1 is off screen');
       let mouseUpDeferred = RSVP.defer();
       let panXPromise = panX(find('.NavStack-item-2'), {
         position: [50, 100],
@@ -286,7 +269,7 @@ module('Integration | Component | nav-stack', function (hooks) {
       mouseUpDeferred.resolve();
       await panXPromise;
       await settled();
-      assert.ok(!isInViewport('.NavStack-item-1'), 'Item 1 is off screen');
+      assert.notOk(isInViewport('.NavStack-item-1'), 'Item 1 is off screen');
       assert.ok(isInViewport('.NavStack-item-2'), 'Item 2 is on screen');
       await panX(find('.NavStack-item-2'), {
         position: [50, 100],
@@ -299,7 +282,7 @@ module('Integration | Component | nav-stack', function (hooks) {
     });
     test('engage preferred recognizer, does not back swipe', async function (assert) {
       await this.renderNavStack(exampleHbs);
-      assert.ok(!isInViewport('.NavStack-item-1'), 'Item 1 is off screen');
+      assert.notOk(isInViewport('.NavStack-item-1'), 'Item 1 is off screen');
       let mouseUpDeferred = RSVP.defer();
       panAlongPath(find('.VerticalPanDetectorPane'), {
         position: [50, 100],
@@ -315,16 +298,16 @@ module('Integration | Component | nav-stack', function (hooks) {
       assert
         .dom('.VerticalPanDetectorPane .status')
         .hasText('pandown gesture detected');
-      assert.ok(!isInViewport('.NavStack-item-1'), 'Item 1 is off screen');
+      assert.notOk(isInViewport('.NavStack-item-1'), 'Item 1 is off screen');
       mouseUpDeferred.resolve();
       assert
         .dom('.VerticalPanDetectorPane .status')
         .hasText('pandown gesture detected');
-      assert.ok(!isInViewport('.NavStack-item-1'), 'Item 1 is off screen');
+      assert.notOk(isInViewport('.NavStack-item-1'), 'Item 1 is off screen');
     });
     test('engage back swipe, does not engage vertical pan recognizer', async function (assert) {
       await this.renderNavStack(exampleHbs);
-      assert.ok(!isInViewport('.NavStack-item-1'), 'Item 1 is off screen');
+      assert.notOk(isInViewport('.NavStack-item-1'), 'Item 1 is off screen');
       let mouseUpDeferred = RSVP.defer();
       panAlongPath(find('.VerticalPanDetectorPane'), {
         position: [10, 100],
@@ -346,29 +329,29 @@ module('Integration | Component | nav-stack', function (hooks) {
       await delay(800);
       mouseUpDeferred.resolve();
       assert.dom('.VerticalPanDetectorPane .status').hasText('hello');
-      assert.ok(!isInViewport('.NavStack-item-1'), 'Item 1 is off screen');
+      assert.notOk(isInViewport('.NavStack-item-1'), 'Item 1 is off screen');
     });
   });
   module('page under more', function () {
     let exampleHbs = hbs`
-      {{#if shouldRenderNavStack}}
+      {{#if this.shouldRenderNavStack}}
         <div style="width:320px;height:480px;position:relative">
           <NavStack
               @layer={{0}}
               @footer={{component 'tab-bar'}}
-              @back={{back}}
+              @back={{this.back}}
           />
         </div>
       {{/if}}
       {{to-nav-stack
         layer=0
-        item=(component 'test-components/yapp/more' model=moreModel controller=controller)
-        header=(component 'test-components/yapp/more/header' model=moreModel controller=controller)
+        item=(component 'test-components/yapp/more' model=this.moreModel controller=this.controller)
+        header=(component 'test-components/yapp/more/header' model=this.moreModel controller=this.controller)
       }}
       {{to-nav-stack
         layer=0
-        item=(component 'test-components/page' model=pageModel controller=controller)
-        header=(component 'test-components/page/header' model=pageModel controller=controller)
+        item=(component 'test-components/page' model=this.pageModel controller=this.controller)
+        header=(component 'test-components/page/header' model=this.pageModel controller=this.controller)
       }}
     `;
     test('it renders', async function (assert) {

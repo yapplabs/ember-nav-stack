@@ -1,6 +1,6 @@
 <div ...attributes>
   <ul>
-    <li>{{#link-to 'page' 3}}Page 3{{/link-to}}</li>
-    <li>{{#link-to 'page' 4}}Page 4{{/link-to}}</li>
+    <li><LinkTo @route="page" @model={{3}}>Page 3</LinkTo></li>
+    <li><LinkTo @route="page" @model={{4}}>Page 4</LinkTo></li>
   </ul>
 </div>

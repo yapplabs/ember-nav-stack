@@ -1,6 +1,6 @@
-/* eslint-disable ember/no-new-mixins */
-import Mixin from '@ember/object/mixin';
-import { computed } from '@ember/object';
+import Route from '@ember/routing/route';
+import { action } from '@ember/object';
+import { inject as service } from '@ember/service';
 
 export function getParentRoute(router, route) {
   // eslint-disable-next-line ember/no-private-routing-service
@@ -17,17 +17,21 @@ export function getParentRoute(router, route) {
   }
 }
 
-export default Mixin.create({
-  templateName: 'stackable',
+export default class StackableRoute extends Route {
+  @service router;
+  templateName = 'stackable';
+
   getRouteComponent(/* model */) {
     return `routable-components/${(
       this.routableTemplateName || this.routeName
     ).replace(/\./g, '/')}`;
-  },
+  }
+
   getHeaderComponent(model) {
     return `${this.getRouteComponent(model)}/header`;
-  },
-  layerIndex: computed('_router', 'newLayer', function () {
+  }
+
+  get layerIndex() {
     let parentRoute = getParentRoute(this._router, this);
     let parentRouteLayerIndex = parentRoute.get('layerIndex');
     let currentLayerIndex = parentRouteLayerIndex || 0;
@@ -35,22 +39,23 @@ export default Mixin.create({
       return currentLayerIndex + 1;
     }
     return currentLayerIndex;
-  }),
+  }
+
   setupController(controller, model) {
-    this._super(controller, model);
+    super.setupController(controller, model);
     controller.setProperties({
       layerIndex: this.layerIndex,
       routeComponent: this.getRouteComponent(model),
       headerComponent: this.getHeaderComponent(model),
       routeName: this.routeName,
     });
-  },
+  }
+
   getParentRouteName() {
     return getParentRoute(this._router, this).routeName;
-  },
-  actions: {
-    back() {
-      this.transitionTo(this.getParentRouteName());
-    },
-  },
-});
+  }
+
+  @action back() {
+    this.router.transitionTo(this.getParentRouteName());
+  }
+}

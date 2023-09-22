@@ -1,11 +1,7 @@
-/* eslint-disable ember/no-mixins */
-/* eslint-disable ember/no-actions-hash */
-/* eslint-disable ember/no-classic-classes */
-import Route from '@ember/routing/route';
-import StackableRoute from 'ember-nav-stack/mixins/stackable-route';
-import AnimationAwareMixin from 'dummy/mixins/animation-aware';
+import StackableRoute from 'ember-nav-stack/routes/stackable-route';
+import { action } from '@ember/object';
 
-export default Route.extend(AnimationAwareMixin, StackableRoute, {
+export default class extends StackableRoute {
   model(params = {}) {
     let page = this.modelFor('page');
     return {
@@ -16,13 +12,13 @@ export default Route.extend(AnimationAwareMixin, StackableRoute, {
       },
       hasMySchedule: true,
     };
-  },
-  actions: {
-    drillDownToScheduleItem(scheduleItem) {
-      this.transitionTo('track.schedule-item', scheduleItem);
-    },
-    visitMySchedule() {
-      this.transitionTo('track.my-schedule');
-    },
-  },
-});
+  }
+  @action
+  drillDownToScheduleItem(scheduleItem) {
+    this.router.transitionTo('track.schedule-item', scheduleItem);
+  }
+  @action
+  visitMySchedule() {
+    this.router.transitionTo('track.my-schedule');
+  }
+}

@@ -1,11 +1,8 @@
-/* eslint-disable ember/no-actions-hash */
-/* eslint-disable ember/no-mixins */
-/* eslint-disable ember/no-classic-classes */
-import Route from '@ember/routing/route';
-import StackableRoute from 'ember-nav-stack/mixins/stackable-route';
+import StackableRoute from 'ember-nav-stack/routes/stackable-route';
+import { action } from '@ember/object';
 
-export default Route.extend(StackableRoute, {
-  templateName: 'page',
+export default class extends StackableRoute {
+  templateName = 'page';
   model(params = {}) {
     let result = {
       id: params.page_id,
@@ -34,29 +31,31 @@ export default Route.extend(StackableRoute, {
         break;
     }
     return result;
-  },
+  }
   setupController(controller, model) {
-    this._super(controller, model);
+    super.setupController(controller, model);
     controller.set('shouldRenderMore', model.isUnderMorePage); // TODO make this true for iOS-only
-  },
+  }
 
-  actions: {
-    drillDownToScheduleItem(scheduleItem) {
-      this.transitionTo('schedule-item', scheduleItem);
-    },
-    drillDownToTrack(track) {
-      this.transitionTo('track', track);
-    },
-    visitMySchedule() {
-      this.transitionTo('my-schedule');
-    },
-    back() {
-      let model = this.modelFor(this.routeName);
-      if (model.isUnderMorePage) {
-        this.transitionTo('yapp.more');
-      } else {
-        this.transitionTo(this.getParentRouteName());
-      }
-    },
-  },
-});
+  @action
+  drillDownToScheduleItem(scheduleItem) {
+    this.router.transitionTo('schedule-item', scheduleItem);
+  }
+  @action
+  drillDownToTrack(track) {
+    this.router.transitionTo('track', track);
+  }
+  @action
+  visitMySchedule() {
+    this.router.transitionTo('my-schedule');
+  }
+  @action
+  back() {
+    let model = this.modelFor(this.routeName);
+    if (model.isUnderMorePage) {
+      this.router.transitionTo('yapp.more');
+    } else {
+      this.router.transitionTo(this.getParentRouteName());
+    }
+  }
+}
