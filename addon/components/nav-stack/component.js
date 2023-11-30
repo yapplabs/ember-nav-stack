@@ -161,6 +161,8 @@ export default class NavStack extends Component {
     let { hammer, gesture } = this;
     gesture.unregister(this, hammer.get('pan'));
     hammer.off('pan');
+    hammer.destroy();
+    this.hammer = null;
   }
 
   @action
@@ -398,7 +400,7 @@ export default class NavStack extends Component {
   }
 
   disablePanRecognizer() {
-    this.hammer.get('pan').set({ enable: false });
+    this.hammer?.get('pan').set({ enable: false });
   }
 
   transitionDidBegin() {
@@ -443,7 +445,7 @@ export default class NavStack extends Component {
     this.backX = this.startingX + itemWidth;
     this.thresholdX = itemWidth / 2;
     this.canNavigateBack = this.back && this.stackDepth > 1;
-    this.hammer.get('pan').set({ enable: true, threshold: 9 });
+    this.hammer?.get('pan').set({ enable: true, threshold: 9 });
   }
 
   @action
@@ -628,11 +630,11 @@ export default class NavStack extends Component {
   }
 
   preferRecognizer(recognizer) {
-    this.hammer.get('pan').requireFailure(recognizer);
+    this.hammer?.get('pan').requireFailure(recognizer);
   }
 
   stopPreferringRecognizer(recognizer) {
-    this.hammer.get('pan').dropRequireFailure(recognizer);
+    this.hammer?.get('pan').dropRequireFailure(recognizer);
   }
 
   getTestContainerEl() {

@@ -29,14 +29,19 @@ export default class VerticalPanDetectorPane extends Component {
 
   @action
   teardownHammer() {
+    if (!this.hammer) {
+      return;
+    }
     this.gesture.unregister(this, this.hammer.get('pan'));
+    this.hammer.destroy();
+    this.hammer = null;
   }
 
   preferRecognizer(recognizer) {
-    this.hammer.get('pan').requireFailure(recognizer);
+    this.hammer?.get('pan').requireFailure(recognizer);
   }
 
   stopPreferringRecognizer(recognizer) {
-    this.hammer.get('pan').dropRequireFailure(recognizer);
+    this.hammer?.get('pan').dropRequireFailure(recognizer);
   }
 }
