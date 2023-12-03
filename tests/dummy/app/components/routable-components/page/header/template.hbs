@@ -1,11 +1,12 @@
+{{!-- template-lint-disable no-route-action --}}
 <div class={{@class}}>
 
   {{#if @model.isUnderMorePage~}}
-    <button {{action (route-action 'back')}} class="y-button left-button theme-color back-button">Back</button>
+    <button class="y-button left-button theme-color back-button" type="button" {{on 'click' (route-action 'back')}}>Back</button>
   {{/if~}}
 
   {{#if @model.hasMySchedule}}
-    <button {{action (route-action 'visitMySchedule')}} class="y-button right-button theme-color icon-button my-schedule-button js-myScheduleButton"></button>
+    <button class="y-button right-button theme-color icon-button my-schedule-button js-myScheduleButton" type="button" {{on 'click' (route-action 'visitMySchedule')}}></button>
   {{/if~}}
 
   <div class="page-title">{{@model.pageTitle}}</div>

@@ -32,6 +32,7 @@ module('Integration | Component | nav-stack', function (hooks) {
   module('top level page', function () {
     let exampleHbs = hbs`
       {{#if this.shouldRenderNavStack}}
+        {{!-- template-lint-disable no-inline-styles --}}
         <div style="width:320px;height:480px;position:relative">
           <NavStack
               @layer={{0}}
@@ -40,11 +41,11 @@ module('Integration | Component | nav-stack', function (hooks) {
           />
         </div>
       {{/if}}
-      {{to-nav-stack
-        layer=0
-        item=(component 'test-components/page' model=this.pageModel controller=this.controller)
-        header=(component 'test-components/page/header' model=this.pageModel controller=this.controller)
-      }}
+      <ToNavStack
+        @layer={{0}}
+        @item={{component 'test-components/page' model=this.pageModel controller=this.controller}}
+        @header={{component 'test-components/page/header' model=this.pageModel controller=this.controller}}
+      />
     `;
     test('it renders', async function (assert) {
       await this.renderNavStack(exampleHbs);
@@ -58,19 +59,20 @@ module('Integration | Component | nav-stack', function (hooks) {
   module('more page', function () {
     let exampleHbs = hbs`
       {{#if this.shouldRenderNavStack}}
+        {{!-- template-lint-disable no-inline-styles --}}
         <div style="width:320px;height:480px;position:relative">
           <NavStack
-              @layer={{0}}
-              @footer={{component 'tab-bar'}}
-              @back={{this.back}}
+            @layer={{0}}
+            @footer={{component 'tab-bar'}}
+            @back={{this.back}}
           />
         </div>
       {{/if}}
-      {{to-nav-stack
-        layer=0
-        item=(component 'test-components/yapp/more' model=this.moreModel controller=this.controller)
-        header=(component 'test-components/yapp/more/header' model=this.moreModel controller=this.controller)
-      }}
+      <ToNavStack
+        @layer={{0}}
+        @item={{component 'test-components/yapp/more' model=this.moreModel controller=this.controller}}
+        @header={{component 'test-components/yapp/more/header' model=this.moreModel controller=this.controller}}
+      />
     `;
     test('it renders', async function (assert) {
       await this.renderNavStack(exampleHbs);
@@ -84,6 +86,7 @@ module('Integration | Component | nav-stack', function (hooks) {
   module('drilled down one level', function () {
     let exampleHbs = hbs`
       {{#if this.shouldRenderNavStack}}
+        {{!-- template-lint-disable no-inline-styles --}}
         <div style="width:320px;height:480px;position:relative">
           <NavStack
               @layer={{0}}
@@ -92,16 +95,16 @@ module('Integration | Component | nav-stack', function (hooks) {
           />
         </div>
       {{/if}}
-      {{to-nav-stack
-        layer=0
-        item=(component 'test-components/page' model=this.pageModel controller=this.controller)
-        header=(component 'test-components/page/header' model=this.pageModel controller=this.controller)
-      }}
-      {{to-nav-stack
-        layer=0
-        item=(component 'test-components/track' model=this.trackModel controller=this.controller)
-        header=(component 'test-components/track/header' model=this.trackModel controller=this.controller)
-      }}
+      <ToNavStack
+        @layer={{0}}
+        @item={{component 'test-components/page' model=this.pageModel controller=this.controller}}
+        @header={{component 'test-components/page/header' model=this.pageModel controller=this.controller}}
+      />
+      <ToNavStack
+        @layer={{0}}
+        @item={{component 'test-components/track' model=this.trackModel controller=this.controller}}
+        @header={{component 'test-components/track/header' model=this.trackModel controller=this.controller}}
+      />
     `;
     test('it renders', async function (assert) {
       await this.renderNavStack(exampleHbs);
@@ -115,30 +118,31 @@ module('Integration | Component | nav-stack', function (hooks) {
   module('drilled down two levels', function (hooks) {
     let exampleHbs = hbs`
       {{#if this.shouldRenderNavStack}}
+        {{!-- template-lint-disable no-inline-styles --}}
         <div style="width:320px;height:480px;position:relative">
           <NavStack
-              @layer={{0}}
-              @footer={{component 'tab-bar'}}
-              @back={{this.back}}
+            @layer={{0}}
+            @footer={{component 'tab-bar'}}
+            @back={{this.back}}
           />
         </div>
       {{/if}}
-      {{to-nav-stack
-        layer=0
-        item=(component 'test-components/page' model=this.pageModel controller=this.controller)
-        header=(component 'test-components/page/header' model=this.pageModel controller=this.controller)
-      }}
-      {{to-nav-stack
-        layer=0
-        item=(component 'test-components/track' model=this.trackModel controller=this.controller)
-        header=(component 'test-components/track/header' model=this.trackModel controller=this.controller)
-      }}
+      <ToNavStack
+        @layer={{0}}
+        @item={{component 'test-components/page' model=this.pageModel controller=this.controller}}
+        @header={{component 'test-components/page/header' model=this.pageModel controller=this.controller}}
+      />
+      <ToNavStack
+        @layer={{0}}
+        @item={{component 'test-components/track' model=this.trackModel controller=this.controller}}
+        @header={{component 'test-components/track/header' model=this.trackModel controller=this.controller}}
+      />
       {{#if this.isThirdLevelShowing}}
-        {{to-nav-stack
-          layer=0
-          item=(component 'test-components/schedule-item' model=this.scheduleItemModel controller=this.controller)
-          header=(component 'test-components/schedule-item/header' model=this.scheduleItemModel controller=this.controller back=this.back)
-        }}
+        <ToNavStack
+          @layer={{0}}
+          @item={{component 'test-components/schedule-item' model=this.scheduleItemModel controller=this.controller}}
+          @header={{component 'test-components/schedule-item/header' model=this.scheduleItemModel controller=this.controller back=this.back}}
+        />
       {{/if}}
     `;
     hooks.beforeEach(function () {
@@ -335,6 +339,7 @@ module('Integration | Component | nav-stack', function (hooks) {
   module('page under more', function () {
     let exampleHbs = hbs`
       {{#if this.shouldRenderNavStack}}
+        {{!-- template-lint-disable no-inline-styles --}}
         <div style="width:320px;height:480px;position:relative">
           <NavStack
               @layer={{0}}
@@ -343,16 +348,16 @@ module('Integration | Component | nav-stack', function (hooks) {
           />
         </div>
       {{/if}}
-      {{to-nav-stack
-        layer=0
-        item=(component 'test-components/yapp/more' model=this.moreModel controller=this.controller)
-        header=(component 'test-components/yapp/more/header' model=this.moreModel controller=this.controller)
-      }}
-      {{to-nav-stack
-        layer=0
-        item=(component 'test-components/page' model=this.pageModel controller=this.controller)
-        header=(component 'test-components/page/header' model=this.pageModel controller=this.controller)
-      }}
+      <ToNavStack
+        @layer={{0}}
+        @item={{component 'test-components/yapp/more' model=this.moreModel controller=this.controller}}
+        @header={{component 'test-components/yapp/more/header' model=this.moreModel controller=this.controller}}
+      />
+      <ToNavStack
+        @layer={{0}}
+        @item={{component 'test-components/page' model=this.pageModel controller=this.controller}}
+        @header={{component 'test-components/page/header' model=this.pageModel controller=this.controller}}
+      />
     `;
     test('it renders', async function (assert) {
       await this.renderNavStack(exampleHbs);

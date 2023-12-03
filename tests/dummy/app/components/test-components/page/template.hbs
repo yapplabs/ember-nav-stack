@@ -1,10 +1,11 @@
+{{!-- template-lint-disable no-inline-styles no-route-action --}}
 <div ...attributes>
   <div class='y-page-content' style="position:absolute;top:0;bottom:0;left:0;right:0" data-test-route-name={{@controller.routeName}}>
     <h1>page {{@model.id}}</h1>
     {{#if (eq @model.slug 'schedule2') }}
-      <a href="#" {{action 'drillDownToScheduleItem' '1'}}>Schedule Item 1</a>
+      <a href="#" {{on 'click' (route-action 'drillDownToScheduleItem' '1')}}>Schedule Item 1</a>
     {{else if (eq @model.slug 'multi_track') }}
-      <a href="#" {{action 'drillDownToTrack' '1'}}>Track 1</a>
+      <a href="#" {{on 'click' (route-action 'drillDownToTrack' '1')}}>Track 1</a>
     {{/if}}
   </div>
 </div>

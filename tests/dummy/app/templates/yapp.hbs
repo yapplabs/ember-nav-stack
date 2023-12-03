@@ -1,5 +1,6 @@
 <div id='yapp-application' class={{if this.birdsEyeDebugging 'birds-eye-debugging' ''}}>
   {{#each (nav-layer-indices) as |layerIndex|}}
+    {{!-- template-lint-disable no-route-action --}}
     <NavStack
       @layer={{layerIndex}}
       @footer={{if (eq layerIndex 0) (component 'tab-bar')}}
