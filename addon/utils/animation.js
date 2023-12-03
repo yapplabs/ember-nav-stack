@@ -1,7 +1,7 @@
 // Thanks ember-css-transitions
 // https://github.com/peec/ember-css-transitions/blob/master/addon/mixins/transition-mixin.js
 
-import { run } from '@ember/runloop';
+import { later, schedule } from '@ember/runloop';
 import RSVP from 'rsvp';
 import Ember from 'ember';
 
@@ -20,7 +20,7 @@ const TICK = 17;
  */
 function rAF(cb) {
   if (Ember.testing || !window.requestAnimationFrame) {
-    return run.later(cb, TICK);
+    return later(cb, TICK);
   } else {
     return window.requestAnimationFrame(cb);
   }
@@ -33,7 +33,7 @@ function rAF(cb) {
  */
 export function nextTick() {
   return new RSVP.Promise((resolve) => {
-    run.schedule('afterRender', () => {
+    schedule('afterRender', () => {
       rAF(() => {
         resolve();
       });

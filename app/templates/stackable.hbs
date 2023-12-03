@@ -1,7 +1,8 @@
-{{to-nav-stack
-    layer=layerIndex
-    item=(component routeComponent model=model controller=this)
-    header=(component headerComponent model=model controller=this)
-}}
+<ToNavStack
+  @layer={{this.layerIndex}}
+  @item={{component this.routeComponent model=this.model controller=this}}
+  @header={{component this.headerComponent model=this.model controller=this}}
+/>
+
 
 {{outlet}}

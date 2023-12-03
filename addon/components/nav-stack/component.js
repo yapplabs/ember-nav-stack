@@ -5,8 +5,6 @@ import { run, scheduleOnce } from '@ember/runloop';
 import { nextTick } from 'ember-nav-stack/utils/animation';
 import BackSwipeRecognizer from 'ember-nav-stack/utils/back-swipe-recognizer';
 import Hammer from 'hammerjs';
-// import { argument } from '@ember-decorators/argument';
-// import { Action, optional } from '@ember-decorators/argument/types';
 import { Spring } from 'wobble';
 import { getOwner } from '@ember/application';
 import { DEBUG } from '@glimmer/env';

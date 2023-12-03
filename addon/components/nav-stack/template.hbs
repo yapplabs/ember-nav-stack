@@ -22,11 +22,11 @@
   <div class="NavStack-header">
     {{#if this.parentItemHeaderComponent}}
       <div class="NavStack-headerContainer NavStack-parentItemHeaderContainer">
-        {{component this.parentItemHeaderComponent class="NavStack-headerComponent"}}
+        {{component this.parentItemHeaderComponent class="NavStack-headerComponent" back=@back}}
       </div>
     {{/if}}
     <div class="NavStack-headerContainer NavStack-currentHeaderContainer">
-      {{component this.headerComponent class="NavStack-headerComponent"}}
+      {{component this.headerComponent class="NavStack-headerComponent" back=@back}}
     </div>
   </div>
   {{#if this.hasFooter}}

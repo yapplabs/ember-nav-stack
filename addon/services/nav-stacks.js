@@ -1,6 +1,6 @@
 import { A } from '@ember/array';
 import Service from '@ember/service';
-import { run, next } from '@ember/runloop';
+import { next, scheduleOnce } from '@ember/runloop';
 import EmberObject from '@ember/object';
 import { Promise as EmberPromise } from 'rsvp';
 import { buildWaiter } from '@ember/test-waiters';
@@ -65,6 +65,10 @@ export default class NavStacks extends Service {
     return this._runningTransitions;
   }
 
+  isRunningTransitions() {
+    return this._runningTransitions > 0;
+  }
+
   waitUntilTransitionIdle() {
     if (this._waitingPromise) {
       return this._waitingPromise;
@@ -89,7 +93,7 @@ export default class NavStacks extends Service {
   }
 
   _schedule() {
-    run.scheduleOnce('afterRender', this, this._process);
+    scheduleOnce('afterRender', this, this._process);
   }
 
   _process() {
@@ -109,7 +113,7 @@ export default class NavStacks extends Service {
     }
     set(this, 'stacks', EmberObject.create(newStacks));
     if (this.isInitialRender === true) {
-      run.next(this, this._clearIsInitialRender);
+      next(this, this._clearIsInitialRender);
     }
     this._listeners.invoke('stackItemsDidChange');
     this.didUpdate();
