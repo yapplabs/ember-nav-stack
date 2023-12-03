@@ -1,3 +1,14 @@
+## v6.0.0 (2023-12-03)
+
+#### :boom: Breaking Change
+* [#71](https://github.com/yapplabs/ember-nav-stack/pull/71) Update to ember 3.28 and address deprecations ([@lukemelia](https://github.com/lukemelia))
+
+#### :house: Internal
+* [#71](https://github.com/yapplabs/ember-nav-stack/pull/71) Update to ember 3.28 and address deprecations ([@lukemelia](https://github.com/lukemelia))
+
+#### Committers: 1
+- Luke Melia ([@lukemelia](https://github.com/lukemelia))
+
 ## v5.0.1 (2023-11-30)
 
 ## v5.0.0 (2023-09-19)
