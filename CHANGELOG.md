@@ -1,3 +1,12 @@
+## v6.0.1 (2023-12-15)
+
+#### :bug: Bug Fix
+* [#74](https://github.com/yapplabs/ember-nav-stack/pull/74) Add some more checks to make sure element is not destroyed before accessing it ([@lukemelia](https://github.com/lukemelia))
+* [#73](https://github.com/yapplabs/ember-nav-stack/pull/73) Avoid trying to access this.element when component has been torn down ([@lukemelia](https://github.com/lukemelia))
+
+#### Committers: 1
+- Luke Melia ([@lukemelia](https://github.com/lukemelia))
+
 ## v6.0.0 (2023-12-03)
 
 #### :boom: Breaking Change
