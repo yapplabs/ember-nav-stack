@@ -234,6 +234,10 @@ export default class NavStack extends Component {
   }
 
   cut() {
+    if (this.isDestroying || this.isDestroyed) {
+      return;
+    }
+
     this.horizontalTransition({
       toValue: this.computeXPosition(),
       animate: false,
@@ -249,6 +253,9 @@ export default class NavStack extends Component {
   }
 
   slideForward() {
+    if (this.isDestroying || this.isDestroyed) {
+      return;
+    }
     this.horizontalTransition({
       toValue: this.computeXPosition(),
       finishCallback: () => {
@@ -258,6 +265,9 @@ export default class NavStack extends Component {
   }
 
   slideBack() {
+    if (this.isDestroying || this.isDestroyed) {
+      return;
+    }
     this.horizontalTransition({
       toValue: this.computeXPosition(),
       finishCallback: () => {
@@ -268,6 +278,10 @@ export default class NavStack extends Component {
   }
 
   slideUp() {
+    if (this.isDestroying || this.isDestroyed) {
+      return;
+    }
+
     let debug = this.birdsEyeDebugging;
     this.verticalTransition({
       element: this.element,
@@ -277,6 +291,9 @@ export default class NavStack extends Component {
   }
 
   slideDown() {
+    if (this.isDestroying || this.isDestroyed) {
+      return;
+    }
     let debug = this.birdsEyeDebugging;
     let clonedElement = this.clones.elements[this.clones.elements.length - 1];
     let y = debug ? 480 : clonedElement.getBoundingClientRect().height;
