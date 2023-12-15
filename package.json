@@ -37,7 +37,7 @@
     "ember-cli-htmlbars": "^6.3.0",
     "ember-decorators": "6.1.1",
     "ember-math-helpers": "^3.0.0",
-    "ember-truth-helpers": "^3.1.1",
+    "ember-truth-helpers": "^4.0.3",
     "hammerjs": "^2.0.8",
     "macro-decorators": "^0.1.2",
     "webpack": "5",
