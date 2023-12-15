@@ -157,10 +157,12 @@ export default class NavStack extends Component {
   @action
   tearDownHammer() {
     let { hammer, gesture } = this;
-    gesture.unregister(this, hammer.get('pan'));
-    hammer.off('pan');
-    hammer.destroy();
-    this.hammer = null;
+    if (hammer) {
+      gesture.unregister(this, hammer.get('pan'));
+      hammer.off('pan');
+      hammer.destroy();
+      this.hammer = null;
+    }
   }
 
   @action
@@ -169,6 +171,10 @@ export default class NavStack extends Component {
   }
 
   handleStackDepthChange(isInitialRender) {
+    if (this.isDestroying || this.isDestroyed) {
+      return;
+    }
+
     let stackItems = this.stackItems || [];
     let stackDepth = stackItems.length;
     let rootComponentRef = stackItems[0] && stackItems[0].component;
