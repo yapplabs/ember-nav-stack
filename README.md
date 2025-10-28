@@ -25,6 +25,11 @@ Usage
 
 [Longer description of how to use the addon in apps.]
 
+Testing
+------------------------------------------------------------------------------
+
+`ember-nav-stack` registers waiters for stack recomputes and transition animations. Ember's built-in test helpers such as `visit` and `click` wait for these operations automatically, so downstream apps should not need custom "nav stack idle" helpers or manual `waitFor` calls.
+
 
 Contributing
 ------------------------------------------------------------------------------
