@@ -340,11 +340,11 @@ export default class NavStack extends Component {
         currentHeaderElement,
         clonedHeaderElement,
       );
-      this.notifyTransitionEnd();
       this.transitionDidEnd();
       if (finishCallback) {
         finishCallback();
       }
+      this.notifyTransitionEnd();
     };
     if (animate) {
       fromValue = fromValue || this.getX(itemContainerElement);
@@ -383,11 +383,11 @@ export default class NavStack extends Component {
     this.notifyTransitionStart();
     let finish = () => {
       setTransform(element, `translateY(${toValue}px)`);
-      this.notifyTransitionEnd();
       this.transitionDidEnd();
       if (finishCallback) {
         finishCallback();
       }
+      this.notifyTransitionEnd();
     };
     if (animate) {
       fromValue = fromValue || element.getBoundingClientRect().top;
