@@ -166,6 +166,17 @@ module('Integration | Component | nav-stack', function (hooks) {
       assert.dom('.NavStack-item-2').doesNotExist();
     });
     test('back swipe from level 3 to level 2', async function (assert) {
+      assert.expect(4);
+      //verify that there is no pending transitions when back is invoked via swipe
+      this.set('back', () => {
+        let navStacksService = this.owner.lookup('service:nav-stacks');
+        assert.equal(
+          navStacksService.runningTransitions(),
+          0,
+          'no pending transitions when back is invoked via swipe',
+        );
+        this.set('isThirdLevelShowing', false);
+      });
       await this.renderNavStack(exampleHbs);
       assert.notOk(isInViewport('.NavStack-item-1'), 'Item 1 is off screen');
       await panX(find('.NavStack-item-2'), {

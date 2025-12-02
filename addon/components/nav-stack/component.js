@@ -520,7 +520,6 @@ export default class NavStack extends Component {
           this.parentHeaderElement,
           this.currentHeaderElement,
         );
-        run(this.args, this.args.back);
       } else {
         setTransform(this.containerElement, `translateX(${this.startingX}px)`);
         styleHeaderElements(
@@ -544,6 +543,9 @@ export default class NavStack extends Component {
       }
       this.navStacksService.notifyTransitionEnd();
       this._activeSpring = null;
+      if (shouldNavigateBack) {
+        run(this.args, this.args.back);
+      }
     };
     if (fromValue === toValue && initialVelocity === 0) {
       finalize();
