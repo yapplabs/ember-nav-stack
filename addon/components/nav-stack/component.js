@@ -332,14 +332,26 @@ export default class NavStack extends Component {
 
     this.transitionDidBegin();
     this.notifyTransitionStart();
+    let isNoOp = false;
     let finish = () => {
       setTransform(itemContainerElement, `translateX(${toValue}px)`);
-      styleHeaderElements(
-        currentTransitionPercentage(fromValue, toValue, toValue),
-        fromValue === undefined || fromValue > toValue,
-        currentHeaderElement,
-        clonedHeaderElement,
-      );
+      // When fromValue === toValue, the container is already at the target X.
+      // This happens after a completed back-swipe gesture: handlePanEnd's
+      // finalize already left the live current/parent header containers in
+      // their correct end-state inline styles, and the subsequent slideBack
+      // is a no-op for X. Re-running styleHeaderElements here would treat
+      // the no-op as a slideBack start state and set the new current header
+      // (which after re-render holds the previous parent's content, e.g. the
+      // back button) to opacity 0 / translateX(-60px), making the back button
+      // invisible.
+      if (!isNoOp) {
+        styleHeaderElements(
+          currentTransitionPercentage(fromValue, toValue, toValue),
+          fromValue === undefined || fromValue > toValue,
+          currentHeaderElement,
+          clonedHeaderElement,
+        );
+      }
       this.notifyTransitionEnd();
       this.transitionDidEnd();
       if (finishCallback) {
@@ -349,6 +361,7 @@ export default class NavStack extends Component {
     if (animate) {
       fromValue = fromValue || this.getX(itemContainerElement);
       if (fromValue === toValue) {
+        isNoOp = true;
         run(finish);
         return;
       }
