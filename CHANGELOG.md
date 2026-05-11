@@ -1,3 +1,11 @@
+## v6.1.2 (2026-05-11)
+
+#### :bug: Bug Fix
+* [#78](https://github.com/yapplabs/ember-nav-stack/pull/78) Fix back button disappearing after completed back-swipe ([@lukemelia](https://github.com/lukemelia))
+
+#### Committers: 1
+- Luke Melia ([@lukemelia](https://github.com/lukemelia))
+
 ## v6.1.1 (2025-12-02)
 
 ## v6.1.0 (2025-10-30)
