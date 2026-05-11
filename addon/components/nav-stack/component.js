@@ -332,14 +332,20 @@ export default class NavStack extends Component {
 
     this.transitionDidBegin();
     this.notifyTransitionStart();
+    let isNoOp = false;
     let finish = () => {
       setTransform(itemContainerElement, `translateX(${toValue}px)`);
-      styleHeaderElements(
-        currentTransitionPercentage(fromValue, toValue, toValue),
-        fromValue === undefined || fromValue > toValue,
-        currentHeaderElement,
-        clonedHeaderElement,
-      );
+      // The no-op case occurs during slideBack after a completed back-swipe:
+      // the header styles were already set as part of the swipe, so we don't
+      // want to change them further here.
+      if (!isNoOp) {
+        styleHeaderElements(
+          currentTransitionPercentage(fromValue, toValue, toValue),
+          fromValue === undefined || fromValue > toValue,
+          currentHeaderElement,
+          clonedHeaderElement,
+        );
+      }
       this.notifyTransitionEnd();
       this.transitionDidEnd();
       if (finishCallback) {
@@ -349,6 +355,7 @@ export default class NavStack extends Component {
     if (animate) {
       fromValue = fromValue || this.getX(itemContainerElement);
       if (fromValue === toValue) {
+        isNoOp = true;
         run(finish);
         return;
       }

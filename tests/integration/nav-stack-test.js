@@ -166,7 +166,7 @@ module('Integration | Component | nav-stack', function (hooks) {
       assert.dom('.NavStack-item-2').doesNotExist();
     });
     test('back swipe from level 3 to level 2', async function (assert) {
-      assert.expect(4);
+      assert.expect(6);
       //verify that there is no pending transitions when back is invoked via swipe
       this.set('back', () => {
         let navStacksService = this.owner.lookup('service:nav-stacks');
@@ -187,6 +187,13 @@ module('Integration | Component | nav-stack', function (hooks) {
       await settled();
       assert.ok(isInViewport('.NavStack-item-1'), 'Item 1 is on screen');
       assert.dom('.NavStack-item-2').doesNotExist();
+      let currentHeader = find('.NavStack-currentHeaderContainer');
+      assert.equal(
+        currentHeader.style.opacity,
+        '1',
+        'current header (with back button) is fully opaque after swipe-back',
+      );
+      assert.dom('.NavStack-currentHeaderContainer .back-button').isVisible();
     });
     test('partial back swipe from level 3 (not enough to snap to level 2)', async function (assert) {
       await this.renderNavStack(exampleHbs);
