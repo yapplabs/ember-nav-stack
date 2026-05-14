@@ -1,7 +1,7 @@
 /* eslint-disable ember/no-observers */
 import Component from '@glimmer/component';
 import { action, get } from '@ember/object';
-import { run, scheduleOnce } from '@ember/runloop';
+import { next, run, scheduleOnce } from '@ember/runloop';
 import { nextTick } from 'ember-nav-stack/utils/animation';
 import BackSwipeRecognizer from 'ember-nav-stack/utils/back-swipe-recognizer';
 import Hammer from 'hammerjs';
@@ -131,6 +131,12 @@ export default class NavStack extends Component {
     stackItems: [],
     headers: [],
     elements: [],
+    // Overlays created during a completed back-swipe gesture so the target
+    // page's header stays visible across the re-render that args.back
+    // triggers. Cleaned up by `_finishGestureBack` (scheduled via next()),
+    // NOT by slideBack's finishCallback — they must outlive that cleanup so
+    // they bridge the re-render gap.
+    gestureBackOverlays: [],
   };
 
   @action
@@ -521,37 +527,39 @@ export default class NavStack extends Component {
     this.navStacksService.notifyTransitionStart();
     let finalize = () => {
       if (shouldNavigateBack) {
-        styleHeaderElements(
-          currentTransitionPercentage(this.startingX, this.backX, this.backX),
-          false,
-          this.parentHeaderElement,
-          this.currentHeaderElement,
-        );
+        // The cross-fade ended with parentHeaderElement (target page header)
+        // visible. args.back will re-render the live header containers,
+        // swapping content: currentHeaderContainer becomes the target page's
+        // header, parentItemHeaderContainer becomes the new grandparent's
+        // (or is removed). Snapshot the visible target header into an overlay
+        // clone so it stays on screen across the re-render. The overlay is
+        // removed after re-render, by which time the live currentHeaderElement
+        // has been re-styled with the target's content visible.
+        let parentClone = this._cloneTargetHeaderOverlay();
+        if (this.currentHeaderElement) {
+          this.currentHeaderElement.style.opacity = 0;
+          setTransform(this.currentHeaderElement, 'translateX(60px)');
+        }
+        if (this.parentHeaderElement) {
+          this.parentHeaderElement.style.opacity = 0;
+          setTransform(this.parentHeaderElement, 'translateX(-60px)');
+        }
+        this.navStacksService.notifyTransitionEnd();
+        this._activeSpring = null;
+        run(this.args, this.args.back);
+        next(this, this._finishGestureBack, parentClone);
       } else {
         setTransform(this.containerElement, `translateX(${this.startingX}px)`);
-        styleHeaderElements(
-          currentTransitionPercentage(
-            this.startingX,
-            this.backX,
-            this.startingX,
-          ),
-          false,
-          this.parentHeaderElement,
-          this.currentHeaderElement,
-        );
-      }
-      if (this.currentHeaderElement) {
-        this.currentHeaderElement.style.opacity = 1;
-        setTransform(this.currentHeaderElement, 'translateX(0px)');
-      }
-      if (this.parentHeaderElement) {
-        this.parentHeaderElement.style.opacity = 0;
-        setTransform(this.parentHeaderElement, 'translateX(-60px)');
-      }
-      this.navStacksService.notifyTransitionEnd();
-      this._activeSpring = null;
-      if (shouldNavigateBack) {
-        run(this.args, this.args.back);
+        if (this.currentHeaderElement) {
+          this.currentHeaderElement.style.opacity = 1;
+          setTransform(this.currentHeaderElement, 'translateX(0px)');
+        }
+        if (this.parentHeaderElement) {
+          this.parentHeaderElement.style.opacity = 0;
+          setTransform(this.parentHeaderElement, 'translateX(-60px)');
+        }
+        this.navStacksService.notifyTransitionEnd();
+        this._activeSpring = null;
       }
     };
     if (fromValue === toValue && initialVelocity === 0) {
@@ -587,6 +595,59 @@ export default class NavStack extends Component {
         finalize();
       })
       .start();
+  }
+
+  _cloneTargetHeaderOverlay() {
+    let liveParent = this.element.querySelector(
+      '.NavStack-parentItemHeaderContainer',
+    );
+    if (!liveParent) {
+      return null;
+    }
+    let clone = liveParent.cloneNode(true);
+    clone.classList.remove('NavStack-parentItemHeaderContainer');
+    clone.classList.add('NavStack-gestureBackTargetHeader');
+    clone.style.opacity = '1';
+    setTransform(clone, 'translateX(0px)');
+    // Append last so it paints on top of currentHeaderContainer.
+    this.element.querySelector('.NavStack-header').appendChild(clone);
+    this.clones.gestureBackOverlays.push(clone);
+    return clone;
+  }
+
+  _finishGestureBack(parentClone) {
+    if (this.isDestroying || this.isDestroyed) {
+      this._removeGestureBackOverlay(parentClone);
+      return;
+    }
+    let currentHeaderElement = this.element?.querySelector(
+      '.NavStack-currentHeaderContainer',
+    );
+    let parentHeaderElement = this.element?.querySelector(
+      '.NavStack-parentItemHeaderContainer',
+    );
+    if (currentHeaderElement) {
+      currentHeaderElement.style.opacity = 1;
+      setTransform(currentHeaderElement, 'translateX(0px)');
+    }
+    if (parentHeaderElement) {
+      parentHeaderElement.style.opacity = 0;
+      setTransform(parentHeaderElement, 'translateX(-60px)');
+    }
+    this._removeGestureBackOverlay(parentClone);
+  }
+
+  _removeGestureBackOverlay(clone) {
+    if (!clone) {
+      return;
+    }
+    let idx = this.clones.gestureBackOverlays.indexOf(clone);
+    if (idx !== -1) {
+      this.clones.gestureBackOverlays.splice(idx, 1);
+    }
+    if (clone.parentNode) {
+      clone.parentNode.removeChild(clone);
+    }
   }
 
   cloneLastStackItem() {

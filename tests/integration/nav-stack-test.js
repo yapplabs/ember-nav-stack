@@ -195,6 +195,36 @@ module('Integration | Component | nav-stack', function (hooks) {
       );
       assert.dom('.NavStack-currentHeaderContainer .back-button').isVisible();
     });
+    test('back swipe shows target page header during the re-render, not the leaving page header', async function (assert) {
+      assert.expect(4);
+      this.set('back', () => {
+        let overlay = find('.NavStack-gestureBackTargetHeader');
+        assert.ok(
+          overlay,
+          'target-header overlay clone is in the DOM at moment of back action',
+        );
+        assert
+          .dom('.NavStack-gestureBackTargetHeader .page-title')
+          .hasText('Track One', 'overlay shows the target page header');
+        let currentHeader = find('.NavStack-currentHeaderContainer');
+        assert.equal(
+          currentHeader.style.opacity,
+          '0',
+          'live current header (still has leaving page content here) is hidden',
+        );
+        this.set('isThirdLevelShowing', false);
+      });
+      await this.renderNavStack(exampleHbs);
+      await panX(find('.NavStack-item-2'), {
+        position: [50, 100],
+        amount: 170,
+        duration: 150,
+      });
+      await settled();
+      assert
+        .dom('.NavStack-gestureBackTargetHeader')
+        .doesNotExist('overlay clone is cleaned up after settle');
+    });
     test('partial back swipe from level 3 (not enough to snap to level 2)', async function (assert) {
       await this.renderNavStack(exampleHbs);
       assert.notOk(isInViewport('.NavStack-item-1'), 'Item 1 is off screen');
