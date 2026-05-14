@@ -225,6 +225,49 @@ module('Integration | Component | nav-stack', function (hooks) {
         .dom('.NavStack-gestureBackTargetHeader')
         .doesNotExist('overlay clone is cleaned up after settle');
     });
+    test('back swipe with async stack pop keeps overlay until the pop lands', async function (assert) {
+      // Models the production path where args.back calls
+      // router.transitionTo and the parent route's model hook is async.
+      // Cleanup must not fire until the stack actually pops; otherwise
+      // we restore the live current header to opacity 1 while it still
+      // holds the leaving page's content — the original flash bug.
+      assert.expect(5);
+      let popDeferred;
+      this.set('back', () => {
+        popDeferred = RSVP.defer();
+        popDeferred.promise.then(() => {
+          this.set('isThirdLevelShowing', false);
+        });
+      });
+      await this.renderNavStack(exampleHbs);
+      await panX(find('.NavStack-item-2'), {
+        position: [50, 100],
+        amount: 170,
+        duration: 150,
+      });
+      await settled();
+      // back was called but did not synchronously mutate the stack.
+      assert.ok(
+        find('.NavStack-gestureBackTargetHeader'),
+        'overlay is still in the DOM while the back action is in flight',
+      );
+      assert.equal(
+        find('.NavStack-currentHeaderContainer').style.opacity,
+        '0',
+        'live current header (still holding leaving page) is hidden — no flash',
+      );
+      popDeferred.resolve();
+      await settled();
+      assert
+        .dom('.NavStack-gestureBackTargetHeader')
+        .doesNotExist('overlay is cleaned up after the stack pop lands');
+      assert.equal(
+        find('.NavStack-currentHeaderContainer').style.opacity,
+        '1',
+        'live current header (now target page) is restored to full opacity',
+      );
+      assert.dom('.NavStack-currentHeaderContainer .back-button').isVisible();
+    });
     test('partial back swipe from level 3 (not enough to snap to level 2)', async function (assert) {
       await this.renderNavStack(exampleHbs);
       assert.notOk(isInViewport('.NavStack-item-1'), 'Item 1 is off screen');

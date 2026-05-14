@@ -86,6 +86,17 @@ export default class NavStack extends Component {
   willDestroy() {
     super.willDestroy(...arguments);
     this.navStacksService.unregister(this);
+    // Defensive: remove any gesture-back overlays still attached. The
+    // normal flow has handleStackDepthChange clean these up once it
+    // observes the stack pop, but if the back transition was abandoned
+    // before that landed, the overlay would otherwise leak.
+    let overlay;
+    while ((overlay = this.clones.gestureBackOverlays.pop())) {
+      if (overlay.parentNode) {
+        overlay.parentNode.removeChild(overlay);
+      }
+    }
+    this._pendingGestureBackOverlay = null;
   }
 
   get layerIndexCssClass() {
@@ -133,9 +144,15 @@ export default class NavStack extends Component {
     elements: [],
     // Overlays created during a completed back-swipe gesture so the target
     // page's header stays visible across the re-render that args.back
-    // triggers. Cleaned up by `_finishGestureBack` (scheduled via next()),
-    // NOT by slideBack's finishCallback — they must outlive that cleanup so
-    // they bridge the re-render gap.
+    // triggers. Cleanup is queued via `_pendingGestureBackOverlay` and
+    // performed by `_finishGestureBack` — scheduled from
+    // `handleStackDepthChange` once the stack pop actually lands, NOT on a
+    // fixed delay from finalize. Tying cleanup to the observed pop matters
+    // because the default `back` action calls `router.transitionTo`, which
+    // resolves asynchronously through route hooks; cleaning up before the
+    // pop lands would restore `.NavStack-currentHeaderContainer` to full
+    // opacity while it still holds the leaving page's header, flashing it.
+    // willDestroy sweeps any overlays left from abandoned transitions.
     gestureBackOverlays: [],
   };
 
@@ -189,6 +206,9 @@ export default class NavStack extends Component {
       : extractComponentKey(rootComponentRef);
 
     let layer = this.args.layer;
+    let pendingGestureBackOverlay = this._pendingGestureBackOverlay;
+    this._pendingGestureBackOverlay = null;
+
     if (isInitialRender) {
       this.schedule(this.cut);
     } else if (
@@ -206,9 +226,25 @@ export default class NavStack extends Component {
       this.cloneLastStackItem();
       this.cloneHeader();
       this.schedule(this.slideBack);
+      if (pendingGestureBackOverlay) {
+        // The back action we initiated in finalize has landed: the stack
+        // has popped, and by the next macrotask the render flush will have
+        // swapped .NavStack-currentHeaderContainer to the target page's
+        // header. Schedule the cleanup for that point.
+        next(this, this._finishGestureBack, pendingGestureBackOverlay);
+        pendingGestureBackOverlay = null;
+      }
     } else if (stackDepth > this._stackDepth) {
       this.cloneHeader();
       this.schedule(this.slideForward);
+    }
+
+    // If we still have a pending overlay but didn't take the depth-decrease
+    // path (e.g. the stack was reshaped some other way before our back
+    // action's intended pop landed), drop the overlay without restyling —
+    // whichever branch ran above owns the header element state now.
+    if (pendingGestureBackOverlay) {
+      this._removeGestureBackOverlay(pendingGestureBackOverlay);
     }
 
     this._stackDepth = stackDepth;
@@ -528,13 +564,19 @@ export default class NavStack extends Component {
     let finalize = () => {
       if (shouldNavigateBack) {
         // The cross-fade ended with parentHeaderElement (target page header)
-        // visible. args.back will re-render the live header containers,
-        // swapping content: currentHeaderContainer becomes the target page's
-        // header, parentItemHeaderContainer becomes the new grandparent's
-        // (or is removed). Snapshot the visible target header into an overlay
-        // clone so it stays on screen across the re-render. The overlay is
-        // removed after re-render, by which time the live currentHeaderElement
-        // has been re-styled with the target's content visible.
+        // visible. args.back will eventually re-render the live header
+        // containers, swapping content: currentHeaderContainer becomes the
+        // target page's header, parentItemHeaderContainer becomes the new
+        // grandparent's (or is removed). Snapshot the visible target header
+        // into an overlay clone so it stays on screen across the re-render.
+        //
+        // Cleanup is queued via this._pendingGestureBackOverlay and runs
+        // from handleStackDepthChange once the stack pop actually lands —
+        // NOT on a fixed delay from here. The default `back` action calls
+        // router.transitionTo, which is async (model hooks); if cleanup
+        // fired before the pop landed, the live currentHeaderContainer
+        // would still hold the leaving page header and we'd restore it
+        // to full opacity for the flash this overlay exists to prevent.
         let parentClone = this._cloneTargetHeaderOverlay();
         if (this.currentHeaderElement) {
           this.currentHeaderElement.style.opacity = 0;
@@ -546,8 +588,8 @@ export default class NavStack extends Component {
         }
         this.navStacksService.notifyTransitionEnd();
         this._activeSpring = null;
+        this._pendingGestureBackOverlay = parentClone;
         run(this.args, this.args.back);
-        next(this, this._finishGestureBack, parentClone);
       } else {
         setTransform(this.containerElement, `translateX(${this.startingX}px)`);
         if (this.currentHeaderElement) {
