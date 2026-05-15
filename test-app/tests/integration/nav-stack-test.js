@@ -4,10 +4,33 @@ import { hbs } from 'ember-cli-htmlbars';
 import { click, find, render, settled, waitUntil } from '@ember/test-helpers';
 import { panX, panAlongPath } from 'ember-simulant-test-helpers';
 import delay from '../helpers/delay';
+import NavStack from 'ember-nav-stack/components/nav-stack';
 import {
   getElementInViewportRatio,
   isInViewport,
 } from 'ember-nav-stack/test-support/in-viewport';
+
+// `<NavStack>` calls `_createSpring` exactly when it kicks off an animated
+// horizontal transition (slideForward/slideBack). The `cut` path uses
+// `animate: false` and skips `_createSpring`. Spying on this method gives
+// a precise "did we attempt a slide" signal that survives the eventual
+// spring cancellation — unlike `runningTransitions()`, which is back to
+// zero by the time the cancellation has run.
+function spyOnCreateSpring(hooks) {
+  let originalCreateSpring = NavStack.prototype._createSpring;
+  let calls;
+  hooks.beforeEach(function () {
+    calls = [];
+    NavStack.prototype._createSpring = function (options) {
+      calls.push(options);
+      return originalCreateSpring.call(this, options);
+    };
+  });
+  hooks.afterEach(function () {
+    NavStack.prototype._createSpring = originalCreateSpring;
+  });
+  return () => calls;
+}
 
 function deferred() {
   let resolve;
@@ -360,6 +383,154 @@ module('Integration | Component | nav-stack', function (hooks) {
       mouseUpDeferred.resolve();
       assert.dom('.VerticalPanDetectorPane .status').hasText('hello');
       assert.notOk(isInViewport('.NavStack-item-1'), 'Item 1 is off screen');
+    });
+  });
+  module('tab switching between different-root tabs', function (hooks) {
+    let exampleHbs = hbs`
+      {{#if this.shouldRenderNavStack}}
+        {{!-- template-lint-disable no-inline-styles --}}
+        <div style="width:320px;height:480px;position:relative">
+          <NavStack
+            @layer={{0}}
+            @footer={{component 'tab-bar'}}
+            @back={{this.back}}
+          />
+        </div>
+      {{/if}}
+      {{#if this.isTab1Active}}
+        <ToNavStack
+          @layer={{0}}
+          @item={{component 'test-components/page' model=this.pageModel controller=this.controller}}
+          @header={{component 'test-components/page/header' model=this.pageModel controller=this.controller}}
+        />
+        {{#if this.isTab1Drilled}}
+          <ToNavStack
+            @layer={{0}}
+            @item={{component 'test-components/track' model=this.trackModel controller=this.controller}}
+            @header={{component 'test-components/track/header' model=this.trackModel controller=this.controller}}
+          />
+        {{/if}}
+      {{else}}
+        <ToNavStack
+          @layer={{0}}
+          @item={{component 'test-components/yapp/more' model=this.moreModel controller=this.controller}}
+          @header={{component 'test-components/yapp/more/header' model=this.moreModel controller=this.controller}}
+        />
+      {{/if}}
+    `;
+    hooks.beforeEach(function () {
+      this.set('isTab1Active', true);
+      this.set('isTab1Drilled', true);
+      this.set('moreModel', { id: '1' });
+    });
+    let getSpringCalls = spyOnCreateSpring(hooks);
+
+    test('single-step tab switch cuts (no slide)', async function (assert) {
+      await this.renderNavStack(exampleHbs);
+      assert
+        .dom('.NavStack-currentHeaderContainer .page-title')
+        .hasText('Track One', 'starts drilled in Tab 1');
+
+      // The initial render may animate (slideForward etc.). Reset the spy
+      // so we only see whether the *tab switch* started a slide.
+      getSpringCalls().length = 0;
+
+      this.set('isTab1Active', false);
+      this.set('isTab1Drilled', false);
+
+      assert.deepEqual(
+        getSpringCalls(),
+        [],
+        'tab switch did not create any animated spring',
+      );
+      await settled();
+      assert
+        .dom('.NavStack-currentHeaderContainer .page-title')
+        .hasText('More', 'ends on Tab 2 root');
+    });
+
+    test('dummy-app shape: shared ToNavStack with changing model + drill exits cuts, does not slide', async function (assert) {
+      // The dummy app's page.hbs renders a single `<ToNavStack>` whose
+      // `@item` is `{{component this.routeComponent model=this.model ...}}`.
+      // A tab change from /pages/1/schedule-items/X to /pages/2 (a) destroys
+      // the schedule-item route's ToNavStack and (b) leaves the page-level
+      // ToNavStack instance alive with a NEW curried component bound to a
+      // new model. This test mirrors that shape: the page-level ToNavStack
+      // stays mounted, only its `@item`/`@header` args change.
+      let sharedShapeHbs = hbs`
+        {{#if this.shouldRenderNavStack}}
+          {{!-- template-lint-disable no-inline-styles --}}
+          <div style="width:320px;height:480px;position:relative">
+            <NavStack
+              @layer={{0}}
+              @footer={{component 'tab-bar'}}
+              @back={{this.back}}
+            />
+          </div>
+        {{/if}}
+        <ToNavStack
+          @layer={{0}}
+          @item={{component 'test-components/page' model=this.pageModel controller=this.controller}}
+          @header={{component 'test-components/page/header' model=this.pageModel controller=this.controller}}
+        />
+        {{#if this.isDrilled}}
+          <ToNavStack
+            @layer={{0}}
+            @item={{component 'test-components/schedule-item' model=this.scheduleItemModel controller=this.controller}}
+            @header={{component 'test-components/schedule-item/header' model=this.scheduleItemModel controller=this.controller back=this.back}}
+          />
+        {{/if}}
+      `;
+      this.set('isDrilled', true);
+      this.set('pageModel', { id: '1', pageTitle: 'Page One' });
+      await this.renderNavStack(sharedShapeHbs);
+      assert
+        .dom('.NavStack-currentHeaderContainer .page-title')
+        .hasText('Schedule Item', 'starts drilled into schedule-item');
+
+      // Reset the spy so we only observe the tab switch.
+      getSpringCalls().length = 0;
+
+      // Simulate tapping a different tab while drilled. Mirror the order
+      // Ember uses for a route transition that re-uses the parent route
+      // with a new dynamic segment: the parent's controller.model updates
+      // first (`setupController`), then the child route's deactivate
+      // tears down the drilled ToNavStack.
+      this.set('pageModel', { id: '2', pageTitle: 'Page Two' });
+      this.set('isDrilled', false);
+
+      assert.deepEqual(
+        getSpringCalls(),
+        [],
+        'dummy-app-shaped tab switch did not create any animated spring',
+      );
+      await settled();
+      assert
+        .dom('.NavStack-currentHeaderContainer .page-title')
+        .hasText('Page Two', 'ends on the new page');
+    });
+
+    test('staged tab switch (drill exits before root swaps) still cuts, does not slide', async function (assert) {
+      await this.renderNavStack(exampleHbs);
+      assert
+        .dom('.NavStack-currentHeaderContainer .page-title')
+        .hasText('Track One', 'starts drilled in Tab 1');
+
+      getSpringCalls().length = 0;
+
+      // Active-tab change first (parent route swap), then drill exit.
+      this.set('isTab1Active', false);
+      this.set('isTab1Drilled', false);
+
+      assert.deepEqual(
+        getSpringCalls(),
+        [],
+        'staged tab switch did not create any animated spring',
+      );
+      await settled();
+      assert
+        .dom('.NavStack-currentHeaderContainer .page-title')
+        .hasText('More', 'ends on Tab 2 root');
     });
   });
   module('page under more', function () {
