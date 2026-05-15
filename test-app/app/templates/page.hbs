@@ -1,0 +1,15 @@
+{{#if this.shouldRenderMore}}
+  <ToNavStack
+    @layer={{0}}
+    @item={{component "routable-components/yapp/more"}}
+    @header={{component "routable-components/yapp/more/header"}}
+  />
+{{/if}}
+
+<ToNavStack
+  @layer={{0}}
+  @item={{component this.routeComponent model=this.model controller=this}}
+  @header={{component this.headerComponent model=this.model controller=this}}
+/>
+
+{{outlet}}
