@@ -8,6 +8,7 @@
     (if this.hasFooter "NavStack--withFooter ")
   }}
   {{did-insert this.setupHammer}}
+  {{did-update this.handleStackFingerprintChange this.stackItemsFingerprint}}
   {{will-destroy this.tearDownHammer}}
   ...attributes
 >

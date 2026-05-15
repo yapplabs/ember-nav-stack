@@ -1,6 +1,6 @@
 import Component from '@glimmer/component';
 import { action } from '@ember/object';
-import { run, scheduleOnce } from '@ember/runloop';
+import { next, run, scheduleOnce } from '@ember/runloop';
 import { nextTick, setTransform } from '../utils/animation.js';
 import BackSwipeRecognizer from '../utils/back-swipe-recognizer.js';
 import Hammer from 'hammerjs';
@@ -158,6 +158,36 @@ export default class NavStack extends Component {
     this.handleStackDepthChange(false);
   }
 
+  // A fingerprint over stackItems that reflects BOTH structural changes
+  // (push/pop) and per-item arg changes (e.g. a curried component whose
+  // bound model.id has changed). Reading each item's component via
+  // `extractComponentKey` consumes the underlying Glimmer reference tags,
+  // so this getter invalidates when any of those references change. The
+  // `{{did-update}}` modifier in the template observes this fingerprint
+  // and re-runs the transition logic when it changes — which is how we
+  // pick up arg-only changes (e.g. a parent route re-currying with a new
+  // model on a dynamic-segment transition) that don't produce a
+  // pushItem/removeItem on the service.
+  get stackItemsFingerprint() {
+    let items = this.stackItems;
+    let extract = this.args.extractComponentKey || extractComponentKey;
+    return items
+      .map((item) => {
+        if (!item || !item.component) return '_';
+        return extract(item.component);
+      })
+      .join('|');
+  }
+
+  @action
+  handleStackFingerprintChange() {
+    this.handleStackDepthChange(false);
+  }
+
+  _clearRootJustChanged() {
+    this._rootJustChanged = false;
+  }
+
   handleStackDepthChange(isInitialRender) {
     if (this.isDestroying || this.isDestroyed) {
       return;
@@ -183,14 +213,31 @@ export default class NavStack extends Component {
       this.element.style.display = 'none';
       this.schedule(this.slideDown);
     } else if (rootComponentKey !== this._rootComponentKey) {
+      // A root change in the same transition can be followed by structural
+      // depth changes (e.g. exiting a drilled-down child route while
+      // simultaneously swapping the parent route's dynamic segment). Set a
+      // flag so the subsequent depth-change branches treat those as part of
+      // the same cut rather than scheduling a slideBack/slideForward that
+      // would animate over the cut. The flag clears on the next runloop tick
+      // so unrelated future transitions still animate normally.
+      this._rootJustChanged = true;
+      next(this, this._clearRootJustChanged);
       this.schedule(this.cut);
     } else if (stackDepth < this._stackDepth) {
-      this.cloneLastStackItem();
-      this.cloneHeader();
-      this.schedule(this.slideBack);
+      if (this._rootJustChanged) {
+        this.schedule(this.cut);
+      } else {
+        this.cloneLastStackItem();
+        this.cloneHeader();
+        this.schedule(this.slideBack);
+      }
     } else if (stackDepth > this._stackDepth) {
-      this.cloneHeader();
-      this.schedule(this.slideForward);
+      if (this._rootJustChanged) {
+        this.schedule(this.cut);
+      } else {
+        this.cloneHeader();
+        this.schedule(this.slideForward);
+      }
     }
 
     this._stackDepth = stackDepth;
@@ -318,6 +365,17 @@ export default class NavStack extends Component {
       '.NavStack-clonedHeaderContainer',
     );
 
+    // If a prior horizontal transition is still animating (e.g. an intermediate
+    // slideBack scheduled during a staged route change like a tab switch),
+    // stop it so this transition can take over from the current position.
+    // The prior spring's onStop runs its finish (cleaning up its clones and
+    // decrementing the transition counter) before we begin the new one.
+    if (this._horizontalSpring) {
+      let prior = this._horizontalSpring;
+      this._horizontalSpring = null;
+      prior.stop();
+    }
+
     this.transitionDidBegin();
     this.notifyTransitionStart();
     let isNoOp = false;
@@ -348,6 +406,7 @@ export default class NavStack extends Component {
         return;
       }
       let spring = this._createSpring({ fromValue, toValue });
+      this._horizontalSpring = spring;
       spring
         .onUpdate((s) => {
           setTransform(itemContainerElement, `translateX(${s.currentValue}px)`);
@@ -359,6 +418,9 @@ export default class NavStack extends Component {
           );
         })
         .onStop(() => {
+          if (this._horizontalSpring === spring) {
+            this._horizontalSpring = null;
+          }
           run(finish);
         })
         .start();
