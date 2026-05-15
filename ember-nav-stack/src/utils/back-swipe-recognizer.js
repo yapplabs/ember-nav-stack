@@ -1,4 +1,5 @@
 import Hammer from 'hammerjs';
+import { macroCondition, isTesting } from '@embroider/macros';
 const { DIRECTION_RIGHT } = Hammer;
 const FIELD_REGEXP = /input|textarea|select/i;
 
@@ -78,14 +79,18 @@ export default class BackSwipeRecognizer extends Hammer.Pan {
   }
 
   checkInitialTouchInValidArea(inputData) {
-    let testingEl = document.querySelector('#ember-testing');
-    if (testingEl) {
-      let testingRect = testingEl.getBoundingClientRect();
-      let minValidX = testingRect.left;
-      let maxValidX =
-        minValidX +
-        testingEl.clientWidth * (this.options.validLeftAreaPercent / 100);
-      return inputData.center.x >= minValidX && inputData.center.x <= maxValidX;
+    if (macroCondition(isTesting())) {
+      let testingEl = document.querySelector('#ember-testing');
+      if (testingEl) {
+        let testingRect = testingEl.getBoundingClientRect();
+        let minValidX = testingRect.left;
+        let maxValidX =
+          minValidX +
+          testingEl.clientWidth * (this.options.validLeftAreaPercent / 100);
+        return (
+          inputData.center.x >= minValidX && inputData.center.x <= maxValidX
+        );
+      }
     }
     let maxValidX =
       window.innerWidth * (this.options.validLeftAreaPercent / 100);

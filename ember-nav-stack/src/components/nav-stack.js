@@ -5,6 +5,7 @@ import { nextTick, setTransform } from '../utils/animation.js';
 import BackSwipeRecognizer from '../utils/back-swipe-recognizer.js';
 import Hammer from 'hammerjs';
 import { Spring } from 'wobble';
+import { macroCondition, isTesting } from '@embroider/macros';
 import { getOwner } from '@ember/application';
 import { service } from '@ember/service';
 import { bool, mapBy, reads } from 'macro-decorators';
@@ -663,9 +664,11 @@ export default class NavStack extends Component {
   }
 
   adjustX(x) {
-    let testContainerEl = this.getTestContainerEl();
-    if (testContainerEl) {
-      return x - testContainerEl.getBoundingClientRect().left;
+    if (macroCondition(isTesting())) {
+      let testContainerEl = this.getTestContainerEl();
+      if (testContainerEl) {
+        return x - testContainerEl.getBoundingClientRect().left;
+      }
     }
     return x;
   }
