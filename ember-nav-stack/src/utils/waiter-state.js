@@ -1,5 +1,13 @@
 import { buildWaiter } from '@ember/test-waiters';
 
+// `buildWaiter` registers a named waiter globally in `@ember/test-waiters`.
+// Hoist these to module scope so every WaiterState instance shares the same
+// two waiters — without this, each `new WaiterState()` (notably in unit
+// tests) would register a fresh duplicate, accumulating noise in the global
+// waiter registry over a test run.
+const TRANSITION_WAITER = buildWaiter('ember-nav-stack:transition');
+const STACK_WAITER = buildWaiter('ember-nav-stack:stack-update');
+
 // Encapsulates the three test-waiter tokens NavStacks needs to manage
 // (transition, stack-update, initial-render), a counter for currently
 // running transitions, and a single-resolver "wait until idle" promise.
@@ -28,11 +36,9 @@ import { buildWaiter } from '@ember/test-waiters';
 // transition before "idle" is declared.
 export default class WaiterState {
   constructor() {
-    this._transitionWaiter = buildWaiter('ember-nav-stack:transition');
-    this._stackWaiter = buildWaiter('ember-nav-stack:stack-update');
     this._transitionToken = null;
     this._stackUpdateToken = null;
-    this._initialRenderToken = this._stackWaiter.beginAsync();
+    this._initialRenderToken = STACK_WAITER.beginAsync();
     this._runningTransitions = 0;
     this._whenIdlePromise = null;
     this._whenIdleResolve = null;
@@ -43,7 +49,7 @@ export default class WaiterState {
   beginTransition() {
     this._runningTransitions++;
     if (this._runningTransitions === 1) {
-      this._transitionToken = this._transitionWaiter.beginAsync();
+      this._transitionToken = TRANSITION_WAITER.beginAsync();
     }
   }
 
@@ -53,7 +59,7 @@ export default class WaiterState {
       this._runningTransitions = 0;
     }
     if (this._runningTransitions === 0 && this._transitionToken) {
-      this._transitionWaiter.endAsync(this._transitionToken);
+      TRANSITION_WAITER.endAsync(this._transitionToken);
       this._transitionToken = null;
     }
   }
@@ -70,13 +76,13 @@ export default class WaiterState {
 
   beginStackUpdate() {
     if (!this._stackUpdateToken) {
-      this._stackUpdateToken = this._stackWaiter.beginAsync();
+      this._stackUpdateToken = STACK_WAITER.beginAsync();
     }
   }
 
   endStackUpdate() {
     if (this._stackUpdateToken) {
-      this._stackWaiter.endAsync(this._stackUpdateToken);
+      STACK_WAITER.endAsync(this._stackUpdateToken);
       this._stackUpdateToken = null;
     }
   }
@@ -89,7 +95,7 @@ export default class WaiterState {
 
   markInitialRenderComplete() {
     if (this._initialRenderToken) {
-      this._stackWaiter.endAsync(this._initialRenderToken);
+      STACK_WAITER.endAsync(this._initialRenderToken);
       this._initialRenderToken = null;
     }
   }

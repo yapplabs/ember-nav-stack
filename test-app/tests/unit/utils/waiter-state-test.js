@@ -38,6 +38,13 @@ module('Unit | Utility | waiter-state', function () {
       state.beginTransition();
       state.beginTransition();
       assert.strictEqual(state.runningTransitions(), 3);
+
+      // Cleanup — balance the 3 beginTransition calls so we don't leak a
+      // pending transition waiter into the next test (waiters are global).
+      state.endTransition();
+      state.endTransition();
+      state.endTransition();
+      assert.false(hasPendingWaiters(), 'no pending waiters at test end');
     });
 
     test('endTransition closes the waiter only when the counter returns to 0', function (assert) {
@@ -141,6 +148,11 @@ module('Unit | Utility | waiter-state', function () {
       let first = state.whenIdle();
       let second = state.whenIdle();
       assert.strictEqual(first, second);
+
+      // Cleanup — close the transition waiter so it doesn't leak globally.
+      state.endTransition();
+      state.maybeResolveIdle();
+      assert.false(hasPendingWaiters(), 'no pending waiters at test end');
     });
 
     test('maybeResolveIdle is a no-op when not idle', async function (assert) {
