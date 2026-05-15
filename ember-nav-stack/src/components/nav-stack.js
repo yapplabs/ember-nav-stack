@@ -16,6 +16,7 @@ import {
   styleHeaderElements,
 } from '../utils/header-style.js';
 import BackSwipeGesture from '../back-swipe-gesture.js';
+import CloneStore from '../utils/clone-store.js';
 
 export default class NavStack extends Component {
   get birdsEyeDebugging() {
@@ -43,16 +44,11 @@ export default class NavStack extends Component {
   willDestroy() {
     super.willDestroy(...arguments);
     this.navStacksService.unregister(this);
-    // Defensive: remove any gesture-back overlays still attached. The
-    // normal flow has handleStackDepthChange clean these up once it
-    // observes the stack pop, but if the back transition was abandoned
-    // before that landed, the overlay would otherwise leak.
-    let overlay;
-    while ((overlay = this.clones.gestureBackOverlays.pop())) {
-      if (overlay.parentNode) {
-        overlay.parentNode.removeChild(overlay);
-      }
-    }
+    // Defensive: sweep every tracked clone in case some transition was
+    // abandoned before its normal cleanup ran (e.g. a back-swipe in flight
+    // when the consumer tore down the route). The `parentNode?` guard in
+    // CloneStore handles clones whose parents are already detached.
+    this._clones.clearAll();
     this._pendingGestureBackOverlay = null;
   }
 
@@ -95,23 +91,21 @@ export default class NavStack extends Component {
     return this._suppressAnimation;
   }
 
-  clones = {
-    stackItems: [],
-    headers: [],
-    elements: [],
-    // Overlays created during a completed back-swipe gesture so the target
-    // page's header stays visible across the re-render that args.back
-    // triggers. Cleanup is queued via `_pendingGestureBackOverlay` and
-    // performed by `_finishGestureBack` — scheduled from
-    // `handleStackDepthChange` once the stack pop actually lands, NOT on a
-    // fixed delay from finalize. Tying cleanup to the observed pop matters
-    // because the default `back` action calls `router.transitionTo`, which
-    // resolves asynchronously through route hooks; cleaning up before the
-    // pop lands would restore `.NavStack-currentHeaderContainer` to full
-    // opacity while it still holds the leaving page's header, flashing it.
-    // willDestroy sweeps any overlays left from abandoned transitions.
-    gestureBackOverlays: [],
-  };
+  // Tracks groups of cloned DOM nodes for unified cleanup. Groups used:
+  //   - 'stackItems'           cloned by slideBack (the leaving last item)
+  //   - 'headers'              cloned for slide animations (leaving header)
+  //   - 'elements'             cloned by slideDown (the whole NavStack)
+  //   - 'gestureBackOverlays'  target-header snapshot during a back-swipe;
+  //     cleanup is queued via `_pendingGestureBackOverlay` and performed by
+  //     `_finishGestureBack` — scheduled from `handleStackDepthChange` once
+  //     the stack pop actually lands, NOT on a fixed delay from finalize.
+  //     Tying cleanup to the observed pop matters because the default `back`
+  //     action calls `router.transitionTo`, which resolves asynchronously
+  //     through route hooks; cleaning up before the pop lands would restore
+  //     `.NavStack-currentHeaderContainer` to full opacity while it still
+  //     holds the leaving page's header, flashing it. willDestroy sweeps
+  //     any clones left from abandoned transitions via _clones.clearAll().
+  _clones = new CloneStore();
 
   @action
   setupHammer(el) {
@@ -124,7 +118,7 @@ export default class NavStack extends Component {
       onBack: () => run(this.args, this.args.back),
       onBackSwipeOverlay: (clone) => {
         if (!clone) return;
-        this.clones.gestureBackOverlays.push(clone);
+        this._clones.track('gestureBackOverlays', clone);
         this._pendingGestureBackOverlay = clone;
       },
     });
@@ -220,7 +214,7 @@ export default class NavStack extends Component {
       if (stackDepth < this._stackDepth) {
         next(this, this._finishGestureBack, pendingGestureBackOverlay);
       } else {
-        this._removeGestureBackOverlay(pendingGestureBackOverlay);
+        this._clones.remove('gestureBackOverlays', pendingGestureBackOverlay);
       }
     }
 
@@ -311,7 +305,7 @@ export default class NavStack extends Component {
     this.horizontalTransition({
       toValue: this.computeXPosition(),
       finishCallback: () => {
-        this.removeClonedHeader();
+        this._clones.clear('headers');
       },
     });
   }
@@ -323,8 +317,8 @@ export default class NavStack extends Component {
     this.horizontalTransition({
       toValue: this.computeXPosition(),
       finishCallback: () => {
-        this.removeClonedStackItem();
-        this.removeClonedHeader();
+        this._clones.clear('stackItems');
+        this._clones.clear('headers');
       },
     });
   }
@@ -347,14 +341,14 @@ export default class NavStack extends Component {
       return;
     }
     let debug = this.birdsEyeDebugging;
-    let clonedElement = this.clones.elements[this.clones.elements.length - 1];
+    let clonedElement = this._clones.last('elements');
     let y = debug ? 480 : clonedElement.getBoundingClientRect().height;
     nextTick().then(() => {
       this.verticalTransition({
         element: clonedElement,
         toValue: y,
         finishCallback: () => {
-          this.removeClonedElement();
+          this._clones.clear('elements');
         },
       });
     });
@@ -509,7 +503,7 @@ export default class NavStack extends Component {
 
   _finishGestureBack(parentClone) {
     if (this.isDestroying || this.isDestroyed) {
-      this._removeGestureBackOverlay(parentClone);
+      this._clones.remove('gestureBackOverlays', parentClone);
       return;
     }
     let currentHeaderElement = this.element?.querySelector(
@@ -529,87 +523,41 @@ export default class NavStack extends Component {
         `translateX(${-HEADER_PARALLAX_OFFSET}px)`,
       );
     }
-    this._removeGestureBackOverlay(parentClone);
-  }
-
-  _removeGestureBackOverlay(clone) {
-    if (!clone) {
-      return;
-    }
-    let idx = this.clones.gestureBackOverlays.indexOf(clone);
-    if (idx !== -1) {
-      this.clones.gestureBackOverlays.splice(idx, 1);
-    }
-    if (clone.parentNode) {
-      clone.parentNode.removeChild(clone);
-    }
+    this._clones.remove('gestureBackOverlays', parentClone);
   }
 
   cloneLastStackItem() {
     let clone = this.element
       .querySelector('.NavStack-item:last-child')
       .cloneNode(true);
-    this.clones.stackItems.push(clone);
     clone.setAttribute('id', `${this.elementId}_clonedStackItem`);
-    this.attachClonedStackItem(clone);
+    this._clones.track('stackItems', clone);
+    this.element.querySelector('.NavStack-itemContainer').appendChild(clone);
   }
 
   cloneHeader() {
-    this.removeClonedHeader();
+    this._clones.clear('headers');
     let liveHeader = this.element.querySelector(
       '.NavStack-currentHeaderContainer',
     );
     if (!liveHeader) {
       return;
     }
-    let clonedHeader = liveHeader.cloneNode(true);
-    this.clones.headers.push(clonedHeader);
-    clonedHeader.classList.remove('NavStack-currentHeaderContainer');
-    clonedHeader.classList.add('NavStack-clonedHeaderContainer');
-    this.attachClonedHeader(clonedHeader);
-  }
-
-  cloneElement() {
-    let clone = this.element.cloneNode(true);
-    this.clones.elements.push(clone);
-    clone.setAttribute('id', `${this.elementId}_clone`);
-    this.attachClonedElement(clone);
-  }
-
-  attachClonedStackItem(clone) {
-    this.element.querySelector('.NavStack-itemContainer').appendChild(clone);
-  }
-
-  attachClonedHeader(clone) {
+    let clone = liveHeader.cloneNode(true);
+    clone.classList.remove('NavStack-currentHeaderContainer');
+    clone.classList.add('NavStack-clonedHeaderContainer');
+    this._clones.track('headers', clone);
     let headerWrapper = this.element.querySelector('.NavStack-header');
     headerWrapper.insertBefore(clone, headerWrapper.firstChild);
   }
 
-  attachClonedElement(clone) {
+  cloneElement() {
+    let clone = this.element.cloneNode(true);
+    clone.setAttribute('id', `${this.elementId}_clone`);
+    this._clones.track('elements', clone);
     this.element.parentNode.appendChild(clone);
     clone.style.transform; // force layout, without this CSS transition does not run
     clone.style.webkitTransform; // force layout, without this CSS transition does not run
-  }
-
-  removeClonedHeader() {
-    var clonedHeader;
-    while ((clonedHeader = this.clones.headers.pop())) {
-      clonedHeader.parentNode.removeChild(clonedHeader);
-    }
-  }
-
-  removeClonedStackItem() {
-    var clonedStackItem;
-    while ((clonedStackItem = this.clones.stackItems.pop())) {
-      clonedStackItem.parentNode.removeChild(clonedStackItem);
-    }
-  }
-
-  removeClonedElement() {
-    var clonedElement;
-    while ((clonedElement = this.clones.elements.pop())) {
-      clonedElement.parentNode.removeChild(clonedElement);
-    }
   }
 
   getTestContainerEl() {
