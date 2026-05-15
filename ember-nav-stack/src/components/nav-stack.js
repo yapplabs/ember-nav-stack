@@ -11,6 +11,7 @@ import { service } from '@ember/service';
 import { bool, mapBy, reads } from 'macro-decorators';
 import { guidFor } from '@ember/object/internals';
 import { extractComponentKey } from '../utils/component.js';
+import { decideTransition } from '../utils/transition-decision.js';
 
 function currentTransitionPercentage(fromValue, toValue, currentValue) {
   if (fromValue === undefined || fromValue === toValue) {
@@ -218,72 +219,74 @@ export default class NavStack extends Component {
 
     let stackItems = this.stackItems || [];
     let stackDepth = stackItems.length;
-    let rootComponentRef = stackItems[0] && stackItems[0].component;
-    let rootComponentKey = this.args.extractComponentKey
-      ? this.args.extractComponentKey(rootComponentRef)
-      : extractComponentKey(rootComponentRef);
+    let rootComponentRef = stackItems[0]?.component;
+    let extract = this.args.extractComponentKey || extractComponentKey;
+    let rootComponentKey = extract(rootComponentRef);
 
-    let layer = this.args.layer;
     let pendingGestureBackOverlay = this._pendingGestureBackOverlay;
     this._pendingGestureBackOverlay = null;
 
-    if (isInitialRender) {
-      this.schedule(this.cut);
-    } else if (
-      (layer > 0 && stackDepth > 0 && this._stackDepth === 0) ||
-      this._stackDepth === undefined
-    ) {
-      this.schedule(this.slideUp);
-    } else if (layer > 0 && stackDepth === 0 && this._stackDepth > 0) {
-      this.cloneElement();
-      this.element.style.display = 'none';
-      this.schedule(this.slideDown);
-    } else if (rootComponentKey !== this._rootComponentKey) {
-      // A root change in the same transition can be followed by structural
-      // depth changes (e.g. exiting a drilled-down child route while
-      // simultaneously swapping the parent route's dynamic segment). Set a
-      // flag so the subsequent depth-change branches treat those as part of
-      // the same cut rather than scheduling a slideBack/slideForward that
-      // would animate over the cut. The flag clears on the next runloop tick
-      // so unrelated future transitions still animate normally.
+    let intent = decideTransition({
+      isInitialRender,
+      previousDepth: this._stackDepth,
+      newDepth: stackDepth,
+      previousRootKey: this._rootComponentKey,
+      newRootKey: rootComponentKey,
+      layer: this.args.layer,
+      rootJustChanged: this._rootJustChanged,
+    });
+
+    if (intent.startsRootChange) {
       this._rootJustChanged = true;
       next(this, this._clearRootJustChanged);
-      this.schedule(this.cut);
-    } else if (stackDepth < this._stackDepth) {
-      if (this._rootJustChanged) {
-        this.schedule(this.cut);
-      } else {
-        this.cloneLastStackItem();
-        this.cloneHeader();
-        this.schedule(this.slideBack);
-      }
-      if (pendingGestureBackOverlay) {
-        // The back action we initiated in finalize has landed: the stack
-        // has popped, and by the next macrotask the render flush will have
-        // swapped .NavStack-currentHeaderContainer to the target page's
-        // header. Schedule the cleanup for that point.
-        next(this, this._finishGestureBack, pendingGestureBackOverlay);
-        pendingGestureBackOverlay = null;
-      }
-    } else if (stackDepth > this._stackDepth) {
-      if (this._rootJustChanged) {
-        this.schedule(this.cut);
-      } else {
-        this.cloneHeader();
-        this.schedule(this.slideForward);
-      }
     }
 
-    // If we still have a pending overlay but didn't take the depth-decrease
-    // path (e.g. the stack was reshaped some other way before our back
-    // action's intended pop landed), drop the overlay without restyling —
-    // whichever branch ran above owns the header element state now.
+    this._applyTransition(intent);
+
+    // Gesture-back overlay cleanup is orthogonal to which transition runs —
+    // it just needs the stack pop to have landed (newDepth < previousDepth).
+    // The overlay snapshot was made by `finalize` after the back-swipe
+    // completed; we restore the live header containers once the re-render
+    // following `args.back` has swapped their content. `next()` defers the
+    // cleanup past the current flush so the swap is visible by the time we
+    // restore opacity.
     if (pendingGestureBackOverlay) {
-      this._removeGestureBackOverlay(pendingGestureBackOverlay);
+      if (stackDepth < this._stackDepth) {
+        next(this, this._finishGestureBack, pendingGestureBackOverlay);
+      } else {
+        this._removeGestureBackOverlay(pendingGestureBackOverlay);
+      }
     }
 
     this._stackDepth = stackDepth;
     this._rootComponentKey = rootComponentKey;
+  }
+
+  _applyTransition(intent) {
+    switch (intent.kind) {
+      case 'cut':
+        this.schedule(this.cut);
+        break;
+      case 'slideUp':
+        this.schedule(this.slideUp);
+        break;
+      case 'slideDown':
+        this.cloneElement();
+        this.element.style.display = 'none';
+        this.schedule(this.slideDown);
+        break;
+      case 'slideBack':
+        this.cloneLastStackItem();
+        this.cloneHeader();
+        this.schedule(this.slideBack);
+        break;
+      case 'slideForward':
+        this.cloneHeader();
+        this.schedule(this.slideForward);
+        break;
+      case 'none':
+        break;
+    }
   }
 
   schedule(method) {
