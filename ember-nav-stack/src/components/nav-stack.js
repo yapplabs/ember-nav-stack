@@ -11,6 +11,7 @@ import { guidFor } from '@ember/object/internals';
 import { extractComponentKey } from '../utils/component.js';
 import { decideTransition } from '../utils/transition-decision.js';
 import {
+  HEADER_PARALLAX_OFFSET,
   currentTransitionPercentage,
   styleHeaderElements,
 } from '../utils/header-style.js';
@@ -523,7 +524,10 @@ export default class NavStack extends Component {
     }
     if (parentHeaderElement) {
       parentHeaderElement.style.opacity = 0;
-      setTransform(parentHeaderElement, 'translateX(-60px)');
+      setTransform(
+        parentHeaderElement,
+        `translateX(${-HEADER_PARALLAX_OFFSET}px)`,
+      );
     }
     this._removeGestureBackOverlay(parentClone);
   }
