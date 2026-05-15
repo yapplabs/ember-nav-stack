@@ -1,0 +1,46 @@
+<div
+  id={{this.elementId}}
+  class={{concat
+    "NavStack "
+    (if this.birdsEyeDebugging "is-birdsEyeDebugging ")
+    this.layerIndexCssClass
+    " "
+    (if this.hasFooter "NavStack--withFooter ")
+  }}
+  {{did-insert this.setupHammer}}
+  {{will-destroy this.tearDownHammer}}
+  ...attributes
+>
+  <div class="NavStack-itemContainer">
+    {{#each this.components as |stackItemComponent index|}}
+      <div class={{concat "NavStack-item NavStack-item-" index}}>
+        {{#if (lte (sub this.stackDepth index) 2)}}
+          {{component stackItemComponent}}
+        {{/if}}
+      </div>
+    {{/each}}
+  </div>
+  <div class="NavStack-header">
+    {{#if this.parentItemHeaderComponent}}
+      <div class="NavStack-headerContainer NavStack-parentItemHeaderContainer">
+        {{component
+          this.parentItemHeaderComponent
+          class="NavStack-headerComponent"
+          back=@back
+        }}
+      </div>
+    {{/if}}
+    <div class="NavStack-headerContainer NavStack-currentHeaderContainer">
+      {{component
+        this.headerComponent
+        class="NavStack-headerComponent"
+        back=@back
+      }}
+    </div>
+  </div>
+  {{#if this.hasFooter}}
+    <div class="NavStack-footer">
+      {{component @footer}}
+    </div>
+  {{/if}}
+</div>

@@ -1,0 +1,110 @@
+{
+  "name": "ember-nav-stack",
+  "version": "6.1.2",
+  "description": "An Ember addon providing iOS-style navigation stacks with swipe-back gesture support.",
+  "keywords": [
+    "ember-addon"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yapplabs/ember-nav-stack.git"
+  },
+  "license": "MIT",
+  "author": "",
+  "exports": {
+    ".": "./dist/index.js",
+    "./*": "./dist/*.js",
+    "./test-support": "./dist/test-support/index.js",
+    "./test-support/*": "./dist/test-support/*.js",
+    "./styles/*": "./dist/styles/*",
+    "./addon-main.js": "./addon-main.cjs"
+  },
+  "typesVersions": {
+    "*": {
+      "test-support": [
+        "./declarations/test-support/index.d.ts"
+      ],
+      "test-support/*": [
+        "./declarations/test-support/*.d.ts"
+      ]
+    }
+  },
+  "files": [
+    "addon-main.cjs",
+    "declarations",
+    "dist"
+  ],
+  "scripts": {
+    "build": "rollup --config",
+    "format": "prettier . --cache --write",
+    "lint": "concurrently \"pnpm:lint:*(!fix)\" --names \"lint:\" --prefixColors auto",
+    "lint:fix": "concurrently \"pnpm:lint:*:fix\" --names \"fix:\" --prefixColors auto && pnpm run format",
+    "lint:format": "prettier . --cache --check",
+    "lint:hbs": "ember-template-lint . --no-error-on-unmatched-pattern",
+    "lint:hbs:fix": "ember-template-lint . --fix --no-error-on-unmatched-pattern",
+    "lint:js": "eslint . --cache",
+    "lint:js:fix": "eslint . --fix",
+    "prepack": "rollup --config",
+    "start": "rollup --config --watch",
+    "test": "echo 'A v2 addon does not have tests, run tests in test-app'"
+  },
+  "dependencies": {
+    "@embroider/addon-shim": "^1.8.9",
+    "@embroider/macros": "^1.16.0",
+    "@ember/render-modifiers": "^2.1.0",
+    "@ember/test-waiters": "^3.1.0",
+    "ember-math-helpers": "^3.0.0",
+    "ember-truth-helpers": "^4.0.3",
+    "decorator-transforms": "^2.2.2",
+    "hammerjs": "^2.0.8",
+    "macro-decorators": "^0.1.2",
+    "wobble": "^1.5.1"
+  },
+  "peerDependencies": {
+    "@ember/test-helpers": ">= 2.6.0",
+    "ember-source": ">= 4.12.0"
+  },
+  "peerDependenciesMeta": {
+    "@ember/test-helpers": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@babel/core": "^7.25.2",
+    "@babel/eslint-parser": "^7.25.1",
+    "@babel/runtime": "^7.25.6",
+    "@embroider/addon-dev": "^7.1.0",
+    "@eslint/js": "^9.17.0",
+    "@rollup/plugin-babel": "^6.0.4",
+    "babel-plugin-ember-template-compilation": "^2.2.5",
+    "concurrently": "^9.0.1",
+    "ember-source": "~5.12.0",
+    "ember-template-lint": "^6.0.0",
+    "eslint": "^9.17.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-ember": "^12.3.3",
+    "eslint-plugin-import": "^2.31.0",
+    "eslint-plugin-n": "^17.15.1",
+    "globals": "^15.14.0",
+    "prettier": "^3.4.2",
+    "prettier-plugin-ember-template-tag": "^2.0.4",
+    "rollup": "^4.22.5",
+    "rollup-plugin-copy": "^3.5.0"
+  },
+  "ember": {
+    "edition": "octane"
+  },
+  "ember-addon": {
+    "version": 2,
+    "type": "addon",
+    "main": "addon-main.cjs",
+    "app-js": {
+      "./components/nav-stack.js": "./dist/_app_/components/nav-stack.js",
+      "./components/to-nav-stack.js": "./dist/_app_/components/to-nav-stack.js",
+      "./helpers/nav-layer-indices.js": "./dist/_app_/helpers/nav-layer-indices.js",
+      "./services/gesture.js": "./dist/_app_/services/gesture.js",
+      "./services/nav-stacks.js": "./dist/_app_/services/nav-stacks.js",
+      "./templates/stackable.js": "./dist/_app_/templates/stackable.js"
+    }
+  }
+}

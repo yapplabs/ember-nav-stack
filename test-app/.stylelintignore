@@ -1,0 +1,8 @@
+# unconventional files
+/blueprints/*/files/
+
+# compiled output
+/dist/
+
+# precompiled bundle of the addon's BEM-style CSS plus dummy overrides
+app/styles/app.css
