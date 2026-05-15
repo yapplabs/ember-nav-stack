@@ -2,8 +2,6 @@ import Component from '@glimmer/component';
 import { action } from '@ember/object';
 import { next, run, scheduleOnce } from '@ember/runloop';
 import { nextTick, setTransform } from '../utils/animation.js';
-import BackSwipeRecognizer from '../utils/back-swipe-recognizer.js';
-import Hammer from 'hammerjs';
 import { Spring } from 'wobble';
 import { macroCondition, isTesting } from '@embroider/macros';
 import { getOwner } from '@ember/application';
@@ -12,42 +10,11 @@ import { bool, mapBy, reads } from 'macro-decorators';
 import { guidFor } from '@ember/object/internals';
 import { extractComponentKey } from '../utils/component.js';
 import { decideTransition } from '../utils/transition-decision.js';
-
-function currentTransitionPercentage(fromValue, toValue, currentValue) {
-  if (fromValue === undefined || fromValue === toValue) {
-    return 1;
-  }
-  let percentage = Math.abs((currentValue - fromValue) / (toValue - fromValue));
-  if (toValue > fromValue) {
-    return 1 - percentage;
-  }
-  return percentage;
-}
-
-function styleHeaderElements(
-  transitionRatio,
-  isForward,
-  currentHeaderElement,
-  otherHeaderElement,
-) {
-  let startingOffset = 60;
-  if (!isForward) {
-    transitionRatio = 1 - transitionRatio;
-    startingOffset = -1 * startingOffset;
-  }
-  let xOffset = transitionRatio * -1 * startingOffset;
-  if (currentHeaderElement) {
-    currentHeaderElement.style.opacity = transitionRatio;
-    setTransform(
-      currentHeaderElement,
-      `translateX(${startingOffset + xOffset}px)`,
-    );
-  }
-  if (otherHeaderElement) {
-    otherHeaderElement.style.opacity = 1 - transitionRatio;
-    setTransform(otherHeaderElement, `translateX(${xOffset}px)`);
-  }
-}
+import {
+  currentTransitionPercentage,
+  styleHeaderElements,
+} from '../utils/header-style.js';
+import BackSwipeGesture from '../back-swipe-gesture.js';
 
 export default class NavStack extends Component {
   get birdsEyeDebugging() {
@@ -148,9 +115,17 @@ export default class NavStack extends Component {
   @action
   setupHammer(el) {
     this.element = el;
-    this.hammer = new Hammer.Manager(this.element, {
-      inputClass: Hammer.TouchMouseInput,
-      recognizers: [[BackSwipeRecognizer]],
+    this._backSwipeGesture = new BackSwipeGesture({
+      element: el,
+      navStacksService: this.navStacksService,
+      gestureService: this.gesture,
+      getCanNavigateBack: () => !!this.args.back && this.stackDepth > 1,
+      onBack: () => run(this.args, this.args.back),
+      onBackSwipeOverlay: (clone) => {
+        if (!clone) return;
+        this.clones.gestureBackOverlays.push(clone);
+        this._pendingGestureBackOverlay = clone;
+      },
     });
     let isInitialRender = this.navStacksService.isInitialRender;
     scheduleOnce(
@@ -159,22 +134,12 @@ export default class NavStack extends Component {
       this.handleStackDepthChange,
       isInitialRender,
     );
-    this._setupPanHandlerContext();
-
-    let { hammer, gesture } = this;
-    hammer.on('pan', this.handlePanEvent);
-    gesture.register(this, hammer.get('pan'));
   }
 
   @action
   tearDownHammer() {
-    let { hammer, gesture } = this;
-    if (hammer) {
-      gesture.unregister(this, hammer.get('pan'));
-      hammer.off('pan');
-      hammer.destroy();
-      this.hammer = null;
-    }
+    this._backSwipeGesture?.teardown();
+    this._backSwipeGesture = null;
   }
 
   @action
@@ -522,22 +487,15 @@ export default class NavStack extends Component {
     });
   }
 
-  disablePanRecognizer() {
-    this.hammer?.get('pan').set({ enable: false });
-  }
-
   transitionDidBegin() {
-    this.disablePanRecognizer();
+    this._backSwipeGesture?.disablePan();
   }
 
   transitionDidEnd() {
-    if (this._currentStackItemElement) {
-      this.disablePanRecognizer();
-    }
     if (!this.element || this.stackDepth <= 1) {
       return;
     }
-    this._setupPanHandlerContext();
+    this._backSwipeGesture?.setupContext();
   }
 
   notifyTransitionStart() {
@@ -546,168 +504,6 @@ export default class NavStack extends Component {
 
   notifyTransitionEnd() {
     this.navStacksService.notifyTransitionEnd();
-  }
-
-  _setupPanHandlerContext() {
-    this.containerElement = this.element.querySelector(
-      '.NavStack-itemContainer',
-    );
-    this.currentHeaderElement = this.element.querySelector(
-      '.NavStack-currentHeaderContainer',
-    );
-    this.parentHeaderElement = this.element.querySelector(
-      '.NavStack-parentItemHeaderContainer',
-    );
-    this.startingX = this.getX(this.containerElement);
-    let currentStackItemElement = (this._currentStackItemElement =
-      this.element.querySelector('.NavStack-item:last-child'));
-    if (!currentStackItemElement) {
-      return;
-    }
-    let itemWidth = currentStackItemElement.getBoundingClientRect().width;
-    this.backX = this.startingX + itemWidth;
-    this.thresholdX = itemWidth / 2;
-    this.canNavigateBack = !!this.args.back && this.stackDepth > 1;
-    this.hammer?.get('pan').set({ enable: true, threshold: 9 });
-  }
-
-  @action
-  handlePanEvent(ev) {
-    if (this._activeSpring) {
-      return;
-    }
-    setTransform(
-      this.containerElement,
-      `translateX(${this.startingX + ev.deltaX}px)`,
-    );
-    styleHeaderElements(
-      currentTransitionPercentage(
-        this.startingX,
-        this.backX,
-        this.startingX + ev.deltaX,
-      ),
-      true,
-      this.currentHeaderElement,
-      this.parentHeaderElement,
-    );
-
-    let transitionRatio = currentTransitionPercentage(
-      this.startingX,
-      this.backX,
-      this.startingX + ev.deltaX,
-    );
-    if (this.currentHeaderElement) {
-      this.currentHeaderElement.style.opacity = transitionRatio;
-    }
-    if (this.parentHeaderElement) {
-      this.parentHeaderElement.style.opacity = 1 - transitionRatio;
-    }
-    if (ev.isFinal) {
-      this.handlePanEnd(ev);
-    }
-  }
-
-  handlePanEnd(ev) {
-    let shouldNavigateBack =
-      this.adjustX(ev.center.x) >= this.thresholdX && this.canNavigateBack;
-    let initialVelocity = ev.velocityX;
-    let fromValue = this.startingX + ev.deltaX;
-    let toValue = shouldNavigateBack ? this.backX : this.startingX;
-    this.navStacksService.notifyTransitionStart();
-    let finalize = () => {
-      if (shouldNavigateBack) {
-        // The cross-fade ended with parentHeaderElement (target page header)
-        // visible. args.back will eventually re-render the live header
-        // containers, swapping content: currentHeaderContainer becomes the
-        // target page's header, parentItemHeaderContainer becomes the new
-        // grandparent's (or is removed). Snapshot the visible target header
-        // into an overlay clone so it stays on screen across the re-render.
-        //
-        // Cleanup is queued via this._pendingGestureBackOverlay and runs
-        // from handleStackDepthChange once the stack pop actually lands —
-        // NOT on a fixed delay from here. The default `back` action calls
-        // router.transitionTo, which is async (model hooks); if cleanup
-        // fired before the pop landed, the live currentHeaderContainer
-        // would still hold the leaving page header and we'd restore it
-        // to full opacity for the flash this overlay exists to prevent.
-        let parentClone = this._cloneTargetHeaderOverlay();
-        if (this.currentHeaderElement) {
-          this.currentHeaderElement.style.opacity = 0;
-          setTransform(this.currentHeaderElement, 'translateX(60px)');
-        }
-        if (this.parentHeaderElement) {
-          this.parentHeaderElement.style.opacity = 0;
-          setTransform(this.parentHeaderElement, 'translateX(-60px)');
-        }
-        this.navStacksService.notifyTransitionEnd();
-        this._activeSpring = null;
-        this._pendingGestureBackOverlay = parentClone;
-        run(this.args, this.args.back);
-      } else {
-        setTransform(this.containerElement, `translateX(${this.startingX}px)`);
-        if (this.currentHeaderElement) {
-          this.currentHeaderElement.style.opacity = 1;
-          setTransform(this.currentHeaderElement, 'translateX(0px)');
-        }
-        if (this.parentHeaderElement) {
-          this.parentHeaderElement.style.opacity = 0;
-          setTransform(this.parentHeaderElement, 'translateX(-60px)');
-        }
-        this.navStacksService.notifyTransitionEnd();
-        this._activeSpring = null;
-      }
-    };
-    if (fromValue === toValue && initialVelocity === 0) {
-      finalize();
-      return;
-    }
-    let spring = this._createSpring({ initialVelocity, fromValue, toValue });
-    this._activeSpring = spring;
-    spring
-      .onUpdate((s) => {
-        setTransform(this.containerElement, `translateX(${s.currentValue}px)`);
-        styleHeaderElements(
-          currentTransitionPercentage(
-            this.startingX,
-            this.backX,
-            s.currentValue,
-          ),
-          false,
-          this.parentHeaderElement,
-          this.currentHeaderElement,
-        );
-        if (
-          !shouldNavigateBack &&
-          s.currentValue >= this.startingX + this.thresholdX
-        ) {
-          shouldNavigateBack = true;
-          spring.updateConfig({
-            toValue: this.backX,
-          });
-        }
-      })
-      .onStop(() => {
-        finalize();
-      })
-      .start();
-  }
-
-  _cloneTargetHeaderOverlay() {
-    let liveParent = this.element.querySelector(
-      '.NavStack-parentItemHeaderContainer',
-    );
-    if (!liveParent) {
-      return null;
-    }
-    let clone = liveParent.cloneNode(true);
-    clone.classList.remove('NavStack-parentItemHeaderContainer');
-    clone.classList.add('NavStack-gestureBackTargetHeader');
-    clone.style.opacity = '1';
-    setTransform(clone, 'translateX(0px)');
-    // Append last so it paints on top of currentHeaderContainer.
-    this.element.querySelector('.NavStack-header').appendChild(clone);
-    this.clones.gestureBackOverlays.push(clone);
-    return clone;
   }
 
   _finishGestureBack(parentClone) {
@@ -810,14 +606,6 @@ export default class NavStack extends Component {
     while ((clonedElement = this.clones.elements.pop())) {
       clonedElement.parentNode.removeChild(clonedElement);
     }
-  }
-
-  preferRecognizer(recognizer) {
-    this.hammer?.get('pan').requireFailure(recognizer);
-  }
-
-  stopPreferringRecognizer(recognizer) {
-    this.hammer?.get('pan').dropRequireFailure(recognizer);
   }
 
   getTestContainerEl() {
