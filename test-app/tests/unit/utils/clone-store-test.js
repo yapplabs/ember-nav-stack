@@ -12,6 +12,7 @@ function makeClone(label) {
 
 function makeParent() {
   let parent = document.createElement('div');
+  parent.dataset.testParent = 'true';
   document.body.appendChild(parent);
   return parent;
 }

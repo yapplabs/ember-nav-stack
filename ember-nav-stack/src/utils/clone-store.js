@@ -16,8 +16,10 @@
 export default class CloneStore {
   #groups = new Map();
 
-  // Records `clone` under `groupName`. The same clone can appear in only one
-  // group; tracking it twice in the same group is a no-op.
+  // Records `clone` under `groupName`. Tracking the same clone twice in the
+  // same group is a no-op. (Tracking the same clone in MULTIPLE groups is
+  // not prevented — but no caller does that today; each clone has one
+  // logical owner group based on which slide animation created it.)
   track(groupName, clone) {
     if (!clone) {
       return;
