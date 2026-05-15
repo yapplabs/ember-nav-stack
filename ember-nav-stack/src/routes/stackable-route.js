@@ -1,21 +1,7 @@
 import Route from '@ember/routing/route';
 import { action } from '@ember/object';
 import { service } from '@ember/service';
-
-export function getParentRoute(router, route) {
-  // eslint-disable-next-line ember/no-private-routing-service
-  let routerMicroLib = router._routerMicrolib;
-  let { routeInfos, handlerInfos } = routerMicroLib.state;
-  routeInfos = routeInfos || handlerInfos; // routeInfos is in newer Ember versions
-  if (!routeInfos) {
-    return;
-  }
-  let routes = routeInfos.map((hi) => hi._handler || hi._route);
-  let routeIndex = routes.indexOf(route);
-  if (routeIndex > 0) {
-    return routes[routes.indexOf(route) - 1];
-  }
-}
+import { getOwner } from '@ember/application';
 
 export default class StackableRoute extends Route {
   @service router;
@@ -32,7 +18,7 @@ export default class StackableRoute extends Route {
   }
 
   get layerIndex() {
-    let parentRoute = getParentRoute(this._router, this);
+    let parentRoute = this._getParentRoute();
     let parentRouteLayerIndex = parentRoute?.layerIndex;
     let currentLayerIndex = parentRouteLayerIndex || 0;
     if (this.newLayer === true) {
@@ -52,10 +38,36 @@ export default class StackableRoute extends Route {
   }
 
   getParentRouteName() {
-    return getParentRoute(this._router, this).routeName;
+    return this._findParentRouteInfo()?.name;
   }
 
   @action back() {
-    this.router.transitionTo(this.getParentRouteName());
+    let parentName = this.getParentRouteName();
+    if (parentName) {
+      this.router.transitionTo(parentName);
+    }
+  }
+
+  // Walks the public RouteInfo chain to find this route's parent. Uses
+  // `router.activeTransition.to` (the destination RouteInfo) when a
+  // transition is in flight — important because `layerIndex` is read during
+  // `setupController`, before `router.currentRoute` has been updated to the
+  // new chain. Falls back to `router.currentRoute` for steady-state reads
+  // (e.g. the user-driven `back` action).
+  _findParentRouteInfo() {
+    let leaf = this.router.activeTransition?.to ?? this.router.currentRoute;
+    let info = leaf;
+    while (info && info.name !== this.routeName) {
+      info = info.parent;
+    }
+    return info?.parent;
+  }
+
+  _getParentRoute() {
+    let parentName = this.getParentRouteName();
+    if (!parentName) {
+      return undefined;
+    }
+    return getOwner(this).lookup(`route:${parentName}`);
   }
 }
