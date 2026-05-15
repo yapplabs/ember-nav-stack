@@ -7,9 +7,13 @@
     " "
     (if this.hasFooter "NavStack--withFooter ")
   }}
-  {{did-insert this.setupHammer}}
+  {{back-swipe
+    onReady=this.handleBackSwipeReady
+    getCanNavigateBack=this.getCanNavigateBack
+    onBack=this.handleBack
+    onBackSwipeOverlay=this.handleBackSwipeOverlay
+  }}
   {{did-update this.handleStackFingerprintChange this.stackItemsFingerprint}}
-  {{will-destroy this.tearDownHammer}}
   ...attributes
 >
   <div class="NavStack-itemContainer">

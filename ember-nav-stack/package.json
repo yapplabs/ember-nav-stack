@@ -54,6 +54,7 @@
     "@ember/render-modifiers": "^2.1.0",
     "@ember/test-waiters": "^3.1.0",
     "ember-math-helpers": "^3.0.0",
+    "ember-modifier": "^4.2.0",
     "ember-truth-helpers": "^4.0.3",
     "decorator-transforms": "^2.2.2",
     "hammerjs": "^2.0.8",
@@ -102,6 +103,7 @@
       "./components/nav-stack.js": "./dist/_app_/components/nav-stack.js",
       "./components/to-nav-stack.js": "./dist/_app_/components/to-nav-stack.js",
       "./helpers/nav-layer-indices.js": "./dist/_app_/helpers/nav-layer-indices.js",
+      "./modifiers/back-swipe.js": "./dist/_app_/modifiers/back-swipe.js",
       "./services/gesture.js": "./dist/_app_/services/gesture.js",
       "./services/nav-stacks.js": "./dist/_app_/services/nav-stacks.js",
       "./templates/stackable.js": "./dist/_app_/templates/stackable.js"
