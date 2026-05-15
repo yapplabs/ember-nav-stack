@@ -1,26 +1,18 @@
 import Service from '@ember/service';
 import { next, scheduleOnce } from '@ember/runloop';
 import { tracked } from '@glimmer/tracking';
-import { buildWaiter } from '@ember/test-waiters';
-
-let transitionWaiter = buildWaiter('ember-nav-stack:transition');
-let stackWaiter = buildWaiter('ember-nav-stack:stack-update');
+import WaiterState from '../utils/waiter-state.js';
 
 export default class NavStacks extends Service {
   @tracked stacks = {};
   @tracked isInitialRender = true;
 
-  transitionToken;
-  _stackUpdateToken;
-  _initialRenderToken;
-
   constructor() {
     super(...arguments);
+    this._waiter = new WaiterState();
     this._listeners = [];
     this._itemsById = {};
     this._counter = 1;
-    this._runningTransitions = 0;
-    this._initialRenderToken = stackWaiter.beginAsync();
   }
 
   pushItem(sourceId, layer, component, headerComponent) {
@@ -50,68 +42,32 @@ export default class NavStacks extends Service {
   }
 
   notifyTransitionStart() {
-    this._runningTransitions++;
-    if (this._runningTransitions === 1) {
-      this.transitionToken = transitionWaiter.beginAsync();
-    }
+    this._waiter.beginTransition();
   }
 
   notifyTransitionEnd() {
-    this._runningTransitions--;
-    if (this._runningTransitions < 0) {
-      this._runningTransitions = 0;
-    }
-    if (this._runningTransitions === 0) {
-      if (this.transitionToken) {
-        transitionWaiter.endAsync(this.transitionToken);
-      }
-      this.transitionToken = undefined;
-    }
-    next(() => {
-      this._maybeResolveIdle();
-    });
+    this._waiter.endTransition();
+    next(this._waiter, this._waiter.maybeResolveIdle);
   }
 
   runningTransitions() {
-    return this._runningTransitions;
+    return this._waiter.runningTransitions();
   }
 
   isRunningTransitions() {
-    return this._runningTransitions > 0;
+    return this._waiter.isRunningTransitions();
   }
 
   waitUntilTransitionIdle() {
-    if (this._waitingPromise) {
-      return this._waitingPromise;
-    }
-    return (this._waitingPromise = new Promise((resolve) => {
-      this._resolveWaiting = resolve;
-      next(() => {
-        this._maybeResolveIdle();
-      });
-    }));
+    let promise = this._waiter.whenIdle();
+    next(this._waiter, this._waiter.maybeResolveIdle);
+    return promise;
   }
 
   didUpdate() {} // hook
 
-  _maybeResolveIdle() {
-    if (
-      this._runningTransitions === 0 &&
-      !this._stackUpdateToken &&
-      !this._initialRenderToken &&
-      this._resolveWaiting
-    ) {
-      let resolveWaiting = this._resolveWaiting;
-      this._resolveWaiting = null;
-      this._waitingPromise = null;
-      resolveWaiting();
-    }
-  }
-
   _schedule() {
-    if (!this._stackUpdateToken) {
-      this._stackUpdateToken = stackWaiter.beginAsync();
-    }
+    this._waiter.beginStackUpdate();
     scheduleOnce('afterRender', this, this._process);
   }
 
@@ -139,15 +95,11 @@ export default class NavStacks extends Service {
     }
     this.didUpdate();
     next(() => {
-      if (wasInitialRender && this._initialRenderToken) {
-        stackWaiter.endAsync(this._initialRenderToken);
-        this._initialRenderToken = undefined;
+      if (wasInitialRender) {
+        this._waiter.markInitialRenderComplete();
       }
-      if (this._stackUpdateToken) {
-        stackWaiter.endAsync(this._stackUpdateToken);
-        this._stackUpdateToken = undefined;
-      }
-      this._maybeResolveIdle();
+      this._waiter.endStackUpdate();
+      this._waiter.maybeResolveIdle();
     });
   }
 
