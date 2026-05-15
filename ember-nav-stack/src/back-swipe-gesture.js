@@ -5,6 +5,7 @@ import { macroCondition, isTesting } from '@embroider/macros';
 import BackSwipeRecognizer from './utils/back-swipe-recognizer.js';
 import { setTransform } from './utils/animation.js';
 import {
+  HEADER_PARALLAX_OFFSET,
   currentTransitionPercentage,
   styleHeaderElements,
 } from './utils/header-style.js';
@@ -92,9 +93,12 @@ export default class BackSwipeGesture {
     this._unclaimedOverlay = null;
   }
 
-  // Called by NavStack when a programmatic transition starts. Stops a
-  // pending swipe-driven spring (if any) and disables the pan recognizer
-  // so the swipe can't compete with the animation.
+  // Called by NavStack when a programmatic transition starts. Disables the
+  // pan recognizer so a new swipe can't start while the animation is
+  // running. A swipe-driven spring that's already in flight is left to
+  // complete on its own — the programmatic transition's spring tracks its
+  // active spring separately (NavStack#_horizontalSpring) and cancels any
+  // prior horizontal spring before starting.
   disablePan() {
     this.hammer?.get('pan').set({ enable: false });
   }
@@ -190,11 +194,17 @@ export default class BackSwipeGesture {
         let overlay = this._cloneTargetHeaderOverlay();
         if (this.currentHeaderElement) {
           this.currentHeaderElement.style.opacity = 0;
-          setTransform(this.currentHeaderElement, 'translateX(60px)');
+          setTransform(
+            this.currentHeaderElement,
+            `translateX(${HEADER_PARALLAX_OFFSET}px)`,
+          );
         }
         if (this.parentHeaderElement) {
           this.parentHeaderElement.style.opacity = 0;
-          setTransform(this.parentHeaderElement, 'translateX(-60px)');
+          setTransform(
+            this.parentHeaderElement,
+            `translateX(${-HEADER_PARALLAX_OFFSET}px)`,
+          );
         }
         this.navStacksService.notifyTransitionEnd();
         this._activeSpring = null;
@@ -210,7 +220,10 @@ export default class BackSwipeGesture {
         }
         if (this.parentHeaderElement) {
           this.parentHeaderElement.style.opacity = 0;
-          setTransform(this.parentHeaderElement, 'translateX(-60px)');
+          setTransform(
+            this.parentHeaderElement,
+            `translateX(${-HEADER_PARALLAX_OFFSET}px)`,
+          );
         }
         this.navStacksService.notifyTransitionEnd();
         this._activeSpring = null;
