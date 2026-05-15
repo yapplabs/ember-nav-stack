@@ -1,3 +1,11 @@
 packages:
   - 'ember-nav-stack'
   - 'test-app'
+
+# Ember 5.12 ships with @glimmer/component@^1.1.2 as its expected peer.
+# Without an explicit override, pnpm resolves a separate ember-source instance
+# for the addon's devDeps (using @glimmer/component@2.x), which trips
+# Embroider's "Some V1 ember addons are resolving as incorrect peer
+# dependencies" guard against duplicate ember-source copies.
+overrides:
+  '@glimmer/component': ^1.1.2
