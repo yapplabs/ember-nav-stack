@@ -15,7 +15,6 @@ import {
   currentTransitionPercentage,
   styleHeaderElements,
 } from '../utils/header-style.js';
-import BackSwipeGesture from '../back-swipe-gesture.js';
 import CloneStore from '../utils/clone-store.js';
 
 export default class NavStack extends Component {
@@ -107,21 +106,17 @@ export default class NavStack extends Component {
   //     any clones left from abandoned transitions via _clones.clearAll().
   _clones = new CloneStore();
 
+  // The {{back-swipe}} modifier (template-level) calls this once its
+  // BackSwipeGesture is instantiated against the rendered element. We
+  // hold the gesture reference so transitionDidBegin / transitionDidEnd
+  // can pause / re-arm the pan recognizer during programmatic
+  // transitions, and the element reference because
+  // horizontalTransition / verticalTransition / cut / slide* all read
+  // from `this.element`.
   @action
-  setupHammer(el) {
-    this.element = el;
-    this._backSwipeGesture = new BackSwipeGesture({
-      element: el,
-      navStacksService: this.navStacksService,
-      gestureService: this.gesture,
-      getCanNavigateBack: () => !!this.args.back && this.stackDepth > 1,
-      onBack: () => run(this.args, this.args.back),
-      onBackSwipeOverlay: (clone) => {
-        if (!clone) return;
-        this._clones.track('gestureBackOverlays', clone);
-        this._pendingGestureBackOverlay = clone;
-      },
-    });
+  handleBackSwipeReady(gesture, element) {
+    this._backSwipeGesture = gesture;
+    this.element = element;
     let isInitialRender = this.navStacksService.isInitialRender;
     scheduleOnce(
       'afterRender',
@@ -132,9 +127,20 @@ export default class NavStack extends Component {
   }
 
   @action
-  tearDownHammer() {
-    this._backSwipeGesture?.teardown();
-    this._backSwipeGesture = null;
+  getCanNavigateBack() {
+    return !!this.args.back && this.stackDepth > 1;
+  }
+
+  @action
+  handleBack() {
+    run(this.args, this.args.back);
+  }
+
+  @action
+  handleBackSwipeOverlay(clone) {
+    if (!clone) return;
+    this._clones.track('gestureBackOverlays', clone);
+    this._pendingGestureBackOverlay = clone;
   }
 
   @action
