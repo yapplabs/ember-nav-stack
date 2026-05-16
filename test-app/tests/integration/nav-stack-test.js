@@ -638,4 +638,150 @@ module('Integration | Component | nav-stack', function (hooks) {
       assert.ok(isInViewport('.NavStack-item-1'), 'Item 1 is on screen');
     });
   });
+
+  // The `@onActiveItemChange` arg is the public extension point for behaviors
+  // that need to react to the top of the stack changing — accessibility focus
+  // moves, analytics page-view events, anything previously implemented by
+  // subclassing NavStack and overriding `handleStackDepthChange`. The callback
+  // fires whenever the curried component identity at the top of the stack
+  // differs from the previously-observed top, which covers push, pop, tab
+  // swap (root change), and same-component-with-new-model curry changes.
+  module('onActiveItemChange callback', function (hooks) {
+    hooks.beforeEach(function () {
+      this.activeItemChanges = [];
+      this.set('handleActiveItemChange', (event) => {
+        this.activeItemChanges.push(event);
+      });
+      this.set('isTrackShowing', false);
+      this.set('isTab1Active', true);
+      this.set('moreModel', { id: '1' });
+    });
+
+    let exampleHbs = hbs`
+      {{#if this.shouldRenderNavStack}}
+        {{!-- template-lint-disable no-inline-styles --}}
+        <div style="width:320px;height:480px;position:relative">
+          <NavStack
+            @layer={{0}}
+            @footer={{component 'tab-bar'}}
+            @back={{this.back}}
+            @onActiveItemChange={{this.handleActiveItemChange}}
+          />
+        </div>
+      {{/if}}
+      {{#if this.isTab1Active}}
+        <ToNavStack
+          @layer={{0}}
+          @item={{component 'test-components/page' model=this.pageModel controller=this.controller}}
+          @header={{component 'test-components/page/header' model=this.pageModel controller=this.controller}}
+        />
+        {{#if this.isTrackShowing}}
+          <ToNavStack
+            @layer={{0}}
+            @item={{component 'test-components/track' model=this.trackModel controller=this.controller}}
+            @header={{component 'test-components/track/header' model=this.trackModel controller=this.controller}}
+          />
+        {{/if}}
+      {{else}}
+        <ToNavStack
+          @layer={{0}}
+          @item={{component 'test-components/yapp/more' model=this.moreModel controller=this.controller}}
+          @header={{component 'test-components/yapp/more/header' model=this.moreModel controller=this.controller}}
+        />
+      {{/if}}
+    `;
+
+    test('fires once on initial render with a non-empty stack', async function (assert) {
+      await this.renderNavStack(exampleHbs);
+      assert.strictEqual(
+        this.activeItemChanges.length,
+        1,
+        'callback fired exactly once on initial render',
+      );
+      let event = this.activeItemChanges[0];
+      assert.true(event.isInitialRender, 'isInitialRender is true');
+      assert.strictEqual(event.previousDepth, 0, 'previousDepth is 0');
+      assert.strictEqual(event.currentDepth, 1, 'currentDepth is 1');
+      assert.strictEqual(
+        event.previousTopKey,
+        undefined,
+        'previousTopKey is undefined on initial fire',
+      );
+      assert.ok(event.currentTopKey, 'currentTopKey is set');
+    });
+
+    test('fires on push (drill-down)', async function (assert) {
+      await this.renderNavStack(exampleHbs);
+      this.activeItemChanges.length = 0;
+      this.set('isTrackShowing', true);
+      await settled();
+
+      assert.strictEqual(
+        this.activeItemChanges.length,
+        1,
+        'callback fired exactly once on push',
+      );
+      let event = this.activeItemChanges[0];
+      assert.false(event.isInitialRender);
+      assert.strictEqual(event.previousDepth, 1);
+      assert.strictEqual(event.currentDepth, 2);
+      assert.notStrictEqual(
+        event.previousTopKey,
+        event.currentTopKey,
+        'top key changed across push',
+      );
+    });
+
+    test('fires on pop', async function (assert) {
+      this.set('isTrackShowing', true);
+      await this.renderNavStack(exampleHbs);
+      this.activeItemChanges.length = 0;
+      this.set('isTrackShowing', false);
+      await settled();
+
+      assert.strictEqual(
+        this.activeItemChanges.length,
+        1,
+        'callback fired exactly once on pop',
+      );
+      let event = this.activeItemChanges[0];
+      assert.strictEqual(event.previousDepth, 2);
+      assert.strictEqual(event.currentDepth, 1);
+      assert.notStrictEqual(event.previousTopKey, event.currentTopKey);
+    });
+
+    test('fires on tab switch (root swap)', async function (assert) {
+      await this.renderNavStack(exampleHbs);
+      this.activeItemChanges.length = 0;
+      this.set('isTab1Active', false);
+      await settled();
+
+      assert.strictEqual(
+        this.activeItemChanges.length,
+        1,
+        'callback fired exactly once on root swap',
+      );
+      let event = this.activeItemChanges[0];
+      assert.strictEqual(event.currentDepth, 1);
+      assert.notStrictEqual(event.previousTopKey, event.currentTopKey);
+    });
+
+    test('omitting onActiveItemChange is a no-op', async function (assert) {
+      this.set('handleActiveItemChange', undefined);
+      await this.renderNavStack(exampleHbs);
+      this.set('isTrackShowing', true);
+      await settled();
+      this.set('isTrackShowing', false);
+      await settled();
+
+      assert.strictEqual(
+        this.activeItemChanges.length,
+        0,
+        'no events captured (handler was undefined)',
+      );
+      assert
+        .dom('.NavStack-currentHeaderContainer .page-title')
+        .hasText('Page One', 'rendered through pop with no handler attached');
+    });
+  });
 });

@@ -108,6 +108,7 @@ Override per-route via `routableTemplateName = 'something-else'` if a single com
 | `@footer` | no | A curried component to render below the stack (e.g. a tab bar). Often only set on layer 0. |
 | `@birdsEyeDebugging` | no | If truthy, applies an `.is-birdsEyeDebugging` class for a debug view that shows all layers at once. |
 | `@extractComponentKey` | no | Override how `NavStack` derives a stable identity for a stack item's component (used to detect "did the root component change?" → cut vs. slide). The default reads the curried component's resolved name + bound `model.id`. Most apps don't need to override. |
+| `@onActiveItemChange` | no | Callback invoked whenever the top of the stack changes identity (push, pop, root swap, initial render). Receives `{ isInitialRender, previousDepth, currentDepth, previousTopKey, currentTopKey }`, where the `*TopKey` values are the top stack item's component name. Use this — not subclassing — to react to navigation (e.g. moving keyboard focus to the newly active heading, recording analytics page views). |
 
 ## `<ToNavStack>` arguments
 

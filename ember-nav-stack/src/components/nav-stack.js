@@ -8,7 +8,10 @@ import { getOwner } from '@ember/application';
 import { service } from '@ember/service';
 import { bool, mapBy, reads } from 'macro-decorators';
 import { guidFor } from '@ember/object/internals';
-import { extractComponentKey } from '../utils/component.js';
+import {
+  extractComponentKey,
+  extractComponentName,
+} from '../utils/component.js';
 import { decideTransition } from '../utils/transition-decision.js';
 import {
   HEADER_PARALLAX_OFFSET,
@@ -196,8 +199,8 @@ export default class NavStack extends Component {
 
     let stackItems = this.stackItems || [];
     let stackDepth = stackItems.length;
-    let rootComponentRef = stackItems[0]?.component;
     let extract = this.args.extractComponentKey || extractComponentKey;
+    let rootComponentRef = stackItems[0]?.component;
     let rootComponentKey = extract(rootComponentRef);
 
     let pendingGestureBackOverlay = this._pendingGestureBackOverlay;
@@ -233,6 +236,30 @@ export default class NavStack extends Component {
       } else {
         this._clones.remove('gestureBackOverlays', pendingGestureBackOverlay);
       }
+    }
+
+    // Fire the active-item-change callback when the top stack item's
+    // component identity changes (push, pop, or root swap). Compared via
+    // component name only — `extractComponentName` skips the `:model.id`
+    // suffix that `extractComponentKey` adds, because the model ref's
+    // `lastValue` populates lazily and would otherwise produce two fires
+    // per push (`track` → `track:1` across consecutive render ticks).
+    // Consumers needing finer per-model granularity should watch their
+    // own model state via `did-update` or similar. Initial render fires
+    // once when the stack starts non-empty.
+    let topComponentRef = stackItems[stackDepth - 1]?.component;
+    let currentTopKey =
+      stackDepth === 0 ? undefined : extractComponentName(topComponentRef);
+    let previousTopKey = this._activeItemKey;
+    if (currentTopKey !== previousTopKey) {
+      this.args.onActiveItemChange?.({
+        isInitialRender,
+        previousDepth: this._stackDepth ?? 0,
+        currentDepth: stackDepth,
+        previousTopKey,
+        currentTopKey,
+      });
+      this._activeItemKey = currentTopKey;
     }
 
     this._stackDepth = stackDepth;
