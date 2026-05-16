@@ -96,6 +96,23 @@ module('Acceptance | stackable-route parent resolution', function (hooks) {
           .map((c) => c.toValue)
           .join(',')}`,
       );
+      // The layer-1 NavStack should now have TWO items in its
+      // .NavStack-itemContainer. The second item (index 1) should hold
+      // schedule-item content.
+      // The layer-1 NavStack should now have TWO items in its stack:
+      // my-schedule at index 0 and schedule-item at index 1.
+      assert
+        .dom('.NavStack--layer1 .NavStack-item')
+        .exists(
+          { count: 2 },
+          'layer-1 NavStack contains 2 stack items after the drill',
+        );
+      assert
+        .dom('.NavStack--layer1 .NavStack-item-1 h1')
+        .hasText(
+          /schedule-item/i,
+          'schedule-item content rendered as the second item on layer 1',
+        );
     } finally {
       NavStack.prototype._createSpring = originalCreateSpring;
     }

@@ -38,7 +38,31 @@ export default class StackableRoute extends Route {
   }
 
   getParentRouteName() {
-    return this._findParentRouteInfo()?.name;
+    return this._findParentRouteInfo()?.name ?? this._parentRouteNameFromName();
+  }
+
+  // Fallback used by `getParentRouteName` when the dynamic RouteInfo chain
+  // doesn't contain this route — which is the common case at
+  // `setupController` time: Ember calls into us BEFORE
+  // `router.currentRoute` is advanced to the new leaf, and
+  // `router.activeTransition` is also null at that moment. The chain walk
+  // in `_findParentRouteInfo` then falls off without finding `this.routeName`
+  // and returns undefined, so a `newLayer=false` child route would default
+  // to layer 0 (its parent's `layerIndex` couldn't be read).
+  //
+  // The dotted route name encodes the registered hierarchy: `foo.bar.baz`'s
+  // parent route is `foo.bar`. Stripping the last segment is reliable for
+  // every nested non-resetNamespace route. ResetNamespace routes have no
+  // dot in their name; this returns undefined for them and the caller's
+  // existing fallback (parentRouteLayerIndex defaults to 0) takes over —
+  // which is correct because resetNamespace routes are exactly the ones
+  // that typically set `newLayer = true` and don't depend on parent state.
+  _parentRouteNameFromName() {
+    let parts = this.routeName.split('.');
+    if (parts.length < 2) {
+      return undefined;
+    }
+    return parts.slice(0, -1).join('.');
   }
 
   @action back() {
