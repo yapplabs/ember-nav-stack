@@ -306,7 +306,7 @@ export default class NavStack extends Component {
       animate: false,
     });
 
-    if ((this.args.layer > 0) & (this.stackDepth > 0)) {
+    if ((this.args.layer > 0) && (this.stackDepth > 0)) {
       this._verticalTransition({
         element: this.element,
         toValue: 0,
