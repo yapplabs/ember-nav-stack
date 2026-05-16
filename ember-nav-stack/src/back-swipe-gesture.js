@@ -148,14 +148,23 @@ export default class BackSwipeGesture {
     if (this._activeSpring) {
       return;
     }
+    // Clamp the gesture's effective displacement at 0 so it can never travel
+    // left of its starting position. Without this, sliding the finger past
+    // origin produces a negative `deltaX`, and `currentTransitionPercentage`
+    // — which takes Math.abs of the delta — interprets it as forward
+    // progress: parent header fades in and current header fades out as if a
+    // forward transition were under way, the opposite of the back-swipe the
+    // user actually started. Clamping makes the gesture latch at origin
+    // until the finger crosses back rightward.
+    let effectiveDeltaX = Math.max(0, ev.deltaX);
     setTransform(
       this.containerElement,
-      `translateX(${this.startingX + ev.deltaX}px)`,
+      `translateX(${this.startingX + effectiveDeltaX}px)`,
     );
     let ratio = currentTransitionPercentage(
       this.startingX,
       this.backX,
-      this.startingX + ev.deltaX,
+      this.startingX + effectiveDeltaX,
     );
     styleHeaderElements(
       ratio,
@@ -175,10 +184,11 @@ export default class BackSwipeGesture {
   };
 
   _handlePanEnd(ev) {
+    let effectiveDeltaX = Math.max(0, ev.deltaX);
     let shouldNavigateBack =
       this._adjustX(ev.center.x) >= this.thresholdX && this.canNavigateBack;
     let initialVelocity = ev.velocityX;
-    let fromValue = this.startingX + ev.deltaX;
+    let fromValue = this.startingX + effectiveDeltaX;
     let toValue = shouldNavigateBack ? this.backX : this.startingX;
     this.navStacksService.notifyTransitionStart();
 
