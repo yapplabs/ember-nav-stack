@@ -102,12 +102,12 @@ export default class NavStack extends Component {
   #suppressAnimation = false;
 
   // Tracks groups of cloned DOM nodes for unified cleanup. Groups used:
-  //   - 'stackItems'           cloned by slideBack (the leaving last item)
+  //   - 'stackItems'           cloned by _slideBack (the leaving last item)
   //   - 'headers'              cloned for slide animations (leaving header)
-  //   - 'elements'             cloned by slideDown (the whole NavStack)
+  //   - 'elements'             cloned by _slideDown (the whole NavStack)
   //   - 'gestureBackOverlays'  target-header snapshot during a back-swipe;
   //     cleanup is queued via `_pendingGestureBackOverlay` and performed by
-  //     `_finishGestureBack` — scheduled from `handleStackDepthChange` once
+  //     `_finishGestureBack` — scheduled from `_handleStackDepthChange` once
   //     the stack pop actually lands, NOT on a fixed delay from finalize.
   //     Tying cleanup to the observed pop matters because the default `back`
   //     action calls `router.transitionTo`, which resolves asynchronously
@@ -119,10 +119,10 @@ export default class NavStack extends Component {
 
   // The {{back-swipe}} modifier (template-level) calls this once its
   // BackSwipeGesture is instantiated against the rendered element. We
-  // hold the gesture reference so transitionDidBegin / transitionDidEnd
+  // hold the gesture reference so _transitionDidBegin / _transitionDidEnd
   // can pause / re-arm the pan recognizer during programmatic
   // transitions, and the element reference because
-  // horizontalTransition / verticalTransition / cut / slide* all read
+  // _horizontalTransition / _verticalTransition / _cut / _slide* all read
   // from `this.element`.
   @action
   handleBackSwipeReady(gesture, element) {
@@ -132,7 +132,7 @@ export default class NavStack extends Component {
     scheduleOnce(
       'afterRender',
       this,
-      this.handleStackDepthChange,
+      this._handleStackDepthChange,
       isInitialRender,
     );
   }
@@ -156,7 +156,7 @@ export default class NavStack extends Component {
 
   @action
   stackItemsDidChange() {
-    this.handleStackDepthChange(false);
+    this._handleStackDepthChange(false);
   }
 
   // A fingerprint over stackItems that reflects BOTH structural changes
@@ -182,14 +182,14 @@ export default class NavStack extends Component {
 
   @action
   handleStackFingerprintChange() {
-    this.handleStackDepthChange(false);
+    this._handleStackDepthChange(false);
   }
 
   _clearRootJustChanged() {
     this._rootJustChanged = false;
   }
 
-  handleStackDepthChange(isInitialRender) {
+  _handleStackDepthChange(isInitialRender) {
     if (this.isDestroying || this.isDestroyed) {
       return;
     }
@@ -242,35 +242,35 @@ export default class NavStack extends Component {
   _applyTransition(intent) {
     switch (intent.kind) {
       case 'cut':
-        this.schedule(this.cut);
+        this._schedule(this._cut);
         break;
       case 'slideUp':
-        this.schedule(this.slideUp);
+        this._schedule(this._slideUp);
         break;
       case 'slideDown':
-        this.cloneElement();
+        this._cloneElement();
         this.element.style.display = 'none';
-        this.schedule(this.slideDown);
+        this._schedule(this._slideDown);
         break;
       case 'slideBack':
-        this.cloneLastStackItem();
-        this.cloneHeader();
-        this.schedule(this.slideBack);
+        this._cloneLastStackItem();
+        this._cloneHeader();
+        this._schedule(this._slideBack);
         break;
       case 'slideForward':
-        this.cloneHeader();
-        this.schedule(this.slideForward);
+        this._cloneHeader();
+        this._schedule(this._slideForward);
         break;
       case 'none':
         break;
     }
   }
 
-  schedule(method) {
+  _schedule(method) {
     scheduleOnce('afterRender', this, method);
   }
 
-  computeXPosition() {
+  _computeXPosition() {
     let stackDepth = this.stackDepth;
     if (stackDepth === 0) {
       return 0;
@@ -292,22 +292,22 @@ export default class NavStack extends Component {
     let itemContainerElement = this.element.querySelector(
       '.NavStack-itemContainer',
     );
-    let newX = this.computeXPosition();
+    let newX = this._computeXPosition();
     setTransform(itemContainerElement, `translateX(${newX}px)`);
   }
 
-  cut() {
+  _cut() {
     if (this.isDestroying || this.isDestroyed) {
       return;
     }
 
-    this.horizontalTransition({
-      toValue: this.computeXPosition(),
+    this._horizontalTransition({
+      toValue: this._computeXPosition(),
       animate: false,
     });
 
     if ((this.args.layer > 0) & (this.stackDepth > 0)) {
-      this.verticalTransition({
+      this._verticalTransition({
         element: this.element,
         toValue: 0,
         animate: false,
@@ -315,24 +315,24 @@ export default class NavStack extends Component {
     }
   }
 
-  slideForward() {
+  _slideForward() {
     if (this.isDestroying || this.isDestroyed) {
       return;
     }
-    this.horizontalTransition({
-      toValue: this.computeXPosition(),
+    this._horizontalTransition({
+      toValue: this._computeXPosition(),
       finishCallback: () => {
         this._clones.clear('headers');
       },
     });
   }
 
-  slideBack() {
+  _slideBack() {
     if (this.isDestroying || this.isDestroyed) {
       return;
     }
-    this.horizontalTransition({
-      toValue: this.computeXPosition(),
+    this._horizontalTransition({
+      toValue: this._computeXPosition(),
       finishCallback: () => {
         this._clones.clear('stackItems');
         this._clones.clear('headers');
@@ -340,20 +340,20 @@ export default class NavStack extends Component {
     });
   }
 
-  slideUp() {
+  _slideUp() {
     if (this.isDestroying || this.isDestroyed) {
       return;
     }
 
     let debug = this.birdsEyeDebugging;
-    this.verticalTransition({
+    this._verticalTransition({
       element: this.element,
       toValue: 0,
       fromValue: debug ? 480 : this.element.getBoundingClientRect().height,
     });
   }
 
-  slideDown() {
+  _slideDown() {
     if (this.isDestroying || this.isDestroyed) {
       return;
     }
@@ -361,7 +361,7 @@ export default class NavStack extends Component {
     let clonedElement = this._clones.last('elements');
     let y = debug ? 480 : clonedElement.getBoundingClientRect().height;
     nextTick().then(() => {
-      this.verticalTransition({
+      this._verticalTransition({
         element: clonedElement,
         toValue: y,
         finishCallback: () => {
@@ -371,7 +371,7 @@ export default class NavStack extends Component {
     });
   }
 
-  horizontalTransition({
+  _horizontalTransition({
     toValue,
     fromValue,
     animate = !this.#suppressAnimation,
@@ -398,8 +398,8 @@ export default class NavStack extends Component {
       prior.stop();
     }
 
-    this.transitionDidBegin();
-    this.notifyTransitionStart();
+    this._transitionDidBegin();
+    this._notifyTransitionStart();
     let isNoOp = false;
     let finish = () => {
       setTransform(itemContainerElement, `translateX(${toValue}px)`);
@@ -414,14 +414,14 @@ export default class NavStack extends Component {
           clonedHeaderElement,
         );
       }
-      this.notifyTransitionEnd();
-      this.transitionDidEnd();
+      this._notifyTransitionEnd();
+      this._transitionDidEnd();
       if (finishCallback) {
         finishCallback();
       }
     };
     if (animate) {
-      fromValue = fromValue || this.getX(itemContainerElement);
+      fromValue = fromValue || this._getX(itemContainerElement);
       if (fromValue === toValue) {
         isNoOp = true;
         run(finish);
@@ -451,19 +451,19 @@ export default class NavStack extends Component {
     run(finish);
   }
 
-  verticalTransition({
+  _verticalTransition({
     element,
     toValue,
     fromValue,
     animate = !this.#suppressAnimation,
     finishCallback,
   }) {
-    this.transitionDidBegin();
-    this.notifyTransitionStart();
+    this._transitionDidBegin();
+    this._notifyTransitionStart();
     let finish = () => {
       setTransform(element, `translateY(${toValue}px)`);
-      this.notifyTransitionEnd();
-      this.transitionDidEnd();
+      this._notifyTransitionEnd();
+      this._transitionDidEnd();
       if (finishCallback) {
         finishCallback();
       }
@@ -499,22 +499,22 @@ export default class NavStack extends Component {
     });
   }
 
-  transitionDidBegin() {
+  _transitionDidBegin() {
     this._backSwipeGesture?.disablePan();
   }
 
-  transitionDidEnd() {
+  _transitionDidEnd() {
     if (!this.element || this.stackDepth <= 1) {
       return;
     }
     this._backSwipeGesture?.setupContext();
   }
 
-  notifyTransitionStart() {
+  _notifyTransitionStart() {
     this.navStacksService.notifyTransitionStart();
   }
 
-  notifyTransitionEnd() {
+  _notifyTransitionEnd() {
     this.navStacksService.notifyTransitionEnd();
   }
 
@@ -543,7 +543,7 @@ export default class NavStack extends Component {
     this._clones.remove('gestureBackOverlays', parentClone);
   }
 
-  cloneLastStackItem() {
+  _cloneLastStackItem() {
     let clone = this.element
       .querySelector('.NavStack-item:last-child')
       .cloneNode(true);
@@ -552,7 +552,7 @@ export default class NavStack extends Component {
     this.element.querySelector('.NavStack-itemContainer').appendChild(clone);
   }
 
-  cloneHeader() {
+  _cloneHeader() {
     this._clones.clear('headers');
     let liveHeader = this.element.querySelector(
       '.NavStack-currentHeaderContainer',
@@ -568,7 +568,7 @@ export default class NavStack extends Component {
     headerWrapper.insertBefore(clone, headerWrapper.firstChild);
   }
 
-  cloneElement() {
+  _cloneElement() {
     let clone = this.element.cloneNode(true);
     clone.setAttribute('id', `${this.elementId}_clone`);
     this._clones.track('elements', clone);
@@ -577,20 +577,20 @@ export default class NavStack extends Component {
     clone.style.webkitTransform; // force layout, without this CSS transition does not run
   }
 
-  getTestContainerEl() {
+  _getTestContainerEl() {
     if (this._testContainerEl === undefined) {
       this._testContainerEl = document.querySelector('#ember-testing') || false;
     }
     return this._testContainerEl;
   }
 
-  getX(element) {
-    return this.adjustX(element.getBoundingClientRect().left);
+  _getX(element) {
+    return this._adjustX(element.getBoundingClientRect().left);
   }
 
-  adjustX(x) {
+  _adjustX(x) {
     if (macroCondition(isTesting())) {
-      let testContainerEl = this.getTestContainerEl();
+      let testContainerEl = this._getTestContainerEl();
       if (testContainerEl) {
         return x - testContainerEl.getBoundingClientRect().left;
       }
