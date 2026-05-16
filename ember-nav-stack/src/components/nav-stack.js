@@ -79,6 +79,22 @@ export default class NavStack extends Component {
 
   @mapBy('stackItems', 'component') components;
 
+  // One entry per stack item. The template renders an empty `.NavStack-item-N`
+  // div for each (so the layout's left-offset CSS classes are correct), but
+  // only mounts the actual curried component when `shouldRender` is true —
+  // i.e. only the last two items in the stack are alive at any time. Items
+  // further back are positioned off-screen by the cut animation and their
+  // contents aren't worth keeping mounted.
+  get renderableEntries() {
+    let components = this.components;
+    let renderThreshold = components.length - 2;
+    return components.map((component, index) => ({
+      index,
+      component,
+      shouldRender: index >= renderThreshold,
+    }));
+  }
+
   @bool('args.footer') hasFooter;
 
   // Resolved once in the constructor from
