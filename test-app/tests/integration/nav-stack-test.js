@@ -406,6 +406,37 @@ module('Integration | Component | nav-stack', function (hooks) {
       assert.ok(isInViewport('.NavStack-item-1'), 'Item 1 is on screen');
       assert.dom('.NavStack-item-2').doesNotExist();
     });
+    test('back-swipe latches at origin if finger crosses left past start', async function (assert) {
+      // Without clamping deltaX at 0 in the pan handler, sliding the finger
+      // back past the gesture's startingX feeds `currentTransitionPercentage`
+      // a negative delta whose Math.abs is interpreted as forward progress
+      // — so the parent (target) header begins to appear and the current
+      // header begins to fade, as if the user were drilling forward. That's
+      // the opposite of the back-swipe she's actually holding open.
+      assert.expect(2);
+      await this.renderNavStack(exampleHbs);
+      let mouseUpDeferred = deferred();
+      let panXPromise = panX(find('.NavStack-item-2'), {
+        position: [50, 100],
+        amount: [40, -100], // right 40 (engage gesture), then left 100 (well past origin)
+        duration: 200,
+        waitForMouseUp: mouseUpDeferred.promise,
+      });
+      await delay(300);
+      assert.strictEqual(
+        find('.NavStack-parentItemHeaderContainer').style.opacity,
+        '0',
+        'parent (target) header stays hidden — gesture clamped at origin',
+      );
+      assert.strictEqual(
+        find('.NavStack-currentHeaderContainer').style.opacity,
+        '1',
+        'current header stays fully opaque — no forward-direction fade',
+      );
+      mouseUpDeferred.resolve();
+      await panXPromise;
+      await settled();
+    });
     test('engage preferred recognizer, does not back swipe', async function (assert) {
       await this.renderNavStack(exampleHbs);
       assert.notOk(isInViewport('.NavStack-item-1'), 'Item 1 is off screen');
