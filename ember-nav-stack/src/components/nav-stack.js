@@ -38,6 +38,8 @@ export default class NavStack extends Component {
   constructor() {
     super(...arguments);
     this.navStacksService.register(this);
+    let config = getOwner(this).resolveRegistration('config:environment');
+    this.#suppressAnimation = !!config?.['ember-nav-stack']?.suppressAnimation;
   }
 
   willDestroy() {
@@ -79,16 +81,9 @@ export default class NavStack extends Component {
 
   @bool('args.footer') hasFooter;
 
-  get suppressAnimation() {
-    if (this._suppressAnimation === undefined) {
-      const config = getOwner(this).resolveRegistration('config:environment');
-      // eslint-disable-next-line ember/no-side-effects
-      this._suppressAnimation =
-        config['ember-nav-stack'] &&
-        config['ember-nav-stack'].suppressAnimation;
-    }
-    return this._suppressAnimation;
-  }
+  // Resolved once in the constructor from
+  // `config.environment['ember-nav-stack'].suppressAnimation`.
+  #suppressAnimation = false;
 
   // Tracks groups of cloned DOM nodes for unified cleanup. Groups used:
   //   - 'stackItems'           cloned by slideBack (the leaving last item)
@@ -363,7 +358,7 @@ export default class NavStack extends Component {
   horizontalTransition({
     toValue,
     fromValue,
-    animate = !this.suppressAnimation,
+    animate = !this.#suppressAnimation,
     finishCallback,
   }) {
     let itemContainerElement = this.element.querySelector(
@@ -444,7 +439,7 @@ export default class NavStack extends Component {
     element,
     toValue,
     fromValue,
-    animate = !this.suppressAnimation,
+    animate = !this.#suppressAnimation,
     finishCallback,
   }) {
     this.transitionDidBegin();
