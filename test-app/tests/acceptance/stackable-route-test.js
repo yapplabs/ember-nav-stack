@@ -1,6 +1,7 @@
 import { module, test } from 'qunit';
 import { visit, click, currentURL } from '@ember/test-helpers';
 import { setupApplicationTest } from 'ember-qunit';
+import NavStack from 'ember-nav-stack/components/nav-stack';
 
 // These tests exercise `StackableRoute`'s parent-route resolution through
 // observable DOM and URL behavior — deliberately avoiding any direct
@@ -48,6 +49,56 @@ module('Acceptance | stackable-route parent resolution', function (hooks) {
         'a second NavStack appears for the layer-1 my-schedule route ' +
           '— proves layerIndex was computed via the in-transition route chain',
       );
+  });
+
+  test('drilling further within layer 1 (real route transition) animates a slideForward', async function (assert) {
+    // Reproduces the dummy-app flow that was reported as not animating:
+    // at /yapp/pages/1 tap MS → my-schedule slides up onto layer 1, then
+    // click "Schedule Item 2" → URL transitions to my-schedule.schedule-item.
+    // The layer-1 NavStack should run a horizontal slideForward (push) when
+    // the second item lands on its stack. We spy on `_createSpring` and
+    // assert that at least one spring with a NEGATIVE toValue (horizontal
+    // forward motion of the .NavStack-itemContainer) is created in
+    // response to the click.
+    let originalCreateSpring = NavStack.prototype._createSpring;
+    let springCalls = [];
+    NavStack.prototype._createSpring = function (options) {
+      springCalls.push(options);
+      return originalCreateSpring.call(this, options);
+    };
+
+    try {
+      await visit('/yapp/pages/1');
+      let mySchedule = document.querySelector('.js-myScheduleButton');
+      assert.ok(mySchedule, 'MS button is visible from page 1');
+      await click(mySchedule);
+      assert
+        .dom('.NavStack')
+        .exists({ count: 2 }, 'on /my-schedule with layer 1 mounted');
+
+      // Reset the spy so we only see what the drill triggered.
+      springCalls.length = 0;
+
+      let scheduleLink = [
+        ...document.querySelectorAll('.NavStack-item a'),
+      ].find((el) => el.textContent.trim() === 'Schedule Item 2');
+      assert.ok(scheduleLink, 'found "Schedule Item 2" link inside layer 1');
+      await click(scheduleLink);
+
+      assert.ok(
+        currentURL().endsWith('/schedule-items/2'),
+        `URL transitioned to schedule-item (got ${currentURL()})`,
+      );
+      let horizontalSpring = springCalls.find((c) => c.toValue < 0);
+      assert.ok(
+        horizontalSpring,
+        `at least one spring with a negative toValue (horizontal slideForward) — got toValues=${springCalls
+          .map((c) => c.toValue)
+          .join(',')}`,
+      );
+    } finally {
+      NavStack.prototype._createSpring = originalCreateSpring;
+    }
   });
 
   test('back action from drilled state navigates to the parent route', async function (assert) {
