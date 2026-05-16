@@ -86,6 +86,22 @@ export default class NavStacks extends Service {
     for (let layerName in newStacks) {
       newStacks[layerName].sort((a, b) => a.order - b.order);
     }
+    // Detect layers that just emptied (had items in the prior snapshot,
+    // none in the new). Those NavStacks are about to be torn down by the
+    // host's `{{#each (nav-layer-indices)}}` once we publish `this.stacks`,
+    // and their willDestroy fires too late to capture a slide-down clone
+    // (Glimmer detaches the element before willDestroy runs). Notify them
+    // here, while their DOM is still attached, so they can start a
+    // detached dismissal animation that outlives the impending teardown.
+    let oldStacks = this.stacks;
+    for (let listener of this._listeners) {
+      let layer = listener.args?.layer ?? listener.layer;
+      let oldList = oldStacks[`layer${layer}`];
+      let newList = newStacks[`layer${layer}`];
+      if ((oldList?.length ?? 0) > 0 && (newList?.length ?? 0) === 0) {
+        listener.layerDidEmpty?.();
+      }
+    }
     this.stacks = newStacks;
     if (this.isInitialRender === true) {
       next(this, this._clearIsInitialRender);

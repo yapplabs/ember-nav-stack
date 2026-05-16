@@ -1,7 +1,7 @@
 import Component from '@glimmer/component';
 import { action } from '@ember/object';
 import { next, run, scheduleOnce } from '@ember/runloop';
-import { nextTick, setTransform } from '../utils/animation.js';
+import { setTransform } from '../utils/animation.js';
 import { Spring } from 'wobble';
 import { macroCondition, isTesting } from '@embroider/macros';
 import { getOwner } from '@ember/application';
@@ -51,9 +51,27 @@ export default class NavStack extends Component {
     // Defensive: sweep every tracked clone in case some transition was
     // abandoned before its normal cleanup ran (e.g. a back-swipe in flight
     // when the consumer tore down the route). The `parentNode?` guard in
-    // CloneStore handles clones whose parents are already detached.
+    // CloneStore handles clones whose parents are already detached. The
+    // detached slide-down clone is not tracked here, so it survives this
+    // sweep and keeps animating after we're gone.
     this._clones.clearAll();
     this._pendingGestureBackOverlay = null;
+  }
+
+  // Called by the service's `_process` immediately before it publishes
+  // `this.stacks = newStacks` for the case where our layer's stack just
+  // went from non-empty to empty. This is the only moment when our DOM is
+  // still attached and we have advance notice that we're about to be torn
+  // down by the host's `{{#each (nav-layer-indices)}}`. willDestroy is too
+  // late (Glimmer has already detached `this.element` by then, leaving us
+  // with no parent to attach the clone to). `_runDetachedSlideDown`
+  // self-guards against double-fire from `_applyTransition('slideDown')`,
+  // which is the parallel path for setups that don't use nav-layer-indices.
+  layerDidEmpty() {
+    if (this.args.layer === 0) {
+      return;
+    }
+    this._runDetachedSlideDown();
   }
 
   get layerIndexCssClass() {
@@ -107,7 +125,6 @@ export default class NavStack extends Component {
   // Tracks groups of cloned DOM nodes for unified cleanup. Groups used:
   //   - 'stackItems'           cloned by _slideBack (the leaving last item)
   //   - 'headers'              cloned for slide animations (leaving header)
-  //   - 'elements'             cloned by _slideDown (the whole NavStack)
   //   - 'gestureBackOverlays'  target-header snapshot during a back-swipe;
   //     cleanup is queued via `_pendingGestureBackOverlay` and performed by
   //     `_finishGestureBack` — scheduled from `_handleStackDepthChange` once
@@ -275,9 +292,7 @@ export default class NavStack extends Component {
         this._schedule(this._slideUp);
         break;
       case 'slideDown':
-        this._cloneElement();
-        this.element.style.display = 'none';
-        this._schedule(this._slideDown);
+        this._runDetachedSlideDown();
         break;
       case 'slideBack':
         this._cloneLastStackItem();
@@ -380,22 +395,81 @@ export default class NavStack extends Component {
     });
   }
 
-  _slideDown() {
-    if (this.isDestroying || this.isDestroyed) {
+  // Runs the slide-down dismissal entirely outside our own lifecycle.
+  // Called from two sites:
+  //   1. willDestroy, when a layer > 0 NavStack is being torn down with
+  //      non-empty stack items — the common case under `nav-layer-indices`,
+  //      where the host's `{{#each}}` drops our entry the instant our layer
+  //      goes empty and we never get a chance to run an afterRender hook on
+  //      a live `this`.
+  //   2. `_applyTransition('slideDown')`, for setups that keep the NavStack
+  //      alive while its items go to zero (manual layer management without
+  //      `nav-layer-indices`). In that case willDestroy never fires so this
+  //      is the only entry point.
+  // Both sites can be reached in degenerate flows, so we self-guard against
+  // a double fire. Clone+parent uses our DOM neighbor (which survives our
+  // teardown), the live element is hidden, and the spring runs with
+  // closure-captured refs — completion and DOM cleanup happen regardless
+  // of NavStack lifecycle. We bypass CloneStore so willDestroy's clearAll
+  // sweep can't tear our animation out, and we talk to the service
+  // directly for waiter tracking (the `_notifyTransition*` indirections
+  // would no-op once we're destroyed).
+  _runDetachedSlideDown() {
+    if (this._slideDownFired) {
       return;
     }
-    let debug = this.birdsEyeDebugging;
-    let clonedElement = this._clones.last('elements');
-    let y = debug ? 480 : clonedElement.getBoundingClientRect().height;
-    nextTick().then(() => {
-      this._verticalTransition({
-        element: clonedElement,
-        toValue: y,
-        finishCallback: () => {
-          this._clones.clear('elements');
-        },
-      });
-    });
+    this._slideDownFired = true;
+    let element = this.element;
+    let parent = element?.parentNode;
+    if (!element || !parent) {
+      return;
+    }
+    let clone = element.cloneNode(true);
+    clone.setAttribute('id', `${this.elementId}_clone`);
+    parent.appendChild(clone);
+    element.style.display = 'none';
+    // Force layout so the upcoming transform animates from rest, not from
+    // wherever the browser would interpolate from with no committed style.
+    void clone.offsetHeight;
+
+    let toValue = this.birdsEyeDebugging
+      ? 480
+      : clone.getBoundingClientRect().height;
+    let service = this.navStacksService;
+    let removeClone = () => {
+      clone.parentNode?.removeChild(clone);
+    };
+
+    if (this.#suppressAnimation || toValue === 0) {
+      // No-op short-circuit: when there's nothing to animate (animations
+      // suppressed, or the element rendered with no height — which happens
+      // when the host's container is torn down before us, e.g. on app
+      // teardown during a test), snap to the final state and bail. Don't
+      // open a transition waiter for a spring that has no work — wobble's
+      // onStop doesn't reliably fire for a degenerate 0→0 spring, which
+      // would leave the waiter perpetually open and hang `settled()`.
+      setTransform(clone, `translateY(${toValue}px)`);
+      removeClone();
+      return;
+    }
+
+    service.notifyTransitionStart();
+    new Spring({
+      initialVelocity: 0,
+      fromValue: 0,
+      toValue,
+      stiffness: 1000,
+      damping: 500,
+      mass: 3,
+    })
+      .onUpdate((s) => {
+        setTransform(clone, `translateY(${s.currentValue}px)`);
+      })
+      .onStop(() => {
+        removeClone();
+        service.notifyTransitionEnd();
+      })
+      .start();
   }
 
   _horizontalTransition({
@@ -593,15 +667,6 @@ export default class NavStack extends Component {
     this._clones.track('headers', clone);
     let headerWrapper = this.element.querySelector('.NavStack-header');
     headerWrapper.insertBefore(clone, headerWrapper.firstChild);
-  }
-
-  _cloneElement() {
-    let clone = this.element.cloneNode(true);
-    clone.setAttribute('id', `${this.elementId}_clone`);
-    this._clones.track('elements', clone);
-    this.element.parentNode.appendChild(clone);
-    clone.style.transform; // force layout, without this CSS transition does not run
-    clone.style.webkitTransform; // force layout, without this CSS transition does not run
   }
 
   _getTestContainerEl() {
