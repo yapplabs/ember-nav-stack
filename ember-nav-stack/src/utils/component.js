@@ -1,4 +1,4 @@
-import { assert } from '@ember/debug';
+import { macroCondition, isDevelopingApp } from '@embroider/macros';
 
 export function extractComponentKey(componentRef) {
   if (!componentRef) {
@@ -13,11 +13,20 @@ export function extractComponentKey(componentRef) {
   // `'undefined' === 'undefined'`, so root-change cuts (e.g. tab switches)
   // would never fire and the addon would silently fall through to a slide
   // animation. Failing loud here surfaces the breakage at the source.
-  // `assert` is a no-op in production builds via @ember/debug.
-  assert(
-    '[ember-nav-stack] extractComponentKey could not derive a name from the component reference. The Glimmer reference shape has likely changed; see src/utils/component.js.',
-    result !== undefined,
-  );
+  //
+  // Gated on `@embroider/macros`'s `isDevelopingApp()` so the entire check
+  // (including the message string) is stripped from production builds by
+  // the consumer's babel pipeline — both Embroider and classic ember-cli
+  // run the macros transform on v2 addon code, unlike
+  // `babel-plugin-debug-macros` (which only applies to app + v1 addon
+  // code in classic builds and would leave the string in the bundle).
+  if (macroCondition(isDevelopingApp())) {
+    if (result === undefined) {
+      throw new Error(
+        '[ember-nav-stack] extractComponentKey could not derive a name from the component reference. The Glimmer reference shape has likely changed; see src/utils/component.js.',
+      );
+    }
+  }
   let modelId = getComponentRefModelId(componentRef);
   if (modelId) {
     result += `:${modelId}`;
