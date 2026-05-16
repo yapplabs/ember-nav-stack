@@ -1,8 +1,23 @@
+import { assert } from '@ember/debug';
+
 export function extractComponentKey(componentRef) {
   if (!componentRef) {
     return 'none';
   }
   let result = getComponentRefName(componentRef);
+  // Dev-only safeguard: if every access path failed to produce a name, the
+  // Glimmer reference's shape has likely changed (it has before — see the
+  // INNER-slot-as-string vs. -as-object update further down) and we'd
+  // otherwise return `undefined` silently. That makes
+  // `rootComponentKey !== this._rootComponentKey` always compare
+  // `'undefined' === 'undefined'`, so root-change cuts (e.g. tab switches)
+  // would never fire and the addon would silently fall through to a slide
+  // animation. Failing loud here surfaces the breakage at the source.
+  // `assert` is a no-op in production builds via @ember/debug.
+  assert(
+    '[ember-nav-stack] extractComponentKey could not derive a name from the component reference. The Glimmer reference shape has likely changed; see src/utils/component.js.',
+    result !== undefined,
+  );
   let modelId = getComponentRefModelId(componentRef);
   if (modelId) {
     result += `:${modelId}`;
