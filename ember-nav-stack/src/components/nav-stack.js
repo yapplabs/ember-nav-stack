@@ -397,23 +397,26 @@ export default class NavStack extends Component {
 
   // Runs the slide-down dismissal entirely outside our own lifecycle.
   // Called from two sites:
-  //   1. willDestroy, when a layer > 0 NavStack is being torn down with
-  //      non-empty stack items — the common case under `nav-layer-indices`,
-  //      where the host's `{{#each}}` drops our entry the instant our layer
-  //      goes empty and we never get a chance to run an afterRender hook on
-  //      a live `this`.
+  //   1. `layerDidEmpty()` — invoked by the service's `_process` immediately
+  //      BEFORE it publishes `this.stacks = newStacks`, when our layer just
+  //      transitioned non-empty → empty. This is the common case under
+  //      `nav-layer-indices`, where publishing the new stacks causes the
+  //      host's `{{#each}}` to tear us down. willDestroy would be too
+  //      late (Glimmer detaches `this.element` before willDestroy fires,
+  //      leaving us with no parent to attach the clone to), which is why
+  //      we hook in pre-publish while our DOM is still mounted.
   //   2. `_applyTransition('slideDown')`, for setups that keep the NavStack
   //      alive while its items go to zero (manual layer management without
-  //      `nav-layer-indices`). In that case willDestroy never fires so this
-  //      is the only entry point.
-  // Both sites can be reached in degenerate flows, so we self-guard against
-  // a double fire. Clone+parent uses our DOM neighbor (which survives our
-  // teardown), the live element is hidden, and the spring runs with
-  // closure-captured refs — completion and DOM cleanup happen regardless
-  // of NavStack lifecycle. We bypass CloneStore so willDestroy's clearAll
-  // sweep can't tear our animation out, and we talk to the service
-  // directly for waiter tracking (the `_notifyTransition*` indirections
-  // would no-op once we're destroyed).
+  //      `nav-layer-indices`). In that case `layerDidEmpty` still fires —
+  //      both paths can land on the same NavStack in degenerate flows, so
+  //      we self-guard against a double fire.
+  // Clone+parent uses our DOM neighbor (which survives our teardown), the
+  // live element is hidden, and the spring runs with closure-captured
+  // refs — completion and DOM cleanup happen regardless of NavStack
+  // lifecycle. We bypass CloneStore so willDestroy's clearAll sweep can't
+  // tear our animation out, and we talk to the service directly for waiter
+  // tracking (the `_notifyTransition*` indirections would no-op once we're
+  // destroyed).
   _runDetachedSlideDown() {
     if (this._slideDownFired) {
       return;
