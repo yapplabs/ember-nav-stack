@@ -1,7 +1,14 @@
 import { module, test } from 'qunit';
 import { setupRenderingTest } from 'ember-qunit';
 import { hbs } from 'ember-cli-htmlbars';
-import { click, find, render, settled, waitUntil } from '@ember/test-helpers';
+import {
+  click,
+  find,
+  render,
+  rerender,
+  settled,
+  waitUntil,
+} from '@ember/test-helpers';
 import { panX, panAlongPath } from 'ember-simulant-test-helpers';
 import delay from '../helpers/delay';
 import NavStack from 'ember-nav-stack/components/nav-stack';
@@ -667,6 +674,89 @@ module('Integration | Component | nav-stack', function (hooks) {
         .hasText('Page One');
       assert.dom('.NavStack-item-1 h1').hasText('page 1');
       assert.ok(isInViewport('.NavStack-item-1'), 'Item 1 is on screen');
+    });
+  });
+
+  // Verifies the layer-dismissal slide-down animation. Setup mirrors the
+  // real-world flow under `nav-layer-indices`: the layer-1 NavStack and its
+  // only ToNavStack are both unmounted in the same render tick. The bug
+  // before this test was added: `service.removeItem` schedules `_process`
+  // for afterRender, but Glimmer destroys the NavStack synchronously first,
+  // and by the time `_process` runs the listener is unregistered — so
+  // `_applyTransition('slideDown')` is never reached and the user sees the
+  // layer just vanish. The fix moves the slide-down animation to a detached
+  // clone started from willDestroy, so it outlives the NavStack's teardown.
+  module('layer > 0 dismissal animates a slide-down', function (hooks) {
+    hooks.beforeEach(function () {
+      this.set('isLayer1Showing', true);
+      this.set('myScheduleModel', { id: 'sched-1' });
+    });
+
+    // Mirrors how real apps render: a `{{#each (nav-layer-indices)}}` loop
+    // produces a NavStack per active layer, so when the last ToNavStack on
+    // a layer unmounts the corresponding NavStack is also torn down. This
+    // is the configuration in which the bug manifests — direct-rendered
+    // NavStacks alive across the empty transition don't show the failure.
+    let exampleHbs = hbs`
+      {{#if this.shouldRenderNavStack}}
+        {{!-- template-lint-disable no-inline-styles --}}
+        <div style="width:320px;height:480px;position:relative">
+          {{#each (nav-layer-indices) as |layerIndex|}}
+            <NavStack
+              @layer={{layerIndex}}
+              @footer={{if (eq layerIndex 0) (component 'tab-bar')}}
+              @back={{this.back}}
+            />
+          {{/each}}
+        </div>
+      {{/if}}
+      <ToNavStack
+        @layer={{0}}
+        @item={{component 'test-components/page' model=this.pageModel controller=this.controller}}
+        @header={{component 'test-components/page/header' model=this.pageModel controller=this.controller}}
+      />
+      {{#if this.isLayer1Showing}}
+        <ToNavStack
+          @layer={{1}}
+          @item={{component 'test-components/my-schedule' model=this.myScheduleModel controller=this.controller}}
+          @header={{component 'test-components/my-schedule/header' model=this.myScheduleModel controller=this.controller}}
+        />
+      {{/if}}
+    `;
+
+    test('clones the leaving layer and animates it down before destroy', async function (assert) {
+      await this.renderNavStack(exampleHbs);
+      assert.dom('.NavStack--layer1').exists({ count: 1 }, 'layer 1 mounted');
+
+      // Trigger dismissal: both the layer-1 ToNavStack and the layer-1
+      // NavStack unmount in this render tick. `rerender` advances Glimmer
+      // past the destroy phase (so willDestroy has fired and the clone is
+      // attached) but doesn't wait for the spring to complete.
+      this.set('isLayer1Showing', false);
+      await rerender();
+
+      // The live layer-1 element is gone (Glimmer removed it), but our
+      // detached clone is now a sibling of where it used to be, mid-spring.
+      // Without the willDestroy hook this clone wouldn't exist at all —
+      // `_applyTransition('slideDown')` never fires because the NavStack
+      // unregistered before `_process` ran, so the layer just vanished.
+      assert
+        .dom('[id$="_clone"]')
+        .exists({ count: 1 }, 'detached slide-down clone is in the DOM');
+      assert
+        .dom('.NavStack--layer1:not([id$="_clone"])')
+        .doesNotExist('live layer-1 NavStack is gone');
+
+      await settled();
+      assert
+        .dom('[id$="_clone"]')
+        .doesNotExist('clone is removed after the spring finishes');
+      let service = this.owner.lookup('service:nav-stacks');
+      assert.strictEqual(
+        service.runningTransitions(),
+        0,
+        'transition waiter closed cleanly after the spring rested',
+      );
     });
   });
 
