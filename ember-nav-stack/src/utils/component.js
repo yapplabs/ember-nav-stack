@@ -34,6 +34,20 @@ export function extractComponentKey(componentRef) {
   return result;
 }
 
+// Component-name-only key for a curried component reference. Skips the
+// `model.id` appendage that `extractComponentKey` adds because, unlike the
+// component name (which is set at curry time), the model ref's `lastValue`
+// resolves lazily — the active-item-change path needs a key that's stable
+// the moment the curry exists, otherwise a single push fires twice as the
+// model id transitions from undefined to its concrete value across two
+// render ticks.
+export function extractComponentName(componentRef) {
+  if (!componentRef) {
+    return 'none';
+  }
+  return getComponentRefName(componentRef);
+}
+
 function getComponentRefName(componentRef) {
   if (componentRef.name) {
     return componentRef.name;

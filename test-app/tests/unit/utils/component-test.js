@@ -1,5 +1,8 @@
 import { module, test } from 'qunit';
-import { extractComponentKey } from 'ember-nav-stack/utils/component';
+import {
+  extractComponentKey,
+  extractComponentName,
+} from 'ember-nav-stack/utils/component';
 
 // `extractComponentKey` walks into Glimmer reference internals (the
 // INNER and ARGS symbols) to identify the component a curried reference
@@ -76,6 +79,34 @@ module('Unit | Utility | component | extractComponentKey', function () {
       },
     };
     assert.strictEqual(extractComponentKey(ref), 'page');
+  });
+
+  // `extractComponentName` is the name-only counterpart used by the
+  // `@onActiveItemChange` callback path. It must NOT include the model id
+  // suffix that the full key uses — the active-item path needs a key that
+  // stays stable while a freshly curried ref's `model.lastValue` resolves
+  // lazily across render ticks.
+  test('extractComponentName returns just the name, ignoring model id', function (assert) {
+    assert.strictEqual(
+      extractComponentName(modernRef({ name: 'page', modelId: '1' })),
+      'page',
+      'modern ref with model id → name only',
+    );
+    assert.strictEqual(
+      extractComponentName(legacyRef({ name: 'page', modelId: '1' })),
+      'page',
+      'legacy ref with model id → name only',
+    );
+    assert.strictEqual(
+      extractComponentName(modernRef({ name: 'page' })),
+      'page',
+      'no model → still just the name',
+    );
+    assert.strictEqual(
+      extractComponentName(null),
+      'none',
+      'null → "none" sentinel',
+    );
   });
 
   test('throws a dev-only assertion when no name can be derived', function (assert) {
