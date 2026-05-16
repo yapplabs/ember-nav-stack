@@ -17,10 +17,10 @@
   ...attributes
 >
   <div class="NavStack-itemContainer">
-    {{#each this.components as |stackItemComponent index|}}
-      <div class={{concat "NavStack-item NavStack-item-" index}}>
-        {{#if (lte (sub this.stackDepth index) 2)}}
-          {{component stackItemComponent}}
+    {{#each this.renderableEntries as |entry|}}
+      <div class={{concat "NavStack-item NavStack-item-" entry.index}}>
+        {{#if entry.shouldRender}}
+          {{component entry.component}}
         {{/if}}
       </div>
     {{/each}}
