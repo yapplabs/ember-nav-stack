@@ -306,6 +306,150 @@ module('Integration | Component | nav-stack', function (hooks) {
       );
       assert.dom('.NavStack-currentHeaderContainer .back-button').isVisible();
     });
+    test('back swipe survives an extra fingerprint did-update before the pop lands', async function (assert) {
+      // Reproduces Y-1305: a consumer shape that re-curries `args.named`
+      // refs during a route transition (e.g. yapp-core's
+      // `<ToNavStack @item={{component … route=childNode.route}}>`)
+      // causes the `{{did-update stackItemsFingerprint}}` modifier to
+      // fire BEFORE the service's `_process` flushes the actual pop.
+      // _handleStackDepthChange then runs TWICE per back-swipe — first
+      // with the depth unchanged, then with the depth decreased.
+      //
+      // Pre-fix: the first call consumed the back-swipe overlay (which
+      // tracks the gesture-finalized parallax state) and the second
+      // call then routed through `decideTransition`'s normal slideBack
+      // branch, re-fading the now-finalized header and making the
+      // target header disappear.
+      //
+      // Post-fix: the overlay stays pending until the depth-decrease
+      // flush, which forces `intent: 'none'` (the gesture already
+      // animated the visual), and `_finishGestureBack` restores the
+      // live header containers as expected.
+      let popDeferred;
+      this.set('back', () => {
+        popDeferred = deferred();
+        popDeferred.promise.then(() => {
+          this.set('isThirdLevelShowing', false);
+        });
+      });
+      // Custom extractComponentKey that we swap out wholesale to trigger
+      // a fingerprint did-update. Setting `extractKey` to a NEW function
+      // reference changes `args.extractComponentKey`, which the
+      // fingerprint getter reads — that arg change re-runs the getter,
+      // the new function returns different strings, the fingerprint
+      // value diffs, and `{{did-update}}` fires
+      // `handleStackFingerprintChange` → `_handleStackDepthChange`.
+      // This reproduces yapp-core's shape where a route-transition
+      // re-curry changes the extracted key without mutating the stack.
+      this.set('extractKey', function (ref) {
+        return (ref?.name ?? 'none') + ':v1';
+      });
+
+      let saltedHbs = hbs`
+        {{#if this.shouldRenderNavStack}}
+          {{!-- template-lint-disable no-inline-styles --}}
+          <div style="width:320px;height:480px;position:relative">
+            <NavStack
+              @layer={{0}}
+              @footer={{component 'tab-bar'}}
+              @back={{this.back}}
+              @extractComponentKey={{this.extractKey}}
+            />
+          </div>
+        {{/if}}
+        <ToNavStack
+          @layer={{0}}
+          @item={{component 'test-components/page' model=this.pageModel controller=this.controller}}
+          @header={{component 'test-components/page/header' model=this.pageModel controller=this.controller}}
+        />
+        <ToNavStack
+          @layer={{0}}
+          @item={{component 'test-components/track' model=this.trackModel controller=this.controller}}
+          @header={{component 'test-components/track/header' model=this.trackModel controller=this.controller}}
+        />
+        {{#if this.isThirdLevelShowing}}
+          <ToNavStack
+            @layer={{0}}
+            @item={{component 'test-components/schedule-item' model=this.scheduleItemModel controller=this.controller}}
+            @header={{component 'test-components/schedule-item/header' model=this.scheduleItemModel controller=this.controller back=this.back}}
+          />
+        {{/if}}
+      `;
+
+      let getSpringCalls = spyOnCreateSpring(hooks);
+      // Set up a fresh spy with explicit hooks here so we can read it.
+      let originalCreateSpring = NavStack.prototype._createSpring;
+      let springCalls = [];
+      NavStack.prototype._createSpring = function (options) {
+        springCalls.push(options);
+        return originalCreateSpring.call(this, options);
+      };
+      try {
+        await this.renderNavStack(saltedHbs);
+        // Drive the back-swipe. After this, the gesture has finalized,
+        // `_pendingGestureBackOverlay` is set, and `args.back` was
+        // called (deferred — no pop yet).
+        await panX(find('.NavStack-item-2'), {
+          position: [50, 100],
+          amount: 170,
+          duration: 150,
+        });
+        await settled();
+        assert
+          .dom('.NavStack-gestureBackTargetHeader')
+          .exists('overlay attached after gesture finalize');
+
+        // Snapshot springs that fired through the gesture itself —
+        // anything new from here onward would be a spurious slideBack.
+        let springsAfterGesture = springCalls.length;
+
+        // Force the fingerprint to invalidate WITHOUT mutating the
+        // stack. Swapping `extractKey` to a NEW function whose return
+        // values differ from before changes `args.extractComponentKey`,
+        // which the fingerprint getter reads — that arg change re-runs
+        // the getter, returns a new fingerprint, and the did-update
+        // modifier fires `handleStackFingerprintChange` →
+        // `_handleStackDepthChange` with unchanged depth — the exact
+        // ordering that drops the overlay pre-fix.
+        this.set('extractKey', function (ref) {
+          return (ref?.name ?? 'none') + ':v2';
+        });
+        await settled();
+
+        // Resolve the deferred pop. Stack goes from depth 3 to 2.
+        popDeferred.resolve();
+        await settled();
+
+        // No NEW spring fired between the gesture's finalize and now.
+        // (Pre-fix this assertion fails — a slideBack spring runs
+        // because the overlay was cleared by the fingerprint flush and
+        // the depth-decrease flush routed through decideTransition.)
+        assert.strictEqual(
+          springCalls.length,
+          springsAfterGesture,
+          `no spurious spring after gesture (created ${
+            springCalls.length - springsAfterGesture
+          } extra; toValues=${springCalls
+            .slice(springsAfterGesture)
+            .map((c) => c.toValue)
+            .join(',')})`,
+        );
+        // Target header restored to full opacity, gesture overlay cleaned up.
+        assert
+          .dom('.NavStack-gestureBackTargetHeader')
+          .doesNotExist('overlay cleaned up after pop');
+        assert.strictEqual(
+          find('.NavStack-currentHeaderContainer').style.opacity,
+          '1',
+          'live current header restored to full opacity',
+        );
+        // Quiet `getSpringCalls` so the helper hook teardown finds something.
+        getSpringCalls();
+      } finally {
+        NavStack.prototype._createSpring = originalCreateSpring;
+      }
+    });
+
     test('partial back swipe from level 3 (not enough to snap to level 2)', async function (assert) {
       await this.renderNavStack(exampleHbs);
       assert.notOk(isInViewport('.NavStack-item-1'), 'Item 1 is off screen');

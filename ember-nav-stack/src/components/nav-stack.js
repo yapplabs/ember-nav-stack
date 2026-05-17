@@ -291,18 +291,43 @@ export default class NavStack extends Component {
     let rootComponentRef = stackItems[0]?.component;
     let rootComponentKey = extract(rootComponentRef);
 
-    let pendingGestureBackOverlay = this._pendingGestureBackOverlay;
-    this._pendingGestureBackOverlay = null;
+    // Only consume `_pendingGestureBackOverlay` when the pop has actually
+    // landed (newDepth < previousDepth). The overlay is a signal that the
+    // back-swipe gesture already drove the items + header parallax to
+    // their final positions, so the next depth-decrease flush should run
+    // *no* transition — the visual change is already on screen. If we
+    // cleared the overlay on a no-op same-depth flush (e.g. a fingerprint
+    // did-update that fires before the service's `_process` runs, which
+    // happens with consumer shapes that re-curry args.named refs during a
+    // route transition), the subsequent depth-decrease flush would have
+    // no overlay to consume, would route through `decideTransition`'s
+    // normal `slideBack` branch, and would clone the now-opacity-0 header
+    // + run a spurious header fade. Net effect: the target header
+    // disappears after a successful back-swipe. Leaving the overlay
+    // pending across no-op flushes preserves the signal until the pop.
+    let pendingGestureBackOverlay = null;
+    if (
+      this._pendingGestureBackOverlay &&
+      stackDepth < (this._stackDepth ?? 0)
+    ) {
+      pendingGestureBackOverlay = this._pendingGestureBackOverlay;
+      this._pendingGestureBackOverlay = null;
+    }
 
-    let intent = decideTransition({
-      isInitialRender,
-      previousDepth: this._stackDepth,
-      newDepth: stackDepth,
-      previousRootKey: this._rootComponentKey,
-      newRootKey: rootComponentKey,
-      layer: this.args.layer,
-      rootJustChanged: this._rootJustChanged,
-    });
+    // When consuming the overlay, force the intent to `none` — the
+    // gesture already animated the visual transition; running `slideBack`
+    // on top would clone the now-finalized header and re-fade everything.
+    let intent = pendingGestureBackOverlay
+      ? { kind: 'none' }
+      : decideTransition({
+          isInitialRender,
+          previousDepth: this._stackDepth,
+          newDepth: stackDepth,
+          previousRootKey: this._rootComponentKey,
+          newRootKey: rootComponentKey,
+          layer: this.args.layer,
+          rootJustChanged: this._rootJustChanged,
+        });
 
     if (intent.startsRootChange) {
       this._rootJustChanged = true;
@@ -311,19 +336,13 @@ export default class NavStack extends Component {
 
     this._applyTransition(intent);
 
-    // Gesture-back overlay cleanup is orthogonal to which transition runs —
-    // it just needs the stack pop to have landed (newDepth < previousDepth).
-    // The overlay snapshot was made by `finalize` after the back-swipe
-    // completed; we restore the live header containers once the re-render
-    // following `args.back` has swapped their content. `next()` defers the
-    // cleanup past the current flush so the swap is visible by the time we
-    // restore opacity.
+    // `_finishGestureBack` restores the live header containers' opacity
+    // and removes the snapshot clone. `next()` defers it past the current
+    // flush so the args.back re-render has committed by the time we
+    // restore opacity (otherwise we'd restore the leaving page's header
+    // to full opacity for one frame — the original Y-1264 flash bug).
     if (pendingGestureBackOverlay) {
-      if (stackDepth < this._stackDepth) {
-        next(this, this._finishGestureBack, pendingGestureBackOverlay);
-      } else {
-        this._clones.remove('gestureBackOverlays', pendingGestureBackOverlay);
-      }
+      next(this, this._finishGestureBack, pendingGestureBackOverlay);
     }
 
     // Fire the active-item-change callback when the top stack item's
