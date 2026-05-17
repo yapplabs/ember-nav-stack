@@ -68,10 +68,21 @@ function getComponentRefName(componentRef) {
 // Resolve a Glimmer reference to its current value without importing from
 // `@glimmer/reference` (which would couple this addon to a specific
 // Glimmer release line and cause dedupe headaches under strict resolvers).
-// In classic Glimmer the reference exposes a `value()` method; in modern
-// Glimmer the reference's `lastValue` is updated whenever the reference
-// is consumed during render, so reading it here returns the most-recently
-// rendered value — which is what we want, since `extractComponentKey` is
+// Three paths:
+//   1. `ref.value()` — classic Glimmer (pre-2020-ish).
+//   2. `ref.compute()` — modern Glimmer. Calls the underlying compute
+//      function, which both recomputes the live value AND consumes the
+//      ref's tag so we participate in autotracking. This is critical for
+//      the `stackItemsFingerprint` getter: without it, we'd be reading
+//      `lastValue` (a snapshot from the last render that consumed this
+//      ref) and miss in-place arg changes — e.g. a parent route swapping
+//      its `model` while keeping the same curried component instance
+//      alive. The fingerprint would then stay stale and the NavStack
+//      would miss the root-key change entirely (next stack mutation
+//      would lump the root change with the depth change and degenerate
+//      to a cut, suppressing the expected slide).
+//   3. `ref.lastValue` — last-resort fallback.
+// `extractComponentKey` is
 // invoked from `<NavStack>`'s reactive `stackItemsFingerprint` getter
 // whose own re-evaluation is what propagated the change in the first place.
 function valueForRef(ref) {
@@ -80,6 +91,9 @@ function valueForRef(ref) {
   }
   if (typeof ref.value === 'function') {
     return ref.value();
+  }
+  if (typeof ref.compute === 'function') {
+    return ref.compute();
   }
   return ref.lastValue;
 }
