@@ -1081,6 +1081,34 @@ module('Integration | Component | nav-stack', function (hooks) {
       assert.dom('.NavStack-itemContainer').hasClass('custom-items');
       assert.dom('.NavStack-footer').hasClass('custom-footer');
     });
+
+    test('omitting @innerWrapperClass leaves no inner wrapper div in the DOM', async function (assert) {
+      // The inner wrapper is opt-in: without `@innerWrapperClass`, there's
+      // no `.NavStack-innerWrapper` between `.NavStack` and its children.
+      // This keeps the addon's DOM identical to pre-v7.1 so consumer CSS
+      // using direct-child selectors on `.NavStack` (e.g. `.NavStack >
+      // .NavStack-itemContainer`) continues to match.
+      await this.renderNavStack(hbs`
+        {{#if this.shouldRenderNavStack}}
+          {{!-- template-lint-disable no-inline-styles --}}
+          <div style="width:320px;height:480px;position:relative">
+            <NavStack @layer={{0}} @back={{this.back}} />
+          </div>
+        {{/if}}
+        <ToNavStack
+          @layer={{0}}
+          @item={{component 'test-components/page' model=this.pageModel controller=this.controller}}
+          @header={{component 'test-components/page/header' model=this.pageModel controller=this.controller}}
+        />
+      `);
+      assert.dom('.NavStack-innerWrapper').doesNotExist();
+      // ItemContainer is a direct child of .NavStack again.
+      assert
+        .dom('.NavStack > .NavStack-itemContainer')
+        .exists(
+          'direct-child selectors on .NavStack still match (non-breaking)',
+        );
+    });
   });
 
   module('@headerPosition controls DOM order of header vs items', function () {

@@ -100,6 +100,7 @@
     "type": "addon",
     "main": "addon-main.cjs",
     "app-js": {
+      "./components/nav-stack-inner-wrapper.js": "./dist/_app_/components/nav-stack-inner-wrapper.js",
       "./components/nav-stack.js": "./dist/_app_/components/nav-stack.js",
       "./components/to-nav-stack.js": "./dist/_app_/components/to-nav-stack.js",
       "./helpers/nav-layer-indices.js": "./dist/_app_/helpers/nav-layer-indices.js",
