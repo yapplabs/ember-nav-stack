@@ -352,7 +352,7 @@
   top: 0;
   left: 0;
   right: 0;
-  background: rgba(0, 0, 0, 0.2);
+  background-color: rgba(0, 0, 0, 0.2);
 }
 .NavStack-headerContainer {
   position: relative;
@@ -378,7 +378,7 @@
   box-sizing: content-box;
   left: 0;
   right: 0;
-  background: rgba(0, 0, 0, 0.2);
+  background-color: rgba(0, 0, 0, 0.2);
 }
 .NavStack.is-birdsEyeDebugging {
   width: 320px;
