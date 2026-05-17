@@ -155,9 +155,17 @@ module('Acceptance | stackable-route parent resolution', function (hooks) {
   test('drill after a tab switch animates a slideForward', async function (assert) {
     // QA-reported flow: load page 1, drill to schedule-item 1, back to
     // page 1, tab to page 2, drill to track 1. The final drill SHOULD
-    // animate a horizontal slide (page 2 → track 1) — but a stale
-    // `_rootJustChanged` flag from the tab-switch cut can suppress it
-    // and produce an immediate transition instead.
+    // animate a horizontal slide (page 2 → track 1). Pre-fix regression
+    // mode: the tab switch reused the same `<ToNavStack>` instance with
+    // updated args, so no `pushItem`/`removeItem` ran and the service
+    // never published a flush. The fingerprint getter that should have
+    // observed the root key changing was reading `ref.lastValue` — a
+    // stale snapshot that doesn't participate in autotracking — so
+    // `did-update` didn't fire and `_rootComponentKey` stayed at the
+    // page-1 value. The next stack mutation (this drill) was then the
+    // first `_handleStackDepthChange` call to see the new root, and
+    // `decideTransition` lumped the root change with the depth change
+    // into a `cut`, suppressing the slide.
     let originalCreateSpring = NavStack.prototype._createSpring;
     let springCalls = [];
     NavStack.prototype._createSpring = function (options) {
