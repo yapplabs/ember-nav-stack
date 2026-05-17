@@ -151,4 +151,72 @@ module('Acceptance | stackable-route parent resolution', function (hooks) {
         'proves parent resolution worked via router.currentRoute in steady state',
     );
   });
+
+  test('drill after a tab switch animates a slideForward', async function (assert) {
+    // QA-reported flow: load page 1, drill to schedule-item 1, back to
+    // page 1, tab to page 2, drill to track 1. The final drill SHOULD
+    // animate a horizontal slide (page 2 → track 1) — but a stale
+    // `_rootJustChanged` flag from the tab-switch cut can suppress it
+    // and produce an immediate transition instead.
+    let originalCreateSpring = NavStack.prototype._createSpring;
+    let springCalls = [];
+    NavStack.prototype._createSpring = function (options) {
+      springCalls.push(options);
+      return originalCreateSpring.call(this, options);
+    };
+
+    try {
+      await visit('/yapp/pages/1');
+      // 2. Drill into schedule-item 1.
+      let scheduleItem1 = [
+        ...document.querySelectorAll('.NavStack-item a'),
+      ].find((el) => el.textContent.trim() === 'Schedule Item 1');
+      assert.ok(scheduleItem1, 'found Schedule Item 1 link on page 1');
+      await click(scheduleItem1);
+      // 3. Back to page 1.
+      await click('.NavStack-currentHeaderContainer .back-button');
+      assert.strictEqual(
+        currentURL(),
+        '/yapp/pages/1',
+        'back from schedule-item lands on page 1',
+      );
+      // 4. Tab to page 2.
+      let page2Tab = [...document.querySelectorAll('.NavStack-footer a')].find(
+        (el) => el.textContent.trim() === 'Page 2',
+      );
+      assert.ok(page2Tab, 'found Page 2 tab in footer');
+      await click(page2Tab);
+      assert.strictEqual(
+        currentURL(),
+        '/yapp/pages/2',
+        'tab switch landed on page 2',
+      );
+
+      // Reset the spy so we only see what the next click triggers.
+      springCalls.length = 0;
+
+      // 5. Drill into Track 1 from page 2.
+      let track1 = [...document.querySelectorAll('.NavStack-item a')].find(
+        (el) => el.textContent.trim() === 'Track 1',
+      );
+      assert.ok(track1, 'found Track 1 link on page 2');
+      await click(track1);
+
+      assert.ok(
+        currentURL().endsWith('/tracks/1'),
+        `URL transitioned to track 1 (got ${currentURL()})`,
+      );
+      // The drill should slideForward — a horizontal spring (negative
+      // toValue) on the layer-0 itemContainer.
+      let horizontalSpring = springCalls.find((c) => c.toValue < 0);
+      assert.ok(
+        horizontalSpring,
+        `drill from page 2 to track 1 created a horizontal spring (got toValues=${springCalls
+          .map((c) => c.toValue)
+          .join(',')})`,
+      );
+    } finally {
+      NavStack.prototype._createSpring = originalCreateSpring;
+    }
+  });
 });
