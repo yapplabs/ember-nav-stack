@@ -1130,4 +1130,159 @@ module('Integration | Component | nav-stack', function (hooks) {
         .hasText('Page One');
     });
   });
+
+  // §2b from Y-1302: named blocks let consumers wrap the rendered header
+  // and inject content into a banner-ad slot without subclassing.
+  module('<:header> named block', function () {
+    test("default (no <:header> block): renders the addon's own headerComponent", async function (assert) {
+      await this.renderNavStack(hbs`
+        {{#if this.shouldRenderNavStack}}
+          {{!-- template-lint-disable no-inline-styles --}}
+          <div style="width:320px;height:480px;position:relative">
+            <NavStack @layer={{0}} @back={{this.back}} />
+          </div>
+        {{/if}}
+        <ToNavStack
+          @layer={{0}}
+          @item={{component 'test-components/page' model=this.pageModel controller=this.controller}}
+          @header={{component 'test-components/page/header' model=this.pageModel controller=this.controller}}
+        />
+      `);
+      assert
+        .dom('.NavStack-currentHeaderContainer .NavStack-headerComponent')
+        .exists('default rendering keeps the NavStack-headerComponent class');
+      assert
+        .dom('.NavStack-currentHeaderContainer .page-title')
+        .hasText('Page One');
+    });
+
+    test('with <:header> block: yields the curried headerComponent for the consumer to wrap', async function (assert) {
+      await this.renderNavStack(hbs`
+        {{#if this.shouldRenderNavStack}}
+          {{!-- template-lint-disable no-inline-styles --}}
+          <div style="width:320px;height:480px;position:relative">
+            <NavStack @layer={{0}} @back={{this.back}}>
+              <:header as |headerComponent|>
+                <div data-test-header-wrap>
+                  {{component headerComponent}}
+                </div>
+              </:header>
+            </NavStack>
+          </div>
+        {{/if}}
+        <ToNavStack
+          @layer={{0}}
+          @item={{component 'test-components/page' model=this.pageModel controller=this.controller}}
+          @header={{component 'test-components/page/header' model=this.pageModel controller=this.controller}}
+        />
+      `);
+      // Block wrapper lands inside the current-header-container — so the
+      // class-based animation selectors still target the right element.
+      assert
+        .dom('.NavStack-currentHeaderContainer [data-test-header-wrap]')
+        .exists(
+          'consumer wrapper rendered inside the current header container',
+        );
+      assert
+        .dom(
+          '.NavStack-currentHeaderContainer [data-test-header-wrap] .page-title',
+        )
+        .hasText('Page One', 'yielded headerComponent renders its content');
+    });
+
+    test('with <:header> block: parent header gets wrapped too (two-deep stack)', async function (assert) {
+      await this.renderNavStack(hbs`
+        {{#if this.shouldRenderNavStack}}
+          {{!-- template-lint-disable no-inline-styles --}}
+          <div style="width:320px;height:480px;position:relative">
+            <NavStack @layer={{0}} @back={{this.back}}>
+              <:header as |headerComponent|>
+                <div data-test-header-wrap>
+                  {{component headerComponent}}
+                </div>
+              </:header>
+            </NavStack>
+          </div>
+        {{/if}}
+        <ToNavStack
+          @layer={{0}}
+          @item={{component 'test-components/page' model=this.pageModel controller=this.controller}}
+          @header={{component 'test-components/page/header' model=this.pageModel controller=this.controller}}
+        />
+        <ToNavStack
+          @layer={{0}}
+          @item={{component 'test-components/track' model=this.trackModel controller=this.controller}}
+          @header={{component 'test-components/track/header' model=this.trackModel controller=this.controller}}
+        />
+      `);
+      // The block is invoked once per header container — both the
+      // current (track) and the parent (page) get the wrap.
+      assert
+        .dom('.NavStack-currentHeaderContainer [data-test-header-wrap]')
+        .exists('current header wrapped');
+      assert
+        .dom('.NavStack-parentItemHeaderContainer [data-test-header-wrap]')
+        .exists('parent header wrapped');
+    });
+  });
+
+  module('<:bannerAd> named block', function () {
+    test('default (no <:bannerAd> block): no banner-ad slot rendered', async function (assert) {
+      await this.renderNavStack(hbs`
+        {{#if this.shouldRenderNavStack}}
+          {{!-- template-lint-disable no-inline-styles --}}
+          <div style="width:320px;height:480px;position:relative">
+            <NavStack @layer={{0}} @back={{this.back}} />
+          </div>
+        {{/if}}
+        <ToNavStack
+          @layer={{0}}
+          @item={{component 'test-components/page' model=this.pageModel controller=this.controller}}
+          @header={{component 'test-components/page/header' model=this.pageModel controller=this.controller}}
+        />
+      `);
+      assert
+        .dom('[data-test-banner]')
+        .doesNotExist('no banner content when block is omitted');
+    });
+
+    test('with <:bannerAd> block: rendered between item container and footer', async function (assert) {
+      await this.renderNavStack(hbs`
+        {{#if this.shouldRenderNavStack}}
+          {{!-- template-lint-disable no-inline-styles --}}
+          <div style="width:320px;height:480px;position:relative">
+            <NavStack
+              @layer={{0}}
+              @footer={{component 'tab-bar'}}
+              @back={{this.back}}
+            >
+              <:bannerAd>
+                <div data-test-banner>House Ad</div>
+              </:bannerAd>
+            </NavStack>
+          </div>
+        {{/if}}
+        <ToNavStack
+          @layer={{0}}
+          @item={{component 'test-components/page' model=this.pageModel controller=this.controller}}
+          @header={{component 'test-components/page/header' model=this.pageModel controller=this.controller}}
+        />
+      `);
+      // Block content rendered; DOM order is items → bannerAd → footer.
+      let banner = find('[data-test-banner]');
+      let items = find('.NavStack-itemContainer');
+      let footer = find('.NavStack-footer');
+      assert.ok(banner, 'banner content rendered');
+      assert.ok(
+        items.compareDocumentPosition(banner) &
+          Node.DOCUMENT_POSITION_FOLLOWING,
+        'banner comes after items in DOM',
+      );
+      assert.ok(
+        banner.compareDocumentPosition(footer) &
+          Node.DOCUMENT_POSITION_FOLLOWING,
+        'footer comes after banner in DOM',
+      );
+    });
+  });
 });

@@ -35,19 +35,41 @@
             class="NavStack-headerContainer NavStack-parentItemHeaderContainer"
             inert={{true}}
           >
-            {{component
-              this.parentItemHeaderComponent
-              class="NavStack-headerComponent"
-              back=@back
-            }}
+            {{#if (has-block "header")}}
+              {{yield
+                (component
+                  this.parentItemHeaderComponent
+                  class="NavStack-headerComponent"
+                  back=@back
+                )
+                to="header"
+              }}
+            {{else}}
+              {{component
+                this.parentItemHeaderComponent
+                class="NavStack-headerComponent"
+                back=@back
+              }}
+            {{/if}}
           </div>
         {{/if}}
         <div class="NavStack-headerContainer NavStack-currentHeaderContainer">
-          {{component
-            this.headerComponent
-            class="NavStack-headerComponent"
-            back=@back
-          }}
+          {{#if (has-block "header")}}
+            {{yield
+              (component
+                this.headerComponent
+                class="NavStack-headerComponent"
+                back=@back
+              )
+              to="header"
+            }}
+          {{else}}
+            {{component
+              this.headerComponent
+              class="NavStack-headerComponent"
+              back=@back
+            }}
+          {{/if}}
         </div>
       </div>
     {{/if}}
@@ -80,22 +102,45 @@
             class="NavStack-headerContainer NavStack-parentItemHeaderContainer"
             inert={{true}}
           >
-            {{component
-              this.parentItemHeaderComponent
-              class="NavStack-headerComponent"
-              back=@back
-            }}
+            {{#if (has-block "header")}}
+              {{yield
+                (component
+                  this.parentItemHeaderComponent
+                  class="NavStack-headerComponent"
+                  back=@back
+                )
+                to="header"
+              }}
+            {{else}}
+              {{component
+                this.parentItemHeaderComponent
+                class="NavStack-headerComponent"
+                back=@back
+              }}
+            {{/if}}
           </div>
         {{/if}}
         <div class="NavStack-headerContainer NavStack-currentHeaderContainer">
-          {{component
-            this.headerComponent
-            class="NavStack-headerComponent"
-            back=@back
-          }}
+          {{#if (has-block "header")}}
+            {{yield
+              (component
+                this.headerComponent
+                class="NavStack-headerComponent"
+                back=@back
+              )
+              to="header"
+            }}
+          {{else}}
+            {{component
+              this.headerComponent
+              class="NavStack-headerComponent"
+              back=@back
+            }}
+          {{/if}}
         </div>
       </div>
     {{/unless}}
+    {{yield to="bannerAd"}}
     {{#if this.hasFooter}}
       <div
         class={{concat
