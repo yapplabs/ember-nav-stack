@@ -905,4 +905,144 @@ module('Integration | Component | nav-stack', function (hooks) {
         .hasText('Page One', 'rendered through pop with no handler attached');
     });
   });
+
+  // §1 from Y-1302: general-purpose chrome the addon owns end-to-end so
+  // consumers don't have to subclass to bolt it on. None of these need
+  // new public arg surface — they're behaviors that always make sense.
+  module('inert on non-active stack items', function () {
+    let exampleHbs = hbs`
+      {{#if this.shouldRenderNavStack}}
+        {{!-- template-lint-disable no-inline-styles --}}
+        <div style="width:320px;height:480px;position:relative">
+          <NavStack @layer={{0}} @back={{this.back}} />
+        </div>
+      {{/if}}
+      <ToNavStack
+        @layer={{0}}
+        @item={{component 'test-components/page' model=this.pageModel controller=this.controller}}
+        @header={{component 'test-components/page/header' model=this.pageModel controller=this.controller}}
+      />
+      <ToNavStack
+        @layer={{0}}
+        @item={{component 'test-components/track' model=this.trackModel controller=this.controller}}
+        @header={{component 'test-components/track/header' model=this.trackModel controller=this.controller}}
+      />
+    `;
+
+    test('non-topmost items are inert; topmost is reachable', async function (assert) {
+      await this.renderNavStack(exampleHbs);
+      // Item 0 (page, parent) is inert.
+      assert.true(
+        find('.NavStack-item-0').inert,
+        '.NavStack-item-0 (parent) is inert',
+      );
+      // Item 1 (track, topmost/active) is NOT inert.
+      assert.false(
+        find('.NavStack-item-1').inert,
+        '.NavStack-item-1 (active) is reachable',
+      );
+    });
+
+    test('parent header container is inert too', async function (assert) {
+      // The parent header is rendered separately from the items (it has
+      // its own slot in `.NavStack-header`) but contains focusable buttons
+      // (Back / Close in this app's chrome). Without `inert` on it,
+      // keyboard users could Tab into an invisible, opacity-0 header while
+      // the active item is visible.
+      await this.renderNavStack(exampleHbs);
+      assert.true(
+        find('.NavStack-parentItemHeaderContainer').inert,
+        '.NavStack-parentItemHeaderContainer is inert',
+      );
+      assert.false(
+        find('.NavStack-currentHeaderContainer').inert,
+        '.NavStack-currentHeaderContainer is reachable',
+      );
+    });
+  });
+
+  module('repositions on viewport resize', function (hooks) {
+    // Stub the global ResizeObserver so we can invoke its callback
+    // deterministically. Real ResizeObserver delivery is async, batched
+    // into a separate "resize loop" task by the browser, and isn't
+    // tracked by Ember's `settled()` — so a real resize is unreliable
+    // to assert in headless CI.
+    let observerCallbacks;
+    hooks.beforeEach(function () {
+      observerCallbacks = [];
+      let OriginalRO = window.ResizeObserver;
+      this.__originalResizeObserver = OriginalRO;
+      window.ResizeObserver = class FakeResizeObserver {
+        constructor(cb) {
+          observerCallbacks.push(cb);
+        }
+        observe() {}
+        unobserve() {}
+        disconnect() {}
+      };
+    });
+    hooks.afterEach(function () {
+      window.ResizeObserver = this.__originalResizeObserver;
+    });
+
+    let exampleHbs = hbs`
+      {{#if this.shouldRenderNavStack}}
+        {{!-- template-lint-disable no-inline-styles --}}
+        <div style="width:320px;height:480px;position:relative">
+          <NavStack @layer={{0}} @back={{this.back}} />
+        </div>
+      {{/if}}
+      <ToNavStack
+        @layer={{0}}
+        @item={{component 'test-components/page' model=this.pageModel controller=this.controller}}
+        @header={{component 'test-components/page/header' model=this.pageModel controller=this.controller}}
+      />
+      <ToNavStack
+        @layer={{0}}
+        @item={{component 'test-components/track' model=this.trackModel controller=this.controller}}
+        @header={{component 'test-components/track/header' model=this.trackModel controller=this.controller}}
+      />
+    `;
+
+    test('the first ResizeObserver tick is skipped (synthetic initial size)', async function (assert) {
+      await this.renderNavStack(exampleHbs);
+      assert.strictEqual(
+        observerCallbacks.length,
+        1,
+        'NavStack installs one ResizeObserver',
+      );
+      let itemContainer = find('.NavStack-itemContainer');
+      let initialTransform = itemContainer.style.transform;
+
+      // Synthetic "initial size" report fired right after observe(). The
+      // handler is wired to skip this one — no translateX change.
+      observerCallbacks[0]();
+      assert.strictEqual(
+        itemContainer.style.transform,
+        initialTransform,
+        'translateX is unchanged after the synthetic first tick',
+      );
+    });
+
+    test('subsequent ResizeObserver ticks recompute translateX from the current item width', async function (assert) {
+      await this.renderNavStack(exampleHbs);
+      // Skip the synthetic first tick.
+      observerCallbacks[0]();
+      let itemContainer = find('.NavStack-itemContainer');
+
+      // Drilled-to-track at depth 2 means `_computeXPosition` returns
+      // `-(stackDepth - 1) * itemWidth = -itemWidth`. Read the live
+      // itemWidth from the actual DOM and assert the resulting transform
+      // matches — that way the test is robust to whatever width the
+      // headless test container happens to be using.
+      let item = find('.NavStack-item:last-child');
+      let expectedTranslateX = -item.getBoundingClientRect().width;
+      observerCallbacks[0]();
+      assert.strictEqual(
+        itemContainer.style.transform,
+        `translateX(${expectedTranslateX}px)`,
+        `translateX was recomputed to ${expectedTranslateX}px (one item width)`,
+      );
+    });
+  });
 });
