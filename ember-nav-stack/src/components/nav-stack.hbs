@@ -57,9 +57,7 @@
           {{#if (has-block "header")}}
             {{yield
               (component
-                this.headerComponent
-                class="NavStack-headerComponent"
-                back=@back
+                this.headerComponent class="NavStack-headerComponent" back=@back
               )
               to="header"
             }}
@@ -124,9 +122,7 @@
           {{#if (has-block "header")}}
             {{yield
               (component
-                this.headerComponent
-                class="NavStack-headerComponent"
-                back=@back
+                this.headerComponent class="NavStack-headerComponent" back=@back
               )
               to="header"
             }}

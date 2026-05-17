@@ -1269,10 +1269,12 @@ module('Integration | Component | nav-stack', function (hooks) {
         />
       `);
       // Block content rendered; DOM order is items → bannerAd → footer.
+      assert.dom('[data-test-banner]').exists('banner content rendered');
+      assert.dom('.NavStack-itemContainer').exists();
+      assert.dom('.NavStack-footer').exists();
       let banner = find('[data-test-banner]');
       let items = find('.NavStack-itemContainer');
       let footer = find('.NavStack-footer');
-      assert.ok(banner, 'banner content rendered');
       assert.ok(
         items.compareDocumentPosition(banner) &
           Node.DOCUMENT_POSITION_FOLLOWING,
