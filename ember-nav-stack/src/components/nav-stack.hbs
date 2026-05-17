@@ -18,7 +18,10 @@
 >
   <div class="NavStack-itemContainer">
     {{#each this.renderableEntries as |entry|}}
-      <div class={{concat "NavStack-item NavStack-item-" entry.index}}>
+      <div
+        class={{concat "NavStack-item NavStack-item-" entry.index}}
+        inert={{entry.isInert}}
+      >
         {{#if entry.shouldRender}}
           {{component entry.component}}
         {{/if}}

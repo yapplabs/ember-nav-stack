@@ -47,6 +47,8 @@ export default class NavStack extends Component {
 
   willDestroy() {
     super.willDestroy(...arguments);
+    this._resizeObserver?.disconnect();
+    this._resizeObserver = null;
     this.navStacksService.unregister(this);
     // Defensive: sweep every tracked clone in case some transition was
     // abandoned before its normal cleanup ran (e.g. a back-swipe in flight
@@ -105,14 +107,19 @@ export default class NavStack extends Component {
   // only mounts the actual curried component when `shouldRender` is true —
   // i.e. only the last two items in the stack are alive at any time. Items
   // further back are positioned off-screen by the cut animation and their
-  // contents aren't worth keeping mounted.
+  // contents aren't worth keeping mounted. `isInert` is true on every item
+  // except the topmost (active) one so non-active items can't be reached by
+  // keyboard or assistive tech — they're still in the DOM (briefly visible
+  // during a horizontal slide) but should not be in the focus order.
   get renderableEntries() {
     let components = this.components;
     let renderThreshold = components.length - 2;
+    let topIndex = components.length - 1;
     return components.map((component, index) => ({
       index,
       component,
       shouldRender: index >= renderThreshold,
+      isInert: index !== topIndex,
     }));
   }
 
@@ -148,12 +155,53 @@ export default class NavStack extends Component {
   handleBackSwipeReady(gesture, element) {
     this._backSwipeGesture = gesture;
     this.element = element;
+    this._observeResize(element);
     let isInitialRender = this.navStacksService.isInitialRender;
     scheduleOnce(
       'afterRender',
       this,
       this._handleStackDepthChange,
       isInitialRender,
+    );
+  }
+
+  // Recompute the item-container's translateX when the NavStack's outer
+  // width changes — e.g. window resize, orientation change, parent grid
+  // reflow, browser dev-tools opening. Without this, `_computeXPosition`'s
+  // `(stackDepth - 1) * itemWidth * -1` snapshot is stale and the visible
+  // item shifts off-center on the next viewport change. We deliberately
+  // skip the very first ResizeObserver callback (the synthetic "initial
+  // size" report fired right after `observe`) because we haven't run any
+  // transition yet — there's no translateX to reposition and forcing one
+  // would cancel any in-flight slide.
+  _observeResize(element) {
+    if (typeof ResizeObserver === 'undefined') {
+      return;
+    }
+    let first = true;
+    this._resizeObserver = new ResizeObserver(() => {
+      if (first) {
+        first = false;
+        return;
+      }
+      this._handleViewportResize();
+    });
+    this._resizeObserver.observe(element);
+  }
+
+  _handleViewportResize() {
+    if (this.isDestroying || this.isDestroyed || !this.element) {
+      return;
+    }
+    let itemContainerElement = this.element.querySelector(
+      '.NavStack-itemContainer',
+    );
+    if (!itemContainerElement) {
+      return;
+    }
+    setTransform(
+      itemContainerElement,
+      `translateX(${this._computeXPosition()}px)`,
     );
   }
 

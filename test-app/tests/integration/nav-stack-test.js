@@ -905,4 +905,94 @@ module('Integration | Component | nav-stack', function (hooks) {
         .hasText('Page One', 'rendered through pop with no handler attached');
     });
   });
+
+  // §1 from Y-1302: general-purpose chrome the addon owns end-to-end so
+  // consumers don't have to subclass to bolt it on. None of these need
+  // new public arg surface — they're behaviors that always make sense.
+  module('inert on non-active stack items', function () {
+    let exampleHbs = hbs`
+      {{#if this.shouldRenderNavStack}}
+        {{!-- template-lint-disable no-inline-styles --}}
+        <div style="width:320px;height:480px;position:relative">
+          <NavStack @layer={{0}} @back={{this.back}} />
+        </div>
+      {{/if}}
+      <ToNavStack
+        @layer={{0}}
+        @item={{component 'test-components/page' model=this.pageModel controller=this.controller}}
+        @header={{component 'test-components/page/header' model=this.pageModel controller=this.controller}}
+      />
+      <ToNavStack
+        @layer={{0}}
+        @item={{component 'test-components/track' model=this.trackModel controller=this.controller}}
+        @header={{component 'test-components/track/header' model=this.trackModel controller=this.controller}}
+      />
+    `;
+
+    test('non-topmost items are inert; topmost is reachable', async function (assert) {
+      await this.renderNavStack(exampleHbs);
+      // Item 0 (page, parent) is inert.
+      assert.true(
+        find('.NavStack-item-0').inert,
+        '.NavStack-item-0 (parent) is inert',
+      );
+      // Item 1 (track, topmost/active) is NOT inert.
+      assert.false(
+        find('.NavStack-item-1').inert,
+        '.NavStack-item-1 (active) is reachable',
+      );
+    });
+  });
+
+  module('repositions on viewport resize', function () {
+    let exampleHbs = hbs`
+      {{#if this.shouldRenderNavStack}}
+        {{!-- template-lint-disable no-inline-styles --}}
+        <div class="resize-host" style={{this.hostStyle}}>
+          <NavStack @layer={{0}} @back={{this.back}} />
+        </div>
+      {{/if}}
+      <ToNavStack
+        @layer={{0}}
+        @item={{component 'test-components/page' model=this.pageModel controller=this.controller}}
+        @header={{component 'test-components/page/header' model=this.pageModel controller=this.controller}}
+      />
+      <ToNavStack
+        @layer={{0}}
+        @item={{component 'test-components/track' model=this.trackModel controller=this.controller}}
+        @header={{component 'test-components/track/header' model=this.trackModel controller=this.controller}}
+      />
+    `;
+
+    test('translateX on .NavStack-itemContainer updates when the root width changes', async function (assert) {
+      this.set('hostStyle', 'width:320px;height:480px;position:relative');
+      await this.renderNavStack(exampleHbs);
+      // After settle: drilled to track (depth 2), itemContainer should be
+      // at translateX(-itemWidth) ≈ -320px.
+      let itemContainer = find('.NavStack-itemContainer');
+      let beforeTransform = itemContainer.style.transform;
+      assert.ok(
+        /translateX\(-?\d+(\.\d+)?px\)/.test(beforeTransform),
+        `itemContainer has an initial translateX (got "${beforeTransform}")`,
+      );
+
+      // Resize the host. ResizeObserver should pick it up async; wait for
+      // settle to let the queued reposition run.
+      this.set('hostStyle', 'width:480px;height:480px;position:relative');
+      // Force a reflow read so the layout commits before settle.
+      void itemContainer.offsetWidth;
+      await new Promise((r) => setTimeout(r, 50));
+      await settled();
+      let afterTransform = itemContainer.style.transform;
+      assert.notStrictEqual(
+        afterTransform,
+        beforeTransform,
+        `itemContainer translateX recomputed after width change (before="${beforeTransform}", after="${afterTransform}")`,
+      );
+      assert.ok(
+        /translateX\(-?\d+(\.\d+)?px\)/.test(afterTransform),
+        `still a translateX value (got "${afterTransform}")`,
+      );
+    });
+  });
 });
