@@ -3346,6 +3346,9 @@ packages:
   electron-to-chromium@1.5.356:
     resolution: {integrity: sha512-9NgFd7m5t5MCJ5rUSjJITUXAH9mEGlrlofnMf4YEr+pz6JlP7cWmTAH+JFmbPnaSW8koVTkuW7pacORWAnA5Yw==}
 
+  electron-to-chromium@1.5.357:
+    resolution: {integrity: sha512-NHlTIQDK8fmVwHwuIzmXYEJ1Ewq3D9wDNc0cWXxDGysP6Pb21giwGNkxiTifyKy/4SoPuN5l6GLP1W9Sv7zB2g==}
+
   ember-auto-import@2.13.1:
     resolution: {integrity: sha512-MjxJK2nfCJmmQI/rju2TrycmAa1AxmTarfvygbcrrgW0s4WeZHtbGXCO2z1lW9wfrShqeTo/o+3Mgk+9xcDTWg==}
     engines: {node: 12.* || 14.* || >= 16}
@@ -11097,7 +11100,7 @@ snapshots:
   browserslist@3.2.8:
     dependencies:
       caniuse-lite: 1.0.30001792
-      electron-to-chromium: 1.5.356
+      electron-to-chromium: 1.5.357
     optional: true
 
   browserslist@4.28.2:
@@ -11787,6 +11790,9 @@ snapshots:
   ee-first@1.1.1: {}
 
   electron-to-chromium@1.5.356: {}
+
+  electron-to-chromium@1.5.357:
+    optional: true
 
   ember-auto-import@2.13.1(webpack@5.106.2(postcss@8.5.14)):
     dependencies:
