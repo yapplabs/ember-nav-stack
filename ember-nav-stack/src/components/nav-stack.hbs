@@ -6,6 +6,7 @@
     this.layerIndexCssClass
     " "
     (if this.hasFooter "NavStack--withFooter ")
+    (if @rootClass (concat " " @rootClass))
   }}
   {{back-swipe
     onReady=this.handleBackSwipeReady
@@ -16,42 +17,94 @@
   {{did-update this.handleStackFingerprintChange this.stackItemsFingerprint}}
   ...attributes
 >
-  <div class="NavStack-itemContainer">
-    {{#each this.renderableEntries as |entry|}}
+  <div
+    class={{concat
+      "NavStack-innerWrapper"
+      (if @innerWrapperClass (concat " " @innerWrapperClass))
+    }}
+  >
+    {{#if this.headerIsTop}}
       <div
-        class={{concat "NavStack-item NavStack-item-" entry.index}}
-        inert={{entry.isInert}}
-      >
-        {{#if entry.shouldRender}}
-          {{component entry.component}}
-        {{/if}}
-      </div>
-    {{/each}}
-  </div>
-  <div class="NavStack-header">
-    {{#if this.parentItemHeaderComponent}}
-      <div
-        class="NavStack-headerContainer NavStack-parentItemHeaderContainer"
-        inert={{true}}
-      >
-        {{component
-          this.parentItemHeaderComponent
-          class="NavStack-headerComponent"
-          back=@back
+        class={{concat
+          "NavStack-header"
+          (if @headerContainerClass (concat " " @headerContainerClass))
         }}
+      >
+        {{#if this.parentItemHeaderComponent}}
+          <div
+            class="NavStack-headerContainer NavStack-parentItemHeaderContainer"
+            inert={{true}}
+          >
+            {{component
+              this.parentItemHeaderComponent
+              class="NavStack-headerComponent"
+              back=@back
+            }}
+          </div>
+        {{/if}}
+        <div class="NavStack-headerContainer NavStack-currentHeaderContainer">
+          {{component
+            this.headerComponent
+            class="NavStack-headerComponent"
+            back=@back
+          }}
+        </div>
       </div>
     {{/if}}
-    <div class="NavStack-headerContainer NavStack-currentHeaderContainer">
-      {{component
-        this.headerComponent
-        class="NavStack-headerComponent"
-        back=@back
+    <div
+      class={{concat
+        "NavStack-itemContainer"
+        (if @itemContainerClass (concat " " @itemContainerClass))
       }}
+    >
+      {{#each this.renderableEntries as |entry|}}
+        <div
+          class={{concat "NavStack-item NavStack-item-" entry.index}}
+          inert={{entry.isInert}}
+        >
+          {{#if entry.shouldRender}}
+            {{component entry.component}}
+          {{/if}}
+        </div>
+      {{/each}}
     </div>
+    {{#unless this.headerIsTop}}
+      <div
+        class={{concat
+          "NavStack-header"
+          (if @headerContainerClass (concat " " @headerContainerClass))
+        }}
+      >
+        {{#if this.parentItemHeaderComponent}}
+          <div
+            class="NavStack-headerContainer NavStack-parentItemHeaderContainer"
+            inert={{true}}
+          >
+            {{component
+              this.parentItemHeaderComponent
+              class="NavStack-headerComponent"
+              back=@back
+            }}
+          </div>
+        {{/if}}
+        <div class="NavStack-headerContainer NavStack-currentHeaderContainer">
+          {{component
+            this.headerComponent
+            class="NavStack-headerComponent"
+            back=@back
+          }}
+        </div>
+      </div>
+    {{/unless}}
+    {{#if this.hasFooter}}
+      <div
+        class={{concat
+          "NavStack-footer"
+          (if @footerClass (concat " " @footerClass))
+        }}
+      >
+        {{component @footer}}
+      </div>
+    {{/if}}
   </div>
-  {{#if this.hasFooter}}
-    <div class="NavStack-footer">
-      {{component @footer}}
-    </div>
-  {{/if}}
 </div>

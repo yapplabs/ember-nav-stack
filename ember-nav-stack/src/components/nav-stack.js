@@ -125,6 +125,16 @@ export default class NavStack extends Component {
 
   @bool('args.footer') hasFooter;
 
+  // `@headerPosition` controls whether the header markup is rendered above
+  // or below the item container in the DOM. Defaults to `'bottom'` to
+  // preserve the historical layout (header DOM-after-items). `'top'` is for
+  // consumers whose chrome needs the header to come first in the focus order
+  // / scroll flow. The addon's animation logic is selector-based, so neither
+  // position affects transitions.
+  get headerIsTop() {
+    return this.args.headerPosition === 'top';
+  }
+
   // Resolved once in the constructor from
   // `config.environment['ember-nav-stack'].suppressAnimation`.
   #suppressAnimation = false;
