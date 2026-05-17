@@ -1,0 +1,7 @@
+{{#if @class}}
+  <div class={{concat "NavStack-innerWrapper " @class}}>
+    {{yield}}
+  </div>
+{{else}}
+  {{yield}}
+{{/if}}

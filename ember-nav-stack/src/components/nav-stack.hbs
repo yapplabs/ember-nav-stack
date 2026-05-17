@@ -17,12 +17,7 @@
   {{did-update this.handleStackFingerprintChange this.stackItemsFingerprint}}
   ...attributes
 >
-  <div
-    class={{concat
-      "NavStack-innerWrapper"
-      (if @innerWrapperClass (concat " " @innerWrapperClass))
-    }}
-  >
+  <NavStackInnerWrapper @class={{@innerWrapperClass}}>
     {{#if this.headerIsTop}}
       <div
         class={{concat
@@ -147,5 +142,5 @@
         {{component @footer}}
       </div>
     {{/if}}
-  </div>
+  </NavStackInnerWrapper>
 </div>
