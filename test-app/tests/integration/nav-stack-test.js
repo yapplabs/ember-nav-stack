@@ -942,13 +942,53 @@ module('Integration | Component | nav-stack', function (hooks) {
         '.NavStack-item-1 (active) is reachable',
       );
     });
+
+    test('parent header container is inert too', async function (assert) {
+      // The parent header is rendered separately from the items (it has
+      // its own slot in `.NavStack-header`) but contains focusable buttons
+      // (Back / Close in this app's chrome). Without `inert` on it,
+      // keyboard users could Tab into an invisible, opacity-0 header while
+      // the active item is visible.
+      await this.renderNavStack(exampleHbs);
+      assert.true(
+        find('.NavStack-parentItemHeaderContainer').inert,
+        '.NavStack-parentItemHeaderContainer is inert',
+      );
+      assert.false(
+        find('.NavStack-currentHeaderContainer').inert,
+        '.NavStack-currentHeaderContainer is reachable',
+      );
+    });
   });
 
-  module('repositions on viewport resize', function () {
+  module('repositions on viewport resize', function (hooks) {
+    // Stub the global ResizeObserver so we can invoke its callback
+    // deterministically. Real ResizeObserver delivery is async, batched
+    // into a separate "resize loop" task by the browser, and isn't
+    // tracked by Ember's `settled()` — so a real resize is unreliable
+    // to assert in headless CI.
+    let observerCallbacks;
+    hooks.beforeEach(function () {
+      observerCallbacks = [];
+      let OriginalRO = window.ResizeObserver;
+      this.__originalResizeObserver = OriginalRO;
+      window.ResizeObserver = class FakeResizeObserver {
+        constructor(cb) {
+          observerCallbacks.push(cb);
+        }
+        observe() {}
+        unobserve() {}
+        disconnect() {}
+      };
+    });
+    hooks.afterEach(function () {
+      window.ResizeObserver = this.__originalResizeObserver;
+    });
+
     let exampleHbs = hbs`
       {{#if this.shouldRenderNavStack}}
         {{!-- template-lint-disable no-inline-styles --}}
-        <div class="resize-host" style={{this.hostStyle}}>
+        <div style="width:320px;height:480px;position:relative">
           <NavStack @layer={{0}} @back={{this.back}} />
         </div>
       {{/if}}
@@ -964,38 +1004,45 @@ module('Integration | Component | nav-stack', function (hooks) {
       />
     `;
 
-    test('_handleViewportResize fires when the root element resizes', async function (assert) {
-      // Spy on the prototype handler so this is decoupled from CSS layout
-      // timing in headless CI (where measuring the resulting translateX
-      // after a synchronous style change is racy). What matters is that
-      // our ResizeObserver wiring delivers width-change events to the
-      // handler — the handler's own behavior (`_computeXPosition` +
-      // `setTransform`) is already exercised by the slide tests.
-      let originalHandler = NavStack.prototype._handleViewportResize;
-      let calls = 0;
-      NavStack.prototype._handleViewportResize = function () {
-        calls += 1;
-        return originalHandler.apply(this, arguments);
-      };
-      try {
-        this.set('hostStyle', 'width:320px;height:480px;position:relative');
-        await this.renderNavStack(exampleHbs);
-        // The synthetic first ResizeObserver callback is deliberately
-        // skipped by `_observeResize`; calls should be 0 at this point.
-        let baseline = calls;
-        this.set('hostStyle', 'width:480px;height:480px;position:relative');
-        // ResizeObserver delivers asynchronously after layout commits.
-        // Wait a couple of macrotasks plus a settle round to give the
-        // browser time to flush the resize batch.
-        await new Promise((r) => setTimeout(r, 100));
-        await settled();
-        assert.ok(
-          calls > baseline,
-          `_handleViewportResize was invoked after width change (baseline=${baseline}, after=${calls})`,
-        );
-      } finally {
-        NavStack.prototype._handleViewportResize = originalHandler;
-      }
+    test('the first ResizeObserver tick is skipped (synthetic initial size)', async function (assert) {
+      await this.renderNavStack(exampleHbs);
+      assert.strictEqual(
+        observerCallbacks.length,
+        1,
+        'NavStack installs one ResizeObserver',
+      );
+      let itemContainer = find('.NavStack-itemContainer');
+      let initialTransform = itemContainer.style.transform;
+
+      // Synthetic "initial size" report fired right after observe(). The
+      // handler is wired to skip this one — no translateX change.
+      observerCallbacks[0]();
+      assert.strictEqual(
+        itemContainer.style.transform,
+        initialTransform,
+        'translateX is unchanged after the synthetic first tick',
+      );
+    });
+
+    test('subsequent ResizeObserver ticks recompute translateX from the current item width', async function (assert) {
+      await this.renderNavStack(exampleHbs);
+      // Skip the synthetic first tick.
+      observerCallbacks[0]();
+      let itemContainer = find('.NavStack-itemContainer');
+
+      // Drilled-to-track at depth 2 means `_computeXPosition` returns
+      // `-(stackDepth - 1) * itemWidth = -itemWidth`. Read the live
+      // itemWidth from the actual DOM and assert the resulting transform
+      // matches — that way the test is robust to whatever width the
+      // headless test container happens to be using.
+      let item = find('.NavStack-item:last-child');
+      let expectedTranslateX = -item.getBoundingClientRect().width;
+      observerCallbacks[0]();
+      assert.strictEqual(
+        itemContainer.style.transform,
+        `translateX(${expectedTranslateX}px)`,
+        `translateX was recomputed to ${expectedTranslateX}px (one item width)`,
+      );
     });
   });
 });

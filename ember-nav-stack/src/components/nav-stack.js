@@ -193,6 +193,15 @@ export default class NavStack extends Component {
     if (this.isDestroying || this.isDestroyed || !this.element) {
       return;
     }
+    // A horizontal slide is in flight: the spring's `onStop` will commit
+    // a translateX based on the pre-resize geometry, clobbering anything
+    // we set here. Defer until the spring rests — `_horizontalTransition`
+    // checks `_resizePending` in its finish path and re-runs us with the
+    // fresh dimensions.
+    if (this._horizontalSpring) {
+      this._resizePending = true;
+      return;
+    }
     let itemContainerElement = this.element.querySelector(
       '.NavStack-itemContainer',
     );
@@ -203,6 +212,10 @@ export default class NavStack extends Component {
       itemContainerElement,
       `translateX(${this._computeXPosition()}px)`,
     );
+    // The back-swipe gesture caches `startingX`, `backX`, and `thresholdX`
+    // off the (now-stale) element measurements. Re-seed those so the next
+    // pan uses the post-resize geometry.
+    this._backSwipeGesture?.setupContext();
   }
 
   @action
@@ -596,6 +609,14 @@ export default class NavStack extends Component {
             this._horizontalSpring = null;
           }
           run(finish);
+          // If a viewport resize landed during this slide, we deferred it
+          // (the spring's geometry was based on pre-resize measurements).
+          // Now that the spring has rested, re-run the reposition against
+          // the current width.
+          if (this._resizePending && !this.isDestroying && !this.isDestroyed) {
+            this._resizePending = false;
+            next(this, this._handleViewportResize);
+          }
         })
         .start();
       return;
