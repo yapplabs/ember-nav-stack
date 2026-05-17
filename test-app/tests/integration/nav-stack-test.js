@@ -1045,4 +1045,89 @@ module('Integration | Component | nav-stack', function (hooks) {
       );
     });
   });
+
+  // §2a from Y-1302: class args + @headerPosition. These let consumers
+  // style the addon's DOM nodes and reorder header vs items without
+  // subclassing.
+  module('class args land on the right nodes', function () {
+    let exampleHbs = hbs`
+      {{#if this.shouldRenderNavStack}}
+        {{!-- template-lint-disable no-inline-styles --}}
+        <div style="width:320px;height:480px;position:relative">
+          <NavStack
+            @layer={{0}}
+            @footer={{component 'tab-bar'}}
+            @back={{this.back}}
+            @rootClass="custom-root"
+            @innerWrapperClass="custom-inner"
+            @headerContainerClass="custom-header"
+            @itemContainerClass="custom-items"
+            @footerClass="custom-footer"
+          />
+        </div>
+      {{/if}}
+      <ToNavStack
+        @layer={{0}}
+        @item={{component 'test-components/page' model=this.pageModel controller=this.controller}}
+        @header={{component 'test-components/page/header' model=this.pageModel controller=this.controller}}
+      />
+    `;
+
+    test('each class arg adds to the matching element without losing the addon class', async function (assert) {
+      await this.renderNavStack(exampleHbs);
+      assert.dom('.NavStack').hasClass('custom-root');
+      assert.dom('.NavStack-innerWrapper').hasClass('custom-inner');
+      assert.dom('.NavStack-header').hasClass('custom-header');
+      assert.dom('.NavStack-itemContainer').hasClass('custom-items');
+      assert.dom('.NavStack-footer').hasClass('custom-footer');
+    });
+  });
+
+  module('@headerPosition controls DOM order of header vs items', function () {
+    let exampleHbs = hbs`
+      {{#if this.shouldRenderNavStack}}
+        {{!-- template-lint-disable no-inline-styles --}}
+        <div style="width:320px;height:480px;position:relative">
+          <NavStack
+            @layer={{0}}
+            @back={{this.back}}
+            @headerPosition={{this.headerPosition}}
+          />
+        </div>
+      {{/if}}
+      <ToNavStack
+        @layer={{0}}
+        @item={{component 'test-components/page' model=this.pageModel controller=this.controller}}
+        @header={{component 'test-components/page/header' model=this.pageModel controller=this.controller}}
+      />
+    `;
+
+    test('default: header is rendered AFTER items (legacy layout)', async function (assert) {
+      await this.renderNavStack(exampleHbs);
+      let header = find('.NavStack-header');
+      let items = find('.NavStack-itemContainer');
+      assert.ok(
+        items.compareDocumentPosition(header) &
+          Node.DOCUMENT_POSITION_FOLLOWING,
+        'header comes after items in the DOM',
+      );
+    });
+
+    test('@headerPosition="top": header is rendered BEFORE items', async function (assert) {
+      this.set('headerPosition', 'top');
+      await this.renderNavStack(exampleHbs);
+      let header = find('.NavStack-header');
+      let items = find('.NavStack-itemContainer');
+      assert.ok(
+        header.compareDocumentPosition(items) &
+          Node.DOCUMENT_POSITION_FOLLOWING,
+        'items come after header in the DOM',
+      );
+      // Animation logic uses class-based selectors so this must still
+      // render the current header container with the right class.
+      assert
+        .dom('.NavStack-currentHeaderContainer .page-title')
+        .hasText('Page One');
+    });
+  });
 });
