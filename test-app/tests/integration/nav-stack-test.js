@@ -152,6 +152,65 @@ module('Integration | Component | nav-stack', function (hooks) {
       assert.dom('.NavStack-item-1 h1').hasText('track 1');
       assert.ok(isInViewport('.NavStack-item-1'), 'Item 1 is on screen');
     });
+
+    test('pushing a new stack item preserves the existing items DOM (no remount)', async function (assert) {
+      // Y-1308: `{{#each renderableEntries}}` without an explicit key
+      // falls back to @identity matching, but `renderableEntries`
+      // re-allocates fresh POJOs on every push/pop. Without
+      // `key="component"` Glimmer treats every entry as new, unmounts
+      // and remounts the wrapping `.NavStack-item` div, and any state
+      // held by the consumer's component instance inside that div
+      // evaporates. This regression test captures the live DOM node
+      // before the push and asserts the same node is still in the DOM
+      // afterward.
+      this.set('isSecondItemShowing', false);
+      await this.renderNavStack(hbs`
+        {{#if this.shouldRenderNavStack}}
+          {{!-- template-lint-disable no-inline-styles --}}
+          <div style="width:320px;height:480px;position:relative">
+            <NavStack
+              @layer={{0}}
+              @footer={{component 'tab-bar'}}
+              @back={{this.back}}
+            />
+          </div>
+        {{/if}}
+        <ToNavStack
+          @layer={{0}}
+          @item={{component 'test-components/page' model=this.pageModel controller=this.controller}}
+          @header={{component 'test-components/page/header' model=this.pageModel controller=this.controller}}
+        />
+        {{#if this.isSecondItemShowing}}
+          <ToNavStack
+            @layer={{0}}
+            @item={{component 'test-components/track' model=this.trackModel controller=this.controller}}
+            @header={{component 'test-components/track/header' model=this.trackModel controller=this.controller}}
+          />
+        {{/if}}
+      `);
+
+      let item0BeforePush = find('.NavStack-item-0');
+      let pageH1Before = find('.NavStack-item-0 h1');
+      assert.ok(item0BeforePush, 'item-0 mounted before push');
+
+      this.set('isSecondItemShowing', true);
+      await settled();
+
+      // Same DOM node — Glimmer matched position 0 across the push
+      // because the curried-component ref is stable.
+      assert.strictEqual(
+        find('.NavStack-item-0'),
+        item0BeforePush,
+        '.NavStack-item-0 DOM node is the same instance after push',
+      );
+      assert.strictEqual(
+        find('.NavStack-item-0 h1'),
+        pageH1Before,
+        'page h1 inside item-0 is the same instance after push',
+      );
+      // The new item is mounted next to the existing one.
+      assert.dom('.NavStack-item-1 h1').hasText('track 1');
+    });
   });
   module('drilled down two levels', function (hooks) {
     let exampleHbs = hbs`

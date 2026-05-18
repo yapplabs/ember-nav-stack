@@ -72,7 +72,14 @@
         (if @itemContainerClass (concat " " @itemContainerClass))
       }}
     >
-      {{#each this.renderableEntries as |entry|}}
+      {{! key=component pins each stack-position to the stable curried
+          component reference. `renderableEntries` re-allocates fresh POJOs
+          on every push/pop (it maps over `this.components`), so without
+          an explicit key Glimmer falls back to @identity matching, sees
+          every entry as new, and unmounts+remounts the wrapping
+          .NavStack-item div on every stack change — taking the consumer's
+          component instance (and any state it holds) with it. See Y-1308. }}
+      {{#each this.renderableEntries key="component" as |entry|}}
         <div
           class={{concat "NavStack-item NavStack-item-" entry.index}}
           inert={{entry.isInert}}
