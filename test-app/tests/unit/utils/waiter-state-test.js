@@ -4,17 +4,55 @@ import { hasPendingWaiters } from '@ember/test-waiters';
 
 module('Unit | Utility | waiter-state', function () {
   module('lifecycle', function () {
-    test('starts with the initial-render token open', function (assert) {
+    test('starts idle — no initial-render token until beginInitialRender is called', function (assert) {
+      // Y-1306: the initial-render token opens LAZILY on the first
+      // beginInitialRender call (driven by NavStacks._schedule). If a
+      // service consumer instantiates the service but never pushes,
+      // no token ever opens — so `await settled()` in unrelated tests
+      // doesn't hang.
       let state = new WaiterState();
-      assert.true(state.hasPendingInitialRender());
+      assert.false(state.hasPendingInitialRender());
       assert.false(state.hasPendingStackUpdate());
       assert.strictEqual(state.runningTransitions(), 0);
+      assert.true(state.isIdle(), 'idle when constructed');
+      assert.false(hasPendingWaiters(), 'no pending waiters at construction');
+    });
+
+    test('beginInitialRender opens the token; markInitialRenderComplete closes it', function (assert) {
+      let state = new WaiterState();
+      state.beginInitialRender();
+      assert.true(state.hasPendingInitialRender());
       assert.false(state.isIdle(), 'not idle while initial render pending');
       state.markInitialRenderComplete();
+      assert.false(state.hasPendingInitialRender());
+      assert.true(state.isIdle());
+    });
+
+    test('beginInitialRender is a no-op after markInitialRenderComplete', function (assert) {
+      let state = new WaiterState();
+      state.beginInitialRender();
+      state.markInitialRenderComplete();
+      state.beginInitialRender(); // re-opening would be wrong — initial is once
+      assert.false(state.hasPendingInitialRender());
+      assert.true(state.isIdle());
+    });
+
+    test('beginInitialRender is idempotent before completion', function (assert) {
+      let state = new WaiterState();
+      state.beginInitialRender();
+      state.beginInitialRender();
+      state.beginInitialRender();
+      assert.true(state.hasPendingInitialRender());
+      state.markInitialRenderComplete();
+      assert.false(
+        hasPendingWaiters(),
+        'a single markInitialRenderComplete closes the coalesced token',
+      );
     });
 
     test('isIdle once all tokens close and runningTransitions returns to 0', function (assert) {
       let state = new WaiterState();
+      state.beginInitialRender();
       state.markInitialRenderComplete();
       assert.true(state.isIdle());
     });
@@ -107,6 +145,7 @@ module('Unit | Utility | waiter-state', function () {
   module('initial render token', function () {
     test('markInitialRenderComplete is idempotent', function (assert) {
       let state = new WaiterState();
+      state.beginInitialRender();
       assert.true(state.hasPendingInitialRender());
 
       state.markInitialRenderComplete();

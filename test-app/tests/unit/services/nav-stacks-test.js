@@ -25,11 +25,24 @@ module('Unit | Service | nav-stacks', function (hooks) {
   });
 
   test('initial render waiter resolves after first stack flush', async function (assert) {
-    assert.true(hasPendingWaiters(), 'initial render waiter starts pending');
+    // Y-1306: the initial-render waiter opens LAZILY on the first
+    // pushItem (via `_schedule()` → `_waiter.beginInitialRender()`).
+    // A freshly-constructed service that's never been pushed to has
+    // no pending waiter — so `await settled()` in unrelated tests
+    // doesn't hang.
+    assert.false(
+      hasPendingWaiters(),
+      'no waiter pending on a never-pushed service',
+    );
 
     run(() => {
       this.service.pushItem('initial', 0, { name: 'component:initial' });
     });
+
+    assert.true(
+      hasPendingWaiters(),
+      'first pushItem opens the initial-render waiter',
+    );
 
     await settled();
 
@@ -37,6 +50,19 @@ module('Unit | Service | nav-stacks', function (hooks) {
     assert.false(
       this.service.isInitialRender,
       'initial render flag clears after first flush',
+    );
+  });
+
+  test('never-pushed service stays idle — no settled() hang', async function (assert) {
+    // Regression for Y-1306: yapp-core CI hung after upgrading to 7.1.1
+    // because instantiating the service (transitively, via any consumer
+    // that injected it) opened a stack-update waiter token that no
+    // pushItem ever closed. `await settled()` then blocked on a waiter
+    // for a first render that was never going to happen.
+    await settled();
+    assert.false(
+      hasPendingWaiters(),
+      'settled() resolves cleanly with no pending waiters',
     );
   });
 
