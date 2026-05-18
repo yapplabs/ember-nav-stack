@@ -19,9 +19,15 @@ const STACK_WAITER = buildWaiter('ember-nav-stack:stack-update');
 //                        closes when runningTransitions returns to 0
 //     - stackUpdate      opens on beginStackUpdate (idempotent),
 //                        closes on endStackUpdate
-//     - initialRender    opens once at construction, closes once on
-//                        markInitialRenderComplete (subsequent calls
-//                        are no-ops)
+//     - initialRender    opens once on the first beginInitialRender call
+//                        (no-op if already opened or already completed),
+//                        closes once on markInitialRenderComplete. Opening
+//                        is deliberately LAZY: if a consumer instantiates
+//                        the NavStacks service but never pushes a stack
+//                        item, no token ever opens — so `await settled()`
+//                        in unrelated tests doesn't hang on a waiter for
+//                        an initial render that's never going to happen
+//                        (see Y-1306).
 //
 //   isIdle === all three tokens CLOSED && runningTransitions === 0
 //
@@ -38,7 +44,8 @@ export default class WaiterState {
   constructor() {
     this._transitionToken = null;
     this._stackUpdateToken = null;
-    this._initialRenderToken = STACK_WAITER.beginAsync();
+    this._initialRenderToken = null;
+    this._initialRenderDone = false;
     this._runningTransitions = 0;
     this._whenIdlePromise = null;
     this._whenIdleResolve = null;
@@ -91,13 +98,25 @@ export default class WaiterState {
     return !!this._stackUpdateToken;
   }
 
-  // Initial-render token (open from construction, closed at most once)
+  // Initial-render token (opens lazily on first beginInitialRender call,
+  // closes at most once on markInitialRenderComplete)
+
+  // Open the initial-render token if it hasn't been opened yet and hasn't
+  // already been completed. Called from `NavStacks._schedule()` so the
+  // token only exists when there's actually a first render to bridge.
+  beginInitialRender() {
+    if (this._initialRenderDone || this._initialRenderToken) {
+      return;
+    }
+    this._initialRenderToken = STACK_WAITER.beginAsync();
+  }
 
   markInitialRenderComplete() {
     if (this._initialRenderToken) {
       STACK_WAITER.endAsync(this._initialRenderToken);
       this._initialRenderToken = null;
     }
+    this._initialRenderDone = true;
   }
 
   hasPendingInitialRender() {

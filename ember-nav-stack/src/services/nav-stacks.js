@@ -67,6 +67,14 @@ export default class NavStacks extends Service {
   didUpdate() {} // hook
 
   _schedule() {
+    // Lazy-open the initial-render token here (idempotent + no-op once
+    // the initial render has completed). The token bridges the gap
+    // between a consumer's first ToNavStack mounting and `_process`
+    // running afterRender. Opening it lazily means a NavStacks service
+    // that's instantiated but never pushed to doesn't leak a pending
+    // waiter that would hang `await settled()` in unrelated tests
+    // (see Y-1306).
+    this._waiter.beginInitialRender();
     this._waiter.beginStackUpdate();
     scheduleOnce('afterRender', this, this._process);
   }
