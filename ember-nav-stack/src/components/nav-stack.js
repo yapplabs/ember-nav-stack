@@ -1,4 +1,5 @@
 import Component from '@glimmer/component';
+import { cached } from '@glimmer/tracking';
 import { action } from '@ember/object';
 import { next, run, scheduleOnce } from '@ember/runloop';
 import { setTransform } from '../utils/animation.js';
@@ -111,6 +112,15 @@ export default class NavStack extends Component {
   // except the topmost (active) one so non-active items can't be reached by
   // keyboard or assistive tech — they're still in the DOM (briefly visible
   // during a horizontal slide) but should not be in the focus order.
+  //
+  // `@cached` saves the array across multiple reads inside one render
+  // frame (the template iterates it once; nothing else reads it today, but
+  // it keeps the cost flat if/when something else does). It does NOT fix
+  // the Y-1308 each-keying issue on its own — when `this.components`
+  // changes, the cache invalidates and a fresh array of fresh POJOs is
+  // produced. The template's `key="component"` on `{{#each}}` is what
+  // pins each entry to its stable curried-component reference.
+  @cached
   get renderableEntries() {
     let components = this.components;
     let renderThreshold = components.length - 2;
