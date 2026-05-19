@@ -753,6 +753,18 @@ export default class NavStack extends Component {
       );
     }
     this._clones.remove('gestureBackOverlays', parentClone);
+
+    // Refresh the gesture's cached startingX / backX / thresholdX and DOM
+    // refs after a gesture-driven pop. The overlay-consumed path forces
+    // `intent = { kind: 'none' }` so the programmatic transition is
+    // skipped — which also skips `_transitionDidEnd`, the usual place
+    // `setupContext` runs. Without this refresh the BackSwipeGesture
+    // still holds geometry seeded for the pre-pop stack depth, so a
+    // second consecutive back-swipe (e.g. on a multi-track page:
+    // Schedule Item → Track → Tracks List) jerks the item container an
+    // extra item-width left on the first pan-move tick and leaves the
+    // next-target stack item off-screen. See Y-1316.
+    this._backSwipeGesture?.setupContext();
   }
 
   _cloneLastStackItem() {

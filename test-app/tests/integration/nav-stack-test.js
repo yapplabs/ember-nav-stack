@@ -292,6 +292,88 @@ module('Integration | Component | nav-stack', function (hooks) {
       );
       assert.dom('.NavStack-currentHeaderContainer .back-button').isVisible();
     });
+    test('two consecutive back-swipes pop all the way down (Y-1316)', async function (assert) {
+      // Multi-track flow: page → track → schedule-item → swipe back to
+      // track → swipe back to page. The overlay-consumed back-swipe
+      // path forces `intent: 'none'` so `_transitionDidEnd` (the usual
+      // refresh point for the BackSwipeGesture's cached geometry) is
+      // skipped. Without an explicit refresh after the pop lands, the
+      // second swipe reads `startingX` / `backX` / `thresholdX` seeded
+      // for the pre-pop (depth-3) stack: the very first pan-move tick
+      // commits a translateX an extra item-width to the left, jerking
+      // both the leaving and target items off-screen.
+      let twoLevelsHbs = hbs`
+        {{#if this.shouldRenderNavStack}}
+          {{!-- template-lint-disable no-inline-styles --}}
+          <div style="width:320px;height:480px;position:relative">
+            <NavStack
+              @layer={{0}}
+              @footer={{component 'tab-bar'}}
+              @back={{this.back}}
+            />
+          </div>
+        {{/if}}
+        <ToNavStack
+          @layer={{0}}
+          @item={{component 'test-components/page' model=this.pageModel controller=this.controller}}
+          @header={{component 'test-components/page/header' model=this.pageModel controller=this.controller}}
+        />
+        {{#if this.isSecondLevelShowing}}
+          <ToNavStack
+            @layer={{0}}
+            @item={{component 'test-components/track' model=this.trackModel controller=this.controller}}
+            @header={{component 'test-components/track/header' model=this.trackModel controller=this.controller back=this.back}}
+          />
+        {{/if}}
+        {{#if this.isThirdLevelShowing}}
+          <ToNavStack
+            @layer={{0}}
+            @item={{component 'test-components/schedule-item' model=this.scheduleItemModel controller=this.controller}}
+            @header={{component 'test-components/schedule-item/header' model=this.scheduleItemModel controller=this.controller back=this.back}}
+          />
+        {{/if}}
+      `;
+      this.set('isSecondLevelShowing', true);
+      this.set('isThirdLevelShowing', true);
+      this.set('back', () => {
+        if (this.isThirdLevelShowing) {
+          this.set('isThirdLevelShowing', false);
+        } else if (this.isSecondLevelShowing) {
+          this.set('isSecondLevelShowing', false);
+        }
+      });
+
+      await this.renderNavStack(twoLevelsHbs);
+      assert.ok(isInViewport('.NavStack-item-2'), 'item 2 visible at depth 3');
+
+      // First back-swipe: depth 3 → 2.
+      await panX(find('.NavStack-item-2'), {
+        position: [50, 100],
+        amount: 170,
+        duration: 150,
+      });
+      await settled();
+      assert.dom('.NavStack-item-2').doesNotExist('depth 3 popped');
+      assert.ok(
+        isInViewport('.NavStack-item-1'),
+        'item 1 (track) now on screen',
+      );
+
+      // Second back-swipe: depth 2 → 1. The bug surfaced here — without
+      // setupContext refresh after the first pop, this pan jerks the
+      // item container left by an extra item-width on the first tick.
+      await panX(find('.NavStack-item-1'), {
+        position: [50, 100],
+        amount: 170,
+        duration: 150,
+      });
+      await settled();
+      assert.dom('.NavStack-item-1').doesNotExist('depth 2 popped');
+      assert.ok(
+        isInViewport('.NavStack-item-0'),
+        'item 0 (page / tracks list) is on screen after second back-swipe',
+      );
+    });
     test('back swipe shows target page header during the re-render, not the leaving page header', async function (assert) {
       assert.expect(4);
       this.set('back', () => {
