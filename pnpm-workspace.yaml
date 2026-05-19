@@ -9,3 +9,12 @@ packages:
 # dependencies" guard against duplicate ember-source copies.
 overrides:
   '@glimmer/component': ^1.1.2
+
+# release-it-lerna-changelog 5.0.0 (the last published version) caps its
+# release-it peer at ^15. The plugin is unmaintained but still works
+# against release-it 17 in practice — historically used to cut 7.1.x
+# releases. Accept the newer release-it so the release script doesn't
+# bail under pnpm's strict peer check.
+peerDependencyRules:
+  allowedVersions:
+    'release-it-lerna-changelog>release-it': '^17.0.0'
