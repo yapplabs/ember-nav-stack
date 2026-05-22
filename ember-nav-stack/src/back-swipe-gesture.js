@@ -267,7 +267,18 @@ export default class BackSwipeGesture {
         // If the spring's momentum carries it past the back-threshold after
         // the user released below the threshold, retarget to backX so the
         // animation completes the back-swipe rather than snapping back.
+        // Gated on `canNavigateBack` so a vigorous swipe at a root page
+        // (where back navigation is disallowed) can't promote itself into a
+        // successful back-swipe via momentum: the swipe-release branch
+        // correctly set `shouldNavigateBack = false`, but without this gate
+        // the first onUpdate tick — currentValue still near `fromValue`,
+        // which is past threshold — would flip it back to true. The
+        // resulting `finalize` would translate the item container off to
+        // the right and fire `onBack()`. At root, `onBack` is typically a
+        // no-op (no stack change), so the container never recovers and the
+        // viewport reads as empty/white. See Y-1342.
         if (
+          this.canNavigateBack &&
           !shouldNavigateBack &&
           s.currentValue >= this.startingX + this.thresholdX
         ) {
