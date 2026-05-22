@@ -94,6 +94,100 @@ module('Integration | Component | nav-stack', function (hooks) {
       assert.ok(isInViewport('.NavStack-item-0'), 'Item 0 is on screen');
     });
   });
+  module('back-swipe at root after a prior back-swipe', function (hooks) {
+    // Real-world repro for Y-1342: user is at depth 2, swipes back to root
+    // (depth 1), then attempts another back-swipe at root. The first swipe's
+    // `_finishGestureBack` calls `setupContext()`, which re-enables pan and
+    // recomputes `canNavigateBack = false`. The second swipe is the case
+    // where the bug surfaces — pre-fix, the spring's momentum-retarget tick
+    // promotes `shouldNavigateBack` to true even though `canNavigateBack`
+    // is false, parking the item container at `backX` and firing `onBack`.
+    let twoLevelsHbs = hbs`
+      {{#if this.shouldRenderNavStack}}
+        {{!-- template-lint-disable no-inline-styles --}}
+        <div style="width:320px;height:480px;position:relative">
+          <NavStack
+            @layer={{0}}
+            @footer={{component 'tab-bar'}}
+            @back={{this.back}}
+          />
+        </div>
+      {{/if}}
+      <ToNavStack
+        @layer={{0}}
+        @item={{component 'test-components/page' model=this.pageModel controller=this.controller}}
+        @header={{component 'test-components/page/header' model=this.pageModel controller=this.controller}}
+      />
+      {{#if this.isSecondLevelShowing}}
+        <ToNavStack
+          @layer={{0}}
+          @item={{component 'test-components/track' model=this.trackModel controller=this.controller}}
+          @header={{component 'test-components/track/header' model=this.trackModel controller=this.controller back=this.back}}
+        />
+      {{/if}}
+    `;
+    hooks.beforeEach(function () {
+      this.set('isSecondLevelShowing', true);
+      this.set('back', () => {
+        if (this.isSecondLevelShowing) {
+          this.set('isSecondLevelShowing', false);
+        }
+      });
+    });
+    test('a vigorous second swipe at root does not strand the viewport (Y-1342)', async function (assert) {
+      await this.renderNavStack(twoLevelsHbs);
+      assert.ok(isInViewport('.NavStack-item-1'), 'item 1 visible at depth 2');
+
+      // First back-swipe: depth 2 → 1. After this, _finishGestureBack
+      // re-runs setupContext, re-enabling pan with canNavigateBack=false.
+      await panX(find('.NavStack-item-1'), {
+        position: [50, 100],
+        amount: 170,
+        duration: 150,
+      });
+      await settled();
+      assert.dom('.NavStack-item-1').doesNotExist('depth 2 popped');
+
+      // Pre-fix: the spring's momentum-retarget on the first onUpdate tick
+      // (currentValue still near `fromValue`, past threshold) flipped
+      // shouldNavigateBack back to true. `finalize` then translated the
+      // item container off to the right (translateX = backX) and fired
+      // `onBack()`. At root, `onBack` is typically a no-op (no stack
+      // change), so the container never snapped back: the viewport read
+      // as empty / white. Post-fix: gated on `canNavigateBack`, momentum
+      // can't promote the swipe at root.
+      let backCallsBeforeRootSwipe = 0;
+      this.set('back', () => {
+        backCallsBeforeRootSwipe++;
+      });
+      let container = find('.NavStack-itemContainer');
+      await panX(find('.NavStack-item-0'), {
+        position: [50, 100],
+        amount: 170,
+        duration: 150,
+      });
+      await settled();
+      assert.strictEqual(
+        backCallsBeforeRootSwipe,
+        0,
+        '`back` is not invoked from a root-page back-swipe',
+      );
+      assert.strictEqual(
+        container.style.transform,
+        'translateX(0px)',
+        'item container snapped back to translateX(0) — not stranded at backX',
+      );
+      assert.strictEqual(
+        find('.NavStack-currentHeaderContainer').style.opacity,
+        '1',
+        'current header opacity restored to 1',
+      );
+      assert.ok(
+        find('.NavStack-item-0'),
+        'item 0 still rendered after the root-page swipe',
+      );
+    });
+  });
   module('more page', function () {
     let exampleHbs = hbs`
       {{#if this.shouldRenderNavStack}}
