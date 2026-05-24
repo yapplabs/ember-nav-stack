@@ -134,9 +134,7 @@ export default class BackSwipeGesture {
     // visible drag of the item container, no blank reveal on release —
     // and lets a sibling gesture (e.g. yapp-mobile's drawer) own the pan
     // unambiguously without requireFailure interplay.
-    this.hammer
-      ?.get('pan')
-      .set({ enable: this.canNavigateBack, threshold: 9 });
+    this.hammer?.get('pan').set({ enable: this.canNavigateBack, threshold: 9 });
   }
 
   // Called by the gesture service when another gesture-aware component
