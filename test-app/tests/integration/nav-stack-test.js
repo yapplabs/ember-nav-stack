@@ -187,6 +187,157 @@ module('Integration | Component | nav-stack', function (hooks) {
         'item 0 still rendered after the root-page swipe',
       );
     });
+    test('a slow pan at root does not visibly drag the item container', async function (assert) {
+      // Dummy-app repro: at root, dragging from the left edge translates the
+      // item container under the user's finger, exposing the blank area
+      // behind it. On release the spring correctly snaps back (canNavigateBack
+      // is false, so shouldNavigateBack is false), but the user has already
+      // seen the empty area. The gesture should be fully inert at root so
+      // the drawer (in yapp-mobile) can own the pan unambiguously.
+      await this.renderNavStack(twoLevelsHbs);
+
+      // First back-swipe: depth 2 → 1. _finishGestureBack re-runs
+      // setupContext, which post-fix disables the pan recognizer (since
+      // canNavigateBack is now false).
+      await panX(find('.NavStack-item-1'), {
+        position: [50, 100],
+        amount: 170,
+        duration: 150,
+      });
+      await settled();
+      assert.dom('.NavStack-item-1').doesNotExist('depth 2 popped');
+
+      let container = find('.NavStack-itemContainer');
+      let preDragTransform = container.style.transform;
+
+      let backCalls = 0;
+      this.set('back', () => {
+        backCalls++;
+      });
+
+      let mouseUpDeferred = deferred();
+      let panXPromise = panX(find('.NavStack-item-0'), {
+        position: [50, 100],
+        amount: 170,
+        duration: 150,
+        waitForMouseUp: mouseUpDeferred.promise,
+      });
+      // Wait long enough for all mousemoves to have fired (duration + slack)
+      // but before the mouseup is allowed, so we can observe mid-pan state.
+      await delay(250);
+      assert.strictEqual(
+        container.style.transform,
+        preDragTransform,
+        'item container transform unchanged mid-pan at root (gesture is inert)',
+      );
+      mouseUpDeferred.resolve();
+      await panXPromise;
+      await settled();
+
+      assert.strictEqual(
+        backCalls,
+        0,
+        '`back` is not invoked from a root-page pan',
+      );
+      assert.strictEqual(
+        container.style.transform,
+        preDragTransform,
+        'item container transform still unchanged after release',
+      );
+      assert.ok(
+        find('.NavStack-item-0'),
+        'item 0 still rendered after the root-page pan',
+      );
+    });
+  });
+  module('back-swipe at root after a programmatic pop', function (hooks) {
+    // Bug 2: when a stack pop lands at root via a programmatic transition
+    // (e.g. tapping the currently-selected tab in yapp-mobile triggers
+    // `navigator-router.pop()` → NavStack's slide-back animation →
+    // `_transitionDidEnd`), the `stackDepth <= 1` guard in
+    // `_transitionDidEnd` skips `setupContext()`. The gesture's cached
+    // `canNavigateBack` stays stale at `true`, so a subsequent swipe at
+    // root translates the container, then `onBack()` runs (no-op at root),
+    // leaving the viewport stranded — the TestFlight blank-screen repro.
+    let twoLevelsHbs = hbs`
+      {{#if this.shouldRenderNavStack}}
+        {{!-- template-lint-disable no-inline-styles --}}
+        <div style="width:320px;height:480px;position:relative">
+          <NavStack
+            @layer={{0}}
+            @footer={{component 'tab-bar'}}
+            @back={{this.back}}
+          />
+        </div>
+      {{/if}}
+      <ToNavStack
+        @layer={{0}}
+        @item={{component 'test-components/page' model=this.pageModel controller=this.controller}}
+        @header={{component 'test-components/page/header' model=this.pageModel controller=this.controller}}
+      />
+      {{#if this.isSecondLevelShowing}}
+        <ToNavStack
+          @layer={{0}}
+          @item={{component 'test-components/track' model=this.trackModel controller=this.controller}}
+          @header={{component 'test-components/track/header' model=this.trackModel controller=this.controller back=this.back}}
+        />
+      {{/if}}
+    `;
+    hooks.beforeEach(function () {
+      this.set('isSecondLevelShowing', true);
+    });
+    test('pan at root after a programmatic pop-to-root is inert', async function (assert) {
+      await this.renderNavStack(twoLevelsHbs);
+      assert.ok(isInViewport('.NavStack-item-1'), 'item 1 visible at depth 2');
+
+      // Programmatic pop: drop the second stack item without a swipe.
+      // NavStack runs its slide-back animation, then `_transitionDidEnd`
+      // fires — and pre-fix skips `setupContext()` because stackDepth is
+      // now <= 1, leaving the gesture's `canNavigateBack` stale.
+      this.set('isSecondLevelShowing', false);
+      await settled();
+      assert.dom('.NavStack-item-1').doesNotExist('depth 2 popped');
+
+      let container = find('.NavStack-itemContainer');
+      let preDragTransform = container.style.transform;
+
+      let backCalls = 0;
+      this.set('back', () => {
+        backCalls++;
+      });
+
+      let mouseUpDeferred = deferred();
+      let panXPromise = panX(find('.NavStack-item-0'), {
+        position: [50, 100],
+        amount: 170,
+        duration: 150,
+        waitForMouseUp: mouseUpDeferred.promise,
+      });
+      await delay(250);
+      assert.strictEqual(
+        container.style.transform,
+        preDragTransform,
+        'item container transform unchanged mid-pan at root (gesture is inert)',
+      );
+      mouseUpDeferred.resolve();
+      await panXPromise;
+      await settled();
+
+      assert.strictEqual(
+        backCalls,
+        0,
+        '`back` is not invoked from a root-page pan',
+      );
+      assert.strictEqual(
+        container.style.transform,
+        preDragTransform,
+        'item container transform still unchanged after release',
+      );
+      assert.ok(
+        find('.NavStack-item-0'),
+        'item 0 still rendered after the root-page pan',
+      );
+    });
   });
   module('more page', function () {
     let exampleHbs = hbs`
