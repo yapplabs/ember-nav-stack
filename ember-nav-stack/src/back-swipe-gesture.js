@@ -129,7 +129,14 @@ export default class BackSwipeGesture {
     this.backX = this.startingX + itemWidth;
     this.thresholdX = itemWidth / 2;
     this.canNavigateBack = this.getCanNavigateBack();
-    this.hammer?.get('pan').set({ enable: true, threshold: 9 });
+    // Disable the recognizer entirely when back-nav isn't allowed (root
+    // page or no `args.back`). This keeps the pan inert at root — no
+    // visible drag of the item container, no blank reveal on release —
+    // and lets a sibling gesture (e.g. yapp-mobile's drawer) own the pan
+    // unambiguously without requireFailure interplay.
+    this.hammer
+      ?.get('pan')
+      .set({ enable: this.canNavigateBack, threshold: 9 });
   }
 
   // Called by the gesture service when another gesture-aware component
