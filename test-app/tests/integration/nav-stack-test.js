@@ -618,6 +618,51 @@ module('Integration | Component | nav-stack', function (hooks) {
         isInViewport('.NavStack-item-0'),
         'item 0 (page / tracks list) is on screen after second back-swipe',
       );
+      // After both gesture pops have landed via the overlay path,
+      // `_finishGestureBack` re-anchors the item container to the new
+      // depth's `_computeXPosition()`. This catches the case where the
+      // gesture's spring lands at a `backX` derived from stale cached
+      // geometry (computed for the pre-pop depth) — a value that would
+      // otherwise strand the container off-screen at the new depth.
+      assert.strictEqual(
+        find('.NavStack-itemContainer').style.transform,
+        'translateX(0px)',
+        'item container is anchored to the depth-1 resting position',
+      );
+    });
+    test('back swipe leaves the item container at the new depth resting position', async function (assert) {
+      // After a successful back-swipe lands via the overlay path,
+      // `_finishGestureBack` writes `translateX(_computeXPosition())` so
+      // the container always sits at the canonical position for the new
+      // depth — independent of where the gesture's spring left it. This
+      // is the saving throw that prevents a stranded container if the
+      // gesture's cached `backX` (which is what the spring targets) was
+      // computed for a different depth.
+      await this.renderNavStack(exampleHbs);
+      // At depth 3 the container's resting position is -2 * itemWidth.
+      // The .NavStack-itemContainer is 500% of the NavStack width, so
+      // itemWidth equals the NavStack width (320px in the test fixture).
+      let containerEl = find('.NavStack-itemContainer');
+      let navStackEl = find('.NavStack');
+      let itemWidth = navStackEl.getBoundingClientRect().width;
+      assert.strictEqual(
+        containerEl.style.transform,
+        `translateX(${-2 * itemWidth}px)`,
+        'depth 3 starts at -2 * itemWidth',
+      );
+
+      await panX(find('.NavStack-item-2'), {
+        position: [50, 100],
+        amount: 170,
+        duration: 150,
+      });
+      await settled();
+
+      assert.strictEqual(
+        containerEl.style.transform,
+        `translateX(${-1 * itemWidth}px)`,
+        'depth 2 resting position after back-swipe lands',
+      );
     });
     test('back swipe shows target page header during the re-render, not the leaving page header', async function (assert) {
       assert.expect(4);

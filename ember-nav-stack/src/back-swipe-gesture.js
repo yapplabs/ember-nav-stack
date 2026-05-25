@@ -16,6 +16,11 @@ const SWIPE_SPRING_CONFIG = {
   stiffness: 1000,
   damping: 500,
   mass: 3,
+  // The spring otherwise rests at ~0.3px past `toValue` for a tick before
+  // settling, which paints a 1-retina-pixel sliver of whatever's behind
+  // the NavStack on the left edge as the back-swipe-back spring lands.
+  // No motion-design reason to keep the overshoot here.
+  overshootClamping: true,
 };
 
 // Encapsulates the back-swipe gesture state and behavior. NavStack
@@ -122,7 +127,12 @@ export default class BackSwipeGesture {
       '.NavStack-item:last-child',
     );
     if (!currentStackItemElement) {
+      // No stack item to anchor against — depth 0, or a transient state
+      // during layer dismissal where the items have drained but the
+      // NavStack is still mounted. Force the recognizer off so a stale
+      // `enable: true` from a prior depth can't fire pan events.
       this.canNavigateBack = false;
+      this.hammer?.get('pan').set({ enable: false });
       return;
     }
     let itemWidth = currentStackItemElement.getBoundingClientRect().width;
@@ -152,6 +162,17 @@ export default class BackSwipeGesture {
   _handlePanEvent = (ev) => {
     if (this._activeSpring) {
       return;
+    }
+    // Refresh cached geometry + recognizer state at the start of every pan.
+    // The cache (startingX, backX, thresholdX, canNavigateBack, enable) is
+    // normally kept fresh by setupContext calls from `_transitionDidEnd`
+    // and `_finishGestureBack`, but the latter is deferred via Ember's
+    // `next()`. A user can lift after a successful back-swipe and start a
+    // new pan before that microtask flushes, leaving the gesture reading
+    // pre-pop geometry. Re-running setupContext on `isFirst` guarantees
+    // the new pan sees the current container position and depth.
+    if (ev.isFirst) {
+      this.setupContext();
     }
     // Clamp the gesture's effective displacement at 0 so it can never travel
     // left of its starting position. Without this, sliding the finger past
