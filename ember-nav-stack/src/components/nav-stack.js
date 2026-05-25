@@ -728,8 +728,10 @@ export default class NavStack extends Component {
     // a gesture pop whose overlay clone was null (non-overlay path),
     // leaving `canNavigateBack` stale at `true` and the recognizer's
     // `enable` stale at whatever `disablePan` last set. At root,
-    // `setupContext` correctly sets both to false. At depth 0 its own
-    // `.NavStack-item:last-child` null check makes it a safe no-op.
+    // `setupContext` sets both to false; at depth 0 its `null` last-child
+    // branch also forces the recognizer off (defensive — depth 0 can
+    // briefly occur during layer-dismissal slide-down while the NavStack
+    // is still mounted).
     this._backSwipeGesture?.setupContext();
   }
 

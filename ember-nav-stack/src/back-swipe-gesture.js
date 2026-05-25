@@ -127,7 +127,12 @@ export default class BackSwipeGesture {
       '.NavStack-item:last-child',
     );
     if (!currentStackItemElement) {
+      // No stack item to anchor against — depth 0, or a transient state
+      // during layer dismissal where the items have drained but the
+      // NavStack is still mounted. Force the recognizer off so a stale
+      // `enable: true` from a prior depth can't fire pan events.
       this.canNavigateBack = false;
+      this.hammer?.get('pan').set({ enable: false });
       return;
     }
     let itemWidth = currentStackItemElement.getBoundingClientRect().width;
