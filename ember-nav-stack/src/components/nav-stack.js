@@ -708,6 +708,10 @@ export default class NavStack extends Component {
       stiffness: 1000,
       damping: 500,
       mass: 3,
+      // See SWIPE_SPRING_CONFIG in back-swipe-gesture.js — overshoot
+      // paints a 1-retina-pixel sliver of the area behind the NavStack
+      // as the slide-back lands.
+      overshootClamping: true,
     });
   }
 
@@ -716,9 +720,16 @@ export default class NavStack extends Component {
   }
 
   _transitionDidEnd() {
-    if (!this.element || this.stackDepth <= 1) {
+    if (!this.element) {
       return;
     }
+    // Always refresh — including pop-to-root. The previous `stackDepth <= 1`
+    // guard skipped the refresh after a programmatic pop-to-root and after
+    // a gesture pop whose overlay clone was null (non-overlay path),
+    // leaving `canNavigateBack` stale at `true` and the recognizer's
+    // `enable` stale at whatever `disablePan` last set. At root,
+    // `setupContext` correctly sets both to false. At depth 0 its own
+    // `.NavStack-item:last-child` null check makes it a safe no-op.
     this._backSwipeGesture?.setupContext();
   }
 
@@ -753,6 +764,31 @@ export default class NavStack extends Component {
       );
     }
     this._clones.remove('gestureBackOverlays', parentClone);
+
+    // Reposition the item container to the new depth's resting position.
+    // The overlay-consumed path ran no programmatic transition, so the
+    // back-swipe spring's final translateX is still latched at the
+    // pre-pop `backX`. That value is the correct visual position for the
+    // pop's target depth *while* the leaving item is still in the DOM —
+    // but once the consumer's re-render drops the stack to its new
+    // length, the container's translateX may no longer match the resting
+    // position computed from the new depth. A rapid second back-swipe
+    // that begins before this same `_finishGestureBack` runs will see
+    // the gesture's `startingX` re-derived from the actual container
+    // position by `setupContext` below, so the gesture itself is fine —
+    // but if no second pan follows, we still want the container to sit
+    // at the new depth's canonical position. Without this re-anchoring,
+    // a value valid for the pre-pop depth strands the container off-
+    // screen at the new depth (rapid double-back-swipe → blank viewport).
+    let itemContainerElement = this.element?.querySelector(
+      '.NavStack-itemContainer',
+    );
+    if (itemContainerElement) {
+      setTransform(
+        itemContainerElement,
+        `translateX(${this._computeXPosition()}px)`,
+      );
+    }
 
     // Refresh the gesture's cached startingX / backX / thresholdX and DOM
     // refs after a gesture-driven pop. The overlay-consumed path forces
