@@ -117,6 +117,7 @@ Override per-route via `routableTemplateName = 'something-else'` if a single com
 | `@layer` | yes | Integer ≥ 0. Which `<NavStack>` should receive this item. |
 | `@item` | yes | A curried component (`{{component 'my-page' model=this.model}}`) rendered as the stack item's body. |
 | `@header` | no | A curried component rendered in the stack item's header slot. Receives `@model`, `@controller`, and `@back` as arguments when the parent `<NavStack>` has them. |
+| `@transition` | no | Set to `'cut'` to show this item without animating when it is pushed, in place of `slideForward`. Pops still slide. Read once, when the item is pushed. |
 
 ## Animation behavior
 
@@ -128,6 +129,7 @@ Override per-route via `routableTemplateName = 'something-else'` if a single com
 | Layer > 0 appearing from empty | `slideUp` (slides up from below) |
 | Layer > 0 disappearing to empty | `slideDown` (slides down off-screen) |
 | Same root, deeper push | `slideForward` (new page slides in from the right) |
+| Same root, deeper push of an item with `@transition='cut'` | `cut` |
 | Same root, shallower pop | `slideBack` (current page slides off to the right) |
 | Root component changed | `cut` (instant swap — used for tab switches) |
 

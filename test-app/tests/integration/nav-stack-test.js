@@ -1890,4 +1890,56 @@ module('Integration | Component | nav-stack', function (hooks) {
       );
     });
   });
+
+  module('@transition on ToNavStack', function (hooks) {
+    let exampleHbs = hbs`
+      {{#if this.shouldRenderNavStack}}
+        {{!-- template-lint-disable no-inline-styles --}}
+        <div style="width:320px;height:480px;position:relative">
+          <NavStack @layer={{0}} @back={{this.back}} />
+        </div>
+      {{/if}}
+      <ToNavStack
+        @layer={{0}}
+        @item={{component 'test-components/page' model=this.pageModel controller=this.controller}}
+        @header={{component 'test-components/page/header' model=this.pageModel controller=this.controller}}
+      />
+      {{#if this.isDrilled}}
+        <ToNavStack
+          @layer={{0}}
+          @item={{component 'test-components/schedule-item' model=this.scheduleItemModel controller=this.controller}}
+          @header={{component 'test-components/schedule-item/header' model=this.scheduleItemModel controller=this.controller back=this.back}}
+          @transition={{this.pushTransition}}
+        />
+      {{/if}}
+    `;
+    let getSpringCalls = spyOnCreateSpring(hooks);
+
+    test("a push with @transition='cut' shows the item without sliding", async function (assert) {
+      this.set('pushTransition', 'cut');
+      await this.renderNavStack(exampleHbs);
+      getSpringCalls().length = 0;
+
+      this.set('isDrilled', true);
+      await settled();
+
+      assert.deepEqual(getSpringCalls(), [], 'no animated spring');
+      assert
+        .dom('.NavStack-currentHeaderContainer .page-title')
+        .hasText('Schedule Item');
+    });
+
+    test('a push without @transition slides', async function (assert) {
+      await this.renderNavStack(exampleHbs);
+      getSpringCalls().length = 0;
+
+      this.set('isDrilled', true);
+      await settled();
+
+      assert.strictEqual(getSpringCalls().length, 1, 'one animated spring');
+      assert
+        .dom('.NavStack-currentHeaderContainer .page-title')
+        .hasText('Schedule Item');
+    });
+  });
 });

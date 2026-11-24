@@ -126,4 +126,22 @@ module('Unit | Utility | transition-decision', function () {
       { kind: 'slideForward' },
     );
   });
+
+  test("depth increase with pushTransition 'cut' → cut", function (assert) {
+    assert.deepEqual(
+      decideTransition(
+        inputs({ previousDepth: 1, newDepth: 2, pushTransition: 'cut' }),
+      ),
+      { kind: 'cut' },
+    );
+  });
+
+  test("pushTransition 'cut' does not change a pop", function (assert) {
+    assert.deepEqual(
+      decideTransition(
+        inputs({ previousDepth: 2, newDepth: 1, pushTransition: 'cut' }),
+      ),
+      { kind: 'slideBack' },
+    );
+  });
 });

@@ -10,6 +10,7 @@
 //   newRootKey ≠ previousRootKey     → cut, startsRootChange=true
 //   next<prev, !rootJustChanged      → slideBack
 //   next<prev, rootJustChanged       → cut    (depth change rides on root change)
+//   next>prev, pushTransition='cut'  → cut    (the pushed item asked for no animation)
 //   next>prev, !rootJustChanged      → slideForward
 //   next>prev, rootJustChanged       → cut
 //   next===prev, same root, !initial → none
@@ -28,6 +29,7 @@ export function decideTransition({
   newRootKey,
   layer,
   rootJustChanged,
+  pushTransition,
 }) {
   if (isInitialRender) {
     return { kind: 'cut' };
@@ -51,7 +53,8 @@ export function decideTransition({
     return { kind: rootJustChanged ? 'cut' : 'slideBack' };
   }
   if (newDepth > previousDepth) {
-    return { kind: rootJustChanged ? 'cut' : 'slideForward' };
+    let cut = rootJustChanged || pushTransition === 'cut';
+    return { kind: cut ? 'cut' : 'slideForward' };
   }
 
   return { kind: 'none' };

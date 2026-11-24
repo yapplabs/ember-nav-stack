@@ -160,4 +160,22 @@ module('Unit | Service | nav-stacks', function (hooks) {
       'internal transition counter resets',
     );
   });
+
+  test('a pushed item keeps the transition it asked for', async function (assert) {
+    run(() => {
+      this.service.pushItem('root', 0, { name: 'component:root' });
+      this.service.pushItem(
+        'drilled',
+        0,
+        { name: 'component:drilled' },
+        undefined,
+        { transition: 'cut' },
+      );
+    });
+    await settled();
+
+    let [root, drilled] = this.service.stacks.layer0;
+    assert.strictEqual(root.transition, undefined);
+    assert.strictEqual(drilled.transition, 'cut');
+  });
 });

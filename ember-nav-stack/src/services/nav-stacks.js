@@ -15,11 +15,14 @@ export default class NavStacks extends Service {
     this._counter = 1;
   }
 
-  pushItem(sourceId, layer, component, headerComponent) {
+  // `options.transition: 'cut'` asks the NavStack to show this item without
+  // animating when pushing it makes the stack deeper.
+  pushItem(sourceId, layer, component, headerComponent, options = {}) {
     this._itemsById[sourceId] = {
       layer,
       component,
       headerComponent,
+      transition: options.transition,
       order: this._counter++,
     };
     this._schedule();
@@ -85,10 +88,13 @@ export default class NavStacks extends Service {
     let wasInitialRender = this.isInitialRender === true;
 
     for (let sourceId in itemsById) {
-      let { layer, component, headerComponent, order } = itemsById[sourceId];
+      let { layer, component, headerComponent, transition, order } =
+        itemsById[sourceId];
       let layerName = `layer${layer}`;
       newStacks[layerName] = newStacks[layerName] || [];
-      let newItem = component ? { component, headerComponent, order } : null;
+      let newItem = component
+        ? { component, headerComponent, transition, order }
+        : null;
       newStacks[layerName].push(newItem);
     }
     for (let layerName in newStacks) {

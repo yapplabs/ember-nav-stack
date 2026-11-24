@@ -337,6 +337,7 @@ export default class NavStack extends Component {
           newRootKey: rootComponentKey,
           layer: this.args.layer,
           rootJustChanged: this._rootJustChanged,
+          pushTransition: stackItems[stackDepth - 1]?.transition,
         });
 
     if (intent.startsRootChange) {

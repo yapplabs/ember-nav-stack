@@ -12,6 +12,7 @@ export default class ToNavStack extends Component {
       this.args.layer,
       this.args.item,
       this.args.header,
+      { transition: this.args.transition },
     );
   }
 
