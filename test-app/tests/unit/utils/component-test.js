@@ -72,9 +72,8 @@ module('Unit | Utility | component | extractComponentKey', function () {
     ref[ARGS] = {
       named: {
         model: {
-          lastValue: {
-            /* no id */
-          },
+          // The model has no id.
+          lastValue: {},
         },
       },
     };
